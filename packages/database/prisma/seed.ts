@@ -100,6 +100,80 @@ async function main() {
   });
   console.log('✅ Created sample pending task');
 
+  // Seed Investment Plans
+  const plans = [
+    {
+      name: 'BASIC',
+      minCapital: 50,
+      minDailyReturn: 1.3,
+      maxDailyReturn: 1.6,
+      dailyAverage: 1.45,
+      monthlyCommission: 0.50,
+      doublingTime: '6 meses',
+      description: 'Plan básico para iniciantes',
+    },
+    {
+      name: 'SILVER',
+      minCapital: 50,
+      minDailyReturn: 1.4,
+      maxDailyReturn: 1.7,
+      dailyAverage: 1.55,
+      monthlyCommission: 0.45,
+      doublingTime: '5.5 meses',
+      description: 'Plan plata con mejores rendimientos',
+    },
+    {
+      name: 'GOLD',
+      minCapital: 350,
+      minDailyReturn: 1.5,
+      maxDailyReturn: 1.9,
+      dailyAverage: 1.70,
+      monthlyCommission: 0.40,
+      doublingTime: '5 meses',
+      description: 'Plan oro para inversores serios',
+    },
+    {
+      name: 'PLATINUM',
+      minCapital: 800,
+      minDailyReturn: 1.9,
+      maxDailyReturn: 2.3,
+      dailyAverage: 2.10,
+      monthlyCommission: 0.35,
+      doublingTime: '4.5 meses',
+      description: 'Plan platino de alto rendimiento',
+    },
+    {
+      name: 'DIAMOND',
+      minCapital: 5000,
+      minDailyReturn: 2.8,
+      maxDailyReturn: 3.2,
+      dailyAverage: 3.00,
+      monthlyCommission: 0.20,
+      doublingTime: '3 meses',
+      description: 'Plan diamante para máxima rentabilidad',
+    },
+  ];
+
+  // Seed Investment Plans logic using findFirst to avoid duplicates
+  for (const plan of plans) {
+    const existingPlan = await prisma.investmentPlan.findFirst({
+        where: { name: plan.name }
+    });
+
+    if (existingPlan) {
+        await prisma.investmentPlan.update({
+            where: { id: existingPlan.id },
+            data: plan
+        });
+        console.log(`🔄 Updated plan: ${plan.name}`);
+    } else {
+        await prisma.investmentPlan.create({
+            data: plan
+        });
+        console.log(`✅ Created plan: ${plan.name}`);
+    }
+  }
+
   console.log('🎉 Seeding completed!');
   console.log('\n📝 Test credentials:');
   console.log('Admin: admin@cloudcapital.com / admin123');

@@ -77,8 +77,7 @@ cp .env.example packages/database/.env
 
 4. **Configurar la base de datos**
 ```bash
-cd packages
-cd database
+cd packages\database
 npx prisma migrate dev #Si pide nombre, poner "cloud"
 npx prisma generate
 
