@@ -1,25 +1,24 @@
-# Cloud Capital - Investment Platform
+# Cloud Capital - Plataforma de Inversión
 
-Una plataforma moderna de inversión que combina minería de criptomonedas con energía limpia y servicios en la nube.
+Plataforma moderna de inversión en criptomonedas.
 
 ## 📊 Estado del Proyecto
 
-**Progreso General**: 60% completado
+**Progreso General**: 85% completado
 
 - ✅ **Fase 1**: Monorepo Setup - COMPLETADA
-- ✅ **Fase 2**: Frontend Implementation - COMPLETADA
-- ✅ **Fase 3**: Backend Implementation - COMPLETADA
-- ⏳ **Fase 4**: Database Setup - PENDIENTE (schema listo)
-- ⏳ **Fase 5**: Integration & Testing - PENDIENTE
+- ✅ **Fase 2**: Frontend Implementation - EN PROGRESO
+- ✅ **Fase 3**: Backend Implementation - EN PROGRESO
+- ✅ **Fase 4**: Database Setup (MySQL) - EN PROGRESO
+- ⏳ **Fase 5**: Integration & Testing - EN PROGRESO
 
-**Último Update**: 2025-11-28
+**Último Update**: 2025-12-01
 
-> 💡 **Nota**: El backend está completamente implementado con autenticación JWT, middleware de seguridad, y todos los endpoints necesarios. Solo falta configurar PostgreSQL y ejecutar las migraciones para tener el sistema funcionando.
-
+> 💡 **Nota**: El sistema está funcional con autenticación (Email/Usuario), gestión de planes de inversión, dashboard de usuario y panel administrativo.
 
 ## 🏗️ Arquitectura
 
-Este proyecto utiliza una arquitectura de **monorepo** con las siguientes partes:
+Este proyecto utiliza una arquitectura de monorepo con las siguientes partes:
 
 - **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS
 - **Backend**: Node.js + Express + TypeScript + Prisma
@@ -35,7 +34,6 @@ cloud-capital/
 │   ├── backend/           # API REST con Express
 │   ├── shared/            # Tipos compartidos
 │   └── database/          # Prisma schema y migraciones
-├── docs/                  # Documentación
 ├── .env.example           # Variables de entorno ejemplo
 ├── package.json           # Root package.json con workspaces
 └── README.md              # Este archivo
@@ -45,7 +43,7 @@ cloud-capital/
 
 ### Prerrequisitos
 
-- Node.js 18+ 
+- Node.js 18+
 - MySQL 8+
 - npm 9+
 
@@ -53,19 +51,22 @@ cloud-capital/
 
 1. **Clonar el repositorio**
 ```bash
-git clone <repository-url>
-cd cloud-capital
+git clone https://github.com/Zwartmit/Cloud-Capital.git
 ```
 
-2. **Instalar dependencias**
+2. **Instalar dependencias en carpeta raíz**
 ```bash
 npm install
 ```
 
 3. **Configurar variables de entorno**
 ```bash
-cp .env.example .env
-# Editar .env con tus credenciales
+# Backend
+cp packages/backend/.env.example packages/backend/.env
+# Editar .env con las credenciales de la base de datos
+
+# Database (opcional si usas el mismo .env)
+cp packages/database/.env.example packages/database/.env
 ```
 
 4. **Configurar la base de datos**
@@ -85,132 +86,76 @@ npm run dev:frontend  # Puerto 5173
 npm run dev:backend   # Puerto 3000
 ```
 
-## 📦 Paquetes
+## 📦 Paquetes y Funcionalidades
 
 ### Frontend (`packages/frontend`)
-Aplicación React con Vite. Incluye:
-- Landing page
-- Sistema de autenticación
-- Dashboard de usuario
-- Panel administrativo
-- Gestión de planes de inversión
+Aplicación React con Vite.
+- **Landing Page**: Diseño moderno con FAQ y planes dinámicos.
+- **Autenticación**: Login (Email/Usuario), Registro con referidos, Recuperación de contraseña.
+- **Dashboard**: Vista general de balance, gráficas y estado de cuenta.
+- **Planes de Inversión**: Visualización y gestión de planes (Admin).
+- **Perfil**: Gestión de datos de usuario.
+- **Admin Panel**: Gestión de usuarios y aprobación de tareas.
 
 **Puerto**: 5173 (desarrollo)
 
 ### Backend (`packages/backend`)
-API REST con Express. Incluye:
-- Autenticación JWT
-- Gestión de usuarios
-- Transacciones
-- Sistema de tareas (depósitos/retiros)
-- Panel administrativo
+API REST con Express.
+- **Autenticación**: JWT (Access + Refresh Tokens), bcrypt.
+- **Usuarios**: CRUD, sistema de referidos.
+- **Inversiones**: Lógica de planes y rendimientos.
+- **Transacciones**: Depósitos, retiros, reinversiones.
+- **Email**: Notificaciones (Bienvenida, Reset Password).
 
 **Puerto**: 3000 (desarrollo)
 
 ### Shared (`packages/shared`)
-Tipos TypeScript compartidos entre frontend y backend.
+Tipos TypeScript compartidos entre frontend y backend para garantizar consistencia de datos.
 
 ### Database (`packages/database`)
-Esquema Prisma y migraciones para PostgreSQL.
+Esquema Prisma y migraciones para MySQL.
+- **Modelos**: User, Transaction, Task, InvestmentPlan.
 
 ## 🛠️ Scripts Disponibles
 
 ```bash
 # Desarrollo
-npm run dev              # Inicia todos los servicios
 npm run dev:frontend     # Solo frontend
 npm run dev:backend      # Solo backend
 
 # Build
-npm run build            # Build de todos los paquetes
 npm run build:frontend   # Build del frontend
 npm run build:backend    # Build del backend
 
-# Testing
-npm run test             # Ejecuta todos los tests
-
-# Limpieza
-npm run clean            # Limpia node_modules y builds
-```
-
-## 🔐 Autenticación
+## 🔐 Autenticación y Roles
 
 El sistema implementa autenticación basada en JWT con tres roles:
 
-- **USER**: Usuario regular (puede invertir, retirar, ver su dashboard)
-- **SUBADMIN**: Administrador de nivel 1 (puede pre-aprobar depósitos)
-- **SUPERADMIN**: Administrador de nivel 2 (aprobación final de depósitos)
+- **USER**: Usuario regular. Puede invertir, ver su dashboard y gestionar su perfil.
+- **SUBADMIN**: Administrador de nivel 1. Puede ver usuarios y pre-aprobar tareas.
+- **SUPERADMIN**: Administrador total. Gestión de planes, aprobación final de depósitos/retiros y gestión de admins.
 
 ## 📊 Base de Datos
 
-El proyecto usa MySQL con Prisma ORM. El esquema incluye:
-
-- **Users**: Usuarios del sistema
-- **Transactions**: Historial de transacciones
-- **Tasks**: Tareas pendientes (depósitos, retiros, liquidaciones)
-
-Ver `packages/database/prisma/schema.prisma` para más detalles.
-
-## 🌐 API Endpoints
-
-Ver documentación completa en `docs/API.md`
-
-**Principales endpoints:**
-- `POST /api/auth/login` - Login
-- `POST /api/auth/register` - Registro
-- `GET /api/user/profile` - Perfil de usuario
-- `GET /api/user/balance` - Balance actual
-- `POST /api/user/deposit` - Solicitar depósito
-- `POST /api/user/withdraw` - Solicitar retiro
-- `GET /api/admin/users` - Listar usuarios (admin)
-- `GET /api/admin/tasks` - Tareas pendientes (admin)
-
-## 📝 Documentación
-
-- [Guía de Setup](docs/SETUP.md)
-- [API Documentation](docs/API.md)
-- [Database Schema](docs/DATABASE.md)
-- [Deployment Guide](docs/DEPLOYMENT.md)
+El proyecto usa **MySQL** con Prisma ORM.
+- **Users**: Información de cuenta, balances, referidos.
+- **InvestmentPlans**: Configuración dinámica de planes de inversión.
+- **Transactions**: Historial financiero.
+- **Tasks**: Cola de tareas para operaciones manuales (depósitos/retiros).
 
 ## 🎨 Tecnologías Utilizadas
 
 **Frontend:**
-- React 18
-- TypeScript
-- Vite
-- Tailwind CSS
-- React Router
-- Zustand (state management)
-- Axios
-- Lucide Icons
-- Recharts
+- React 18, TypeScript, Vite
+- Tailwind CSS (Estilos)
+- Zustand (Estado global)
+- Axios (HTTP Client)
+- Lucide Icons (Iconos)
+- Recharts (Gráficos)
 
 **Backend:**
-- Node.js
-- Express
+- Node.js, Express
 - TypeScript
-- Prisma ORM
-- MySQL
-- JWT
-- bcrypt
-- Zod (validation)
-
-## 🤝 Contribuir
-
-1. Fork el proyecto
-2. Crea tu rama de feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
-
-## 👥 Equipo
-
-Cloud Capital Investment Group © 2025
-
-## 📧 Contacto
-
-Para soporte o consultas: support@cloudcapital.com
+- Prisma ORM (MySQL)
+- JWT (Auth)
+- Nodemailer (Emails)
