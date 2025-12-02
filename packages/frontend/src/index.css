@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Variables de color base (Modo Nocturno) */
+  --color-primary: #0A0A18;
+  --color-secondary: #1F2937;
+  --color-accent: #3B82F6;
+  --color-profit: #10B981;
+  --color-text: #F9FAFB;
+  --color-subtext: #9CA3AF;
+  --color-danger: #EF4444;
+  --color-admin: #FBBF24;
+  --color-super-admin: #F97316;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-primary);
+  color: var(--color-text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Dashboard/General Cards */
+.card {
+  background-color: #111827;
+  border: 1px solid #374151;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  border-color: #4B5563;
+}
+
+/* Datos y Métricas */
+.data-metric {
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+/* Modal */
+.modal {
+  background-color: rgba(10, 10, 24, 0.98);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}

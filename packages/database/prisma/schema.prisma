@@ -1,0 +1,127 @@
+// Prisma schema for Cloud Capital database
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  SUBADMIN
+  SUPERADMIN
+}
+
+enum TaskStatus {
+  PENDING
+  PRE_APPROVED
+  COMPLETED
+  REJECTED
+}
+
+enum TaskType {
+  DEPOSIT_MANUAL
+  DEPOSIT_AUTO
+  WITHDRAWAL
+  LIQUIDATION
+}
+
+enum InvestmentClass {
+  BRONCE
+  PLATA
+  BASIC
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
+model User {
+  id                 String           @id @default(uuid())
+  email              String           @unique
+  password           String
+  name               String
+  username           String           @unique
+  role               UserRole         @default(USER)
+  
+  capitalUSDT        Float            @default(0)
+  currentBalanceUSDT Float            @default(0)
+  
+  investmentClass    InvestmentClass  @default(BRONCE)
+  
+  referralCode       String?          @unique
+  referrerId         String?
+  referrer           User?            @relation("UserReferrals", fields: [referrerId], references: [id])
+  referrals          User[]           @relation("UserReferrals")
+
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  
+  transactions       Transaction[]
+  tasks              Task[]
+  
+  @@map("users")
+}
+
+model Transaction {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type       String   // "DEPOSIT", "WITHDRAWAL", "PROFIT", "REINVEST"
+  amountUSDT Float
+  amountBTC  Float?
+  btcPrice   Float?
+  
+  reference  String?  // TXID, wallet address, etc.
+  status     String   @default("COMPLETED")
+  
+  createdAt  DateTime @default(now())
+  
+  @@map("transactions")
+  @@index([userId])
+}
+
+model Task {
+  id                 String     @id @default(uuid())
+  userId             String
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type               TaskType
+  status             TaskStatus @default(PENDING)
+  
+  amountUSD          Float
+  reference          String?
+  proof              String?    // URL to proof image
+  
+  approvedByAdmin    String?    // Email of admin who approved
+  
+  liquidationDetails Json?      // For liquidation tasks
+  
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  
+  @@map("tasks")
+  @@index([status])
+}
+
+model InvestmentPlan {
+  id                String   @id @default(uuid())
+  name              String
+  minCapital        Float
+  minDailyReturn    Float    // Percentage
+  maxDailyReturn    Float    // Percentage
+  dailyAverage      Float    // Percentage
+  monthlyCommission Float    // Percentage
+  doublingTime      String
+  description       String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("investment_plans")
+}

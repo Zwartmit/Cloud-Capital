@@ -1,0 +1,30 @@
+{
+  "name": "cloud-capital",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloud Capital - Investment Platform",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:frontend": "npm run dev -w @cloud-capital/frontend",
+    "dev:backend": "npm run dev -w @cloud-capital/backend",
+    "build": "npm run build --workspaces --if-present",
+    "build:frontend": "npm run build -w @cloud-capital/frontend",
+    "build:backend": "npm run build -w @cloud-capital/backend",
+    "clean": "npm run clean --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "keywords": [
+    "investment",
+    "crypto",
+    "cloud",
+    "monorepo"
+  ],
+  "author": "Cloud Capital Team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
