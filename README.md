@@ -88,7 +88,7 @@ npm run seed
 
 5. **Iniciar en modo desarrollo**
 ```bash
-# Abrir dos terminales y ejecutar:
+# Abrir dos terminales desde la carpeta raiz y ejecutar:
 
 # Frontend
 npm run dev:frontend  # Puerto 5173
