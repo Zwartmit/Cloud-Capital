@@ -20,6 +20,7 @@ async function main() {
       capitalUSDT: 0,
       currentBalanceUSDT: 0,
       investmentClass: 'DIAMOND',
+      referralCode: 'ADMIN123',
     },
   });
   console.log('✅ Created admin user:', admin.email);
@@ -38,6 +39,7 @@ async function main() {
       capitalUSDT: 0,
       currentBalanceUSDT: 0,
       investmentClass: 'PLATINUM',
+      referralCode: 'SUBADMIN123',
     },
   });
   console.log('✅ Created subadmin user:', subadmin.email);
@@ -56,6 +58,7 @@ async function main() {
       capitalUSDT: 1000,
       currentBalanceUSDT: 1150,
       investmentClass: 'GOLD',
+      referralCode: 'USER123',
     },
   });
   console.log('✅ Created test user:', user.email);

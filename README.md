@@ -54,35 +54,46 @@ cloud-capital/
 git clone https://github.com/Zwartmit/Cloud-Capital.git
 ```
 
-2. **Instalar dependencias en carpeta raíz**
+2. **Instalar dependencias**
 ```bash
+# Ejecutar desde la raíz del proyecto:
 npm install
 ```
 
 3. **Configurar variables de entorno**
 ```bash
+# Ejecutar desde la raíz del proyecto:
+
 # Backend
-cp packages/backend/.env.example packages/backend/.env
+cp .env.example packages/backend/.env
 # Editar .env con las credenciales de la base de datos
 
-# Database (opcional si usas el mismo .env)
-cp packages/database/.env.example packages/database/.env
+# Frontend
+cp packages/frontend/.env.example packages/frontend/.env
+
+# Database
+cp .env.example packages/database/.env
 ```
 
 4. **Configurar la base de datos**
 ```bash
-cd packages/database
+cd packages
+cd database
 npx prisma migrate dev
 npx prisma generate
+
+# Inicializar datos de prueba:
+npm run seed
 ```
 
 5. **Iniciar en modo desarrollo**
 ```bash
-# Desde la raíz del proyecto
-npm run dev
+# Abrir dos terminales y ejecutar:
 
-# O individualmente:
+# Frontend
 npm run dev:frontend  # Puerto 5173
+
+# Backend
 npm run dev:backend   # Puerto 3000
 ```
 
