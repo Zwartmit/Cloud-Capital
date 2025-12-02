@@ -79,7 +79,7 @@ cp .env.example packages/database/.env
 ```bash
 cd packages
 cd database
-npx prisma migrate dev
+npx prisma migrate dev #Si pide nombre, poner "cloud"
 npx prisma generate
 
 # Inicializar datos de prueba:
