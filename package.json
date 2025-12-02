@@ -14,7 +14,8 @@
     "build:frontend": "npm run build -w @cloud-capital/frontend",
     "build:backend": "npm run build -w @cloud-capital/backend",
     "clean": "npm run clean --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "seed": "npm run seed -w @cloud-capital/database"
   },
   "keywords": [
     "investment",
