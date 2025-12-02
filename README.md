@@ -126,6 +126,7 @@ npm run dev:backend      # Solo backend
 # Build
 npm run build:frontend   # Build del frontend
 npm run build:backend    # Build del backend
+```
 
 ## 🔐 Autenticación y Roles
 
