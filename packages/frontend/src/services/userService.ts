@@ -51,5 +51,10 @@ export const userService = {
       newPassword
     });
     return response.data;
+  },
+
+  async getReferrals(): Promise<UserDTO[]> {
+    const response = await apiClient.get<UserDTO[]>('/user/referrals');
+    return response.data;
   }
 };

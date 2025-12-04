@@ -3,6 +3,7 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { Search, Users, ListChecks, TrendingUp, User } from 'lucide-react';
 import { InvestmentPlanManager } from '../components/admin/InvestmentPlanManager';
 import { ConfirmModal } from '../components/modals/ConfirmModal';
+import { ReferralsModal } from '../components/modals/ReferralsModal';
 import { PasswordInput } from '../components/common/PasswordInput';
 import { adminService } from '../services/adminService';
 import { userService } from '../services/userService';
@@ -38,6 +39,7 @@ export const AdminPage: React.FC = () => {
     // Password reset state
     const [newPassword, setNewPassword] = useState('');
     const [resetPasswordMessage, setResetPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
 
     // Live search effect
     useEffect(() => {
@@ -559,6 +561,19 @@ export const AdminPage: React.FC = () => {
                                     <p className="text-sm text-gray-400 mb-1">Código de referido</p>
                                     <p className="text-lg font-semibold text-accent">{user?.referralCode || 'N/A'}</p>
                                 </div>
+                                <div>
+                                    <p className="text-sm text-gray-400 mb-1">Usuarios referidos</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-lg font-semibold text-white">{user?.referralsCount || 0}</p>
+                                        <button
+                                            onClick={() => setIsReferralsModalOpen(true)}
+                                            className="p-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors"
+                                            title="Ver referidos"
+                                        >
+                                            <Search className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Change Password Section */}
@@ -649,6 +664,10 @@ export const AdminPage: React.FC = () => {
                 confirmText="Eliminar"
                 cancelText="Cancelar"
                 confirmButtonClass="bg-red-600 hover:bg-red-500"
+            />
+            <ReferralsModal
+                isOpen={isReferralsModalOpen}
+                onClose={() => setIsReferralsModalOpen(false)}
             />
         </div>
     );

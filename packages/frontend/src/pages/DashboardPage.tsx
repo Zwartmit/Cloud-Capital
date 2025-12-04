@@ -6,8 +6,9 @@ import { ActivityFeed } from '../components/dashboard/ActivityFeed';
 import { TransactionTable } from '../components/dashboard/TransactionTable';
 import { Modal } from '../components/common/Modal';
 import { useAuthStore } from '../store/authStore';
-import { investmentClasses, InvestmentClass } from '../utils/investmentClasses';
+import { getPlanColor } from '../utils/planStyles';
 import { userService } from '../services/userService';
+import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
 import { cryptoService } from '../services/cryptoService';
 import { TransactionDTO } from '@cloud-capital/shared';
 
@@ -19,6 +20,7 @@ export const DashboardPage: React.FC = () => {
     const [transactions, setTransactions] = useState<TransactionDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [btcPrice, setBtcPrice] = useState<number>(96500); // Default fallback price
+    const [currentPlan, setCurrentPlan] = useState<InvestmentPlan | null>(null);
 
     // Fetch BTC price from CoinGecko
     useEffect(() => {
@@ -60,14 +62,55 @@ export const DashboardPage: React.FC = () => {
     const capitalUSDT = user?.capitalUSDT || 0;
     const currentBalanceUSDT = user?.currentBalanceUSDT || 0;
     const profitUSDT = currentBalanceUSDT - capitalUSDT;
-    const weeklyRate = 7.5; // TODO: Calculate from actual data
+
 
     // Get user's actual investment class from database
     const userInvestmentClass = user?.investmentClass;
     const hasInvestmentPlan = userInvestmentClass && userInvestmentClass !== null;
-    const userClassData = hasInvestmentPlan
-        ? investmentClasses[userInvestmentClass as InvestmentClass]
-        : null;
+
+    const [nextPlan, setNextPlan] = useState<InvestmentPlan | null>(null);
+
+    useEffect(() => {
+        const fetchPlans = async () => {
+            try {
+                const plans = await investmentPlanService.getAllPlans();
+                // Sort plans by minCapital to ensure correct order
+                const sortedPlans = plans.sort((a, b) => a.minCapital - b.minCapital);
+
+
+                if (hasInvestmentPlan && userInvestmentClass) {
+                    const plan = sortedPlans.find(p => p.name === userInvestmentClass);
+                    if (plan) {
+                        setCurrentPlan(plan);
+                        // Find next plan
+                        const currentIndex = sortedPlans.indexOf(plan);
+                        if (currentIndex < sortedPlans.length - 1) {
+                            setNextPlan(sortedPlans[currentIndex + 1]);
+                        } else {
+                            setNextPlan(null); // Max level reached
+                        }
+                    } else {
+                        // If user has a class name but it's not in the list (edge case), default to first plan as next?
+                        // Or maybe they are below the first plan?
+                        // For now, let's assume if they have a class, it matches a plan.
+                        // If they don't have a plan, the next plan is the first one (BRONZE usually)
+                        setNextPlan(sortedPlans[0]);
+                    }
+                } else {
+                    // No active plan, next target is the first plan
+                    setNextPlan(sortedPlans[0]);
+                }
+            } catch (error) {
+                console.error('Error fetching plans:', error);
+            }
+        };
+        fetchPlans();
+    }, [hasInvestmentPlan, userInvestmentClass]);
+
+    // Calculate dynamic weekly rate
+    const weeklyRate = currentPlan ? currentPlan.dailyAverage * 7 : 0;
+
+    const planColor = getPlanColor(userInvestmentClass || '');
 
     return (
         <div className="flex min-h-screen">
@@ -77,7 +120,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 border-b border-secondary pb-3 sm:pb-4">
-                        <h2 className="text-2xl sm:text-3xl lg:text-3xl font-extrabold text-white flex flex-col sm:flex-row sm:items-center mb-2 sm:mb-0">
+                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white flex flex-col sm:flex-row sm:items-center mb-2 sm:mb-0">
                             Resumen general
                         </h2>
                     </div>
@@ -90,7 +133,7 @@ export const DashboardPage: React.FC = () => {
                                 capitalUSDT={capitalUSDT}
                                 currentBalanceUSDT={currentBalanceUSDT}
                                 btcPrice={btcPrice}
-                                userClassData={userClassData}
+                                currentPlan={currentPlan}
                             />
 
                             {/* Stats Cards */}
@@ -109,30 +152,41 @@ export const DashboardPage: React.FC = () => {
                             <ActivityFeed />
 
                             {/* Progress Card */}
-                            <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-gray-400">
-                                <h4 className="font-bold text-sm sm:text-base lg:text-lg mb-2 sm:mb-4 text-gray-400">
-                                    Progreso a Nivel <span className="text-sky-300">PLATINUM</span>
-                                </h4>
-                                <p className="text-xs text-gray-500 mb-2 sm:mb-4">
-                                    Meta para un rendimiento de **2.0% diario**.
-                                </p>
-                                <div className="text-xs sm:text-sm space-y-2 sm:space-y-3">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="text-gray-400 text-xs sm:text-sm">Cartera Mínima ($2,500 USD)</span>
-                                            <span className="text-profit font-bold text-xs sm:text-sm">
-                                                {currentBalanceUSDT >= 2500 ? 'COMPLETADO' : `${((currentBalanceUSDT / 2500) * 100).toFixed(1)}%`}
-                                            </span>
-                                        </div>
-                                        <div className="w-full bg-gray-700 rounded-full h-1.5">
-                                            <div
-                                                className={`h-1.5 rounded-full ${currentBalanceUSDT >= 2500 ? 'bg-profit' : 'bg-red-500'}`}
-                                                style={{ width: `${Math.min(100, (currentBalanceUSDT / 2500) * 100)}%` }}
-                                            />
+                            {nextPlan ? (
+                                <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-gray-400">
+                                    <h4 className="font-bold text-sm sm:text-base lg:text-lg mb-2 sm:mb-4 text-gray-400">
+                                        Progreso a Nivel <span className={`${getPlanColor(nextPlan.name)}`}>{nextPlan.name}</span>
+                                    </h4>
+                                    <p className="text-xs text-gray-500 mb-2 sm:mb-4">
+                                        Meta para un rendimiento de **{nextPlan.minDailyReturn}% - {nextPlan.maxDailyReturn}% diario**.
+                                    </p>
+                                    <div className="text-xs sm:text-sm space-y-2 sm:space-y-3">
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-gray-400 text-xs sm:text-sm">Cartera Mínima (${nextPlan.minCapital.toLocaleString()} USD)</span>
+                                                <span className="text-profit font-bold text-xs sm:text-sm">
+                                                    {currentBalanceUSDT >= nextPlan.minCapital ? 'COMPLETADO' : `${((currentBalanceUSDT / nextPlan.minCapital) * 100).toFixed(1)}%`}
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-gray-700 rounded-full h-1.5">
+                                                <div
+                                                    className={`h-1.5 rounded-full ${currentBalanceUSDT >= nextPlan.minCapital ? 'bg-profit' : 'bg-red-500'}`}
+                                                    style={{ width: `${Math.min(100, (currentBalanceUSDT / nextPlan.minCapital) * 100)}%` }}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-accent">
+                                    <h4 className="font-bold text-sm sm:text-base lg:text-lg mb-2 text-accent">
+                                        ¡Nivel Máximo Alcanzado!
+                                    </h4>
+                                    <p className="text-xs text-gray-400">
+                                        Has alcanzado el plan de inversión más alto. Disfruta de los máximos beneficios.
+                                    </p>
+                                </div>
+                            )}
                         </aside>
                     </div>
 

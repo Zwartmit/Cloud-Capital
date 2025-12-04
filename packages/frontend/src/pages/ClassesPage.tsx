@@ -1,38 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
+import { Search } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
-import { Cloud, Crown, Activity, Server, Star, Gem, TrendingUp } from 'lucide-react';
-import { InvestmentClass } from '@cloud-capital/shared';
-
-const iconMap: Record<string, any> = {
-    'BRONCE': Cloud,
-    'PLATA': Server,
-    'BASIC': Activity,
-    'STARTER': Activity,
-    'SILVER': Star,
-    'GOLD': Crown,
-    'PLATINUM': Gem,
-    'DIAMOND': TrendingUp,
-};
-
-const getColor = (name: string) => {
-    const upperName = name.toUpperCase();
-    if (upperName.includes('BRONCE')) return 'text-orange-400';
-    if (upperName.includes('PLATA')) return 'text-gray-400';
-    if (upperName.includes('BASIC') || upperName.includes('STARTER')) return 'text-blue-400';
-    if (upperName.includes('SILVER')) return 'text-gray-300';
-    if (upperName.includes('GOLD')) return 'text-yellow-400';
-    if (upperName.includes('PLATINUM')) return 'text-cyan-400';
-    if (upperName.includes('DIAMOND')) return 'text-purple-400';
-    return 'text-accent';
-};
+import { UserDTO } from '@cloud-capital/shared';
+import { getPlanColor, getPlanIcon } from '../utils/planStyles';
+import { ReferralsModal } from '../components/modals/ReferralsModal';
 
 export const ClassesPage: React.FC = () => {
     const { user } = useAuthStore();
     const [plans, setPlans] = useState<InvestmentPlan[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
 
     const currentBalance = user?.currentBalanceUSDT || 0;
     const referralsCount = user?.referralsCount || 0;
@@ -77,12 +57,25 @@ export const ClassesPage: React.FC = () => {
                         </p>
                         <div className="mt-4 inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-secondary border border-accent">
                             <span className="text-gray-400">Tu plan actual:</span>
-                            <span className={`font-bold ${getColor(user?.investmentClass || '')}`}>
+                            <span className={`font-bold ${getPlanColor(user?.investmentClass || '')}`}>
                                 {user?.investmentClass || 'N/A'}
                             </span>
                         </div>
-                        <div className="mt-2 text-sm text-gray-500">
-                            Referidos activos: <span className="text-white font-bold">{referralsCount}</span>
+
+                        <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div className="text-sm text-gray-400">
+                                Tu código de referido: <span className="text-accent font-bold text-base ml-1">{user?.referralCode || 'N/A'}</span>
+                            </div>
+                            <div className="text-sm text-gray-500 flex items-center gap-2">
+                                <span>Referidos activos: <span className="text-white font-bold">{referralsCount}</span></span>
+                                <button
+                                    onClick={() => setIsReferralsModalOpen(true)}
+                                    className="p-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors border border-gray-700"
+                                    title="Ver referidos"
+                                >
+                                    <Search className="w-3 h-3" />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -93,16 +86,14 @@ export const ClassesPage: React.FC = () => {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {plans.map((plan) => {
-                                const upperName = plan.name.toUpperCase();
-                                // Find icon based on name inclusion
-                                const iconKey = Object.keys(iconMap).find(k => upperName.includes(k)) || 'BASIC';
-                                const Icon = iconMap[iconKey] || Activity;
-                                const colorClass = getColor(plan.name);
+                                const Icon = getPlanIcon(plan.name);
+                                const colorClass = getPlanColor(plan.name);
 
-                                const isCurrentClass = user?.investmentClass === plan.name; // Assuming names match exactly or we map them
+                                const isCurrentClass = user?.investmentClass === plan.name;
 
                                 // Unlock logic
                                 const isCapitalMet = currentBalance >= plan.minCapital;
+                                const upperName = plan.name.toUpperCase();
                                 const isReferralMet = (upperName.includes('PLATINUM') || upperName.includes('DIAMOND'))
                                     ? referralsCount >= 1
                                     : true;
@@ -210,6 +201,11 @@ export const ClassesPage: React.FC = () => {
                     )}
                 </div>
             </main>
+
+            <ReferralsModal
+                isOpen={isReferralsModalOpen}
+                onClose={() => setIsReferralsModalOpen(false)}
+            />
         </div>
     );
 };

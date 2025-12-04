@@ -2,17 +2,25 @@ import { PrismaClient, User, Transaction } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const getUserProfile = async (userId: string): Promise<Omit<User, 'password'>> => {
+export const getUserProfile = async (userId: string): Promise<Omit<User, 'password'> & { referralsCount: number }> => {
   const user = await prisma.user.findUnique({
-    where: { id: userId }
+    where: { id: userId },
+    include: {
+      _count: {
+        select: { referrals: true }
+      }
+    }
   });
 
   if (!user) {
     throw new Error('Usuario no encontrado');
   }
 
-  const { password: _, ...userWithoutPassword } = user;
-  return userWithoutPassword;
+  const { password: _, _count, ...userWithoutPassword } = user;
+  return {
+    ...userWithoutPassword,
+    referralsCount: _count.referrals
+  };
 };
 
 export const getUserBalance = async (userId: string) => {
@@ -149,7 +157,9 @@ export const createWithdrawalRequest = async (userId: string, amountUSD: number)
   }
 
   // Check if user has enough balance
-  const availableProfit = user.currentBalanceUSDT - user.capitalUSDT;
+  const currentBalance = user.currentBalanceUSDT || 0;
+  const capital = user.capitalUSDT || 0;
+  const availableProfit = currentBalance - capital;
   
   if (availableProfit < amountUSD) {
     throw new Error('Saldo insuficiente');
@@ -177,7 +187,9 @@ export const reinvestProfit = async (userId: string, amountUSD: number) => {
   }
 
   // Check if user has enough profit
-  const availableProfit = user.currentBalanceUSDT - user.capitalUSDT;
+  const currentBalance = user.currentBalanceUSDT || 0;
+  const capital = user.capitalUSDT || 0;
+  const availableProfit = currentBalance - capital;
   
   if (availableProfit < amountUSD) {
     throw new Error('Saldo insuficiente para reinvertir');
@@ -187,7 +199,7 @@ export const reinvestProfit = async (userId: string, amountUSD: number) => {
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: {
-      capitalUSDT: user.capitalUSDT + amountUSD,
+      capitalUSDT: capital + amountUSD,
     }
   });
 
@@ -229,4 +241,22 @@ export const changePassword = async (userId: string, currentPassword: string, ne
     where: { id: userId },
     data: { password: hashedPassword }
   });
+};
+
+export const getUserReferrals = async (userId: string) => {
+  const referrals = await prisma.user.findMany({
+    where: { referrerId: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      username: true,
+      createdAt: true,
+      investmentClass: true,
+      currentBalanceUSDT: true,
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  return referrals;
 };

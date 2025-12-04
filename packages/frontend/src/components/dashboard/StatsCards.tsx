@@ -65,21 +65,18 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
             </div>
 
             {/* TASA SEMANAL */}
-            <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-sky-500">
-                <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-xs sm:text-sm font-bold text-white">TASA SEMANAL</h3>
-                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-sky-500" />
+            <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-sky-500 flex flex-col justify-between">
+                <div>
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-xs sm:text-sm font-bold text-white">TASA SEMANAL</h3>
+                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-sky-500" />
+                    </div>
+                    <p className="text-xl sm:text-2xl font-black text-sky-400 mb-1 data-metric">
+                        +{weeklyRate.toFixed(1)}%
+                    </p>
+                    <p className="text-xs text-gray-400">Ganancia esperada</p>
                 </div>
-                <p className="text-xl sm:text-2xl font-black text-sky-400 mb-1 data-metric">
-                    +{weeklyRate.toFixed(1)}%
-                </p>
-                <p className="text-xs text-gray-400 mb-2 sm:mb-3">Ganancia esperada</p>
-                <a
-                    href="#"
-                    className="bg-gray-600 hover:bg-gray-500 text-white font-medium py-1.5 rounded-lg transition duration-200 text-xs w-full text-center inline-block"
-                >
-                    Ver proyecciones
-                </a>
+                <div className="h-[30px]"></div> {/* Spacer to match height roughly or just leave empty */}
             </div>
         </div>
     );

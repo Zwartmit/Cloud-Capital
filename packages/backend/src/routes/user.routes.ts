@@ -34,4 +34,7 @@ router.get('/balance-history', userController.getBalanceHistory);
 // PUT /api/user/change-password
 router.put('/change-password', userController.changePassword);
 
+// GET /api/user/referrals
+router.get('/referrals', userController.getReferrals);
+
 export default router;

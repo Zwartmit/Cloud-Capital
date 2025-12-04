@@ -3,20 +3,21 @@ import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { useState, useEffect } from 'react';
 import { userService } from '../../services/userService';
 import { Bitcoin, ChevronsUp, ChevronsDown } from 'lucide-react';
-import { InvestmentClassData } from '../../utils/investmentClasses';
+import { InvestmentPlan } from '../../services/investmentPlanService';
+import { getPlanColor } from '../../utils/planStyles';
 
 interface BalanceCardProps {
     capitalUSDT: number;
     currentBalanceUSDT: number;
     btcPrice: number;
-    userClassData: InvestmentClassData | null;
+    currentPlan: InvestmentPlan | null;
 }
 
 export const BalanceCard: React.FC<BalanceCardProps> = ({
     capitalUSDT,
     currentBalanceUSDT,
     btcPrice,
-    userClassData,
+    currentPlan,
 }) => {
     const profitUSDT = currentBalanceUSDT - capitalUSDT;
     const profitPercent = capitalUSDT > 0 ? (profitUSDT / capitalUSDT) * 100 : 0;
@@ -46,6 +47,8 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 
         fetchBalanceHistory();
     }, []);
+
+    const planColor = getPlanColor(currentPlan?.name || '');
 
     return (
         <div className="card main-balance-card p-3 sm:p-4 lg:p-6 rounded-xl relative overflow-hidden">
@@ -130,9 +133,9 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 
                 {/* Investment Plan Info */}
                 <div className="pt-3 sm:pt-4 border-t border-gray-700">
-                    {userClassData ? (
-                        <div className={`flex items-center justify-center space-x-2 py-2 px-4 rounded-lg text-xs sm:text-sm font-bold transition-all ${userClassData.color} bg-opacity-10 border border-gray-700 hover:border-accent w-full`}>
-                            <span>PLAN {userClassData.name}: {userClassData.dailyProfit}</span>
+                    {currentPlan ? (
+                        <div className={`flex items-center justify-center space-x-2 py-2 px-4 rounded-lg text-xs sm:text-sm font-bold transition-all ${planColor} bg-opacity-10 border border-gray-700 hover:border-accent w-full`}>
+                            <span>PLAN {currentPlan.name}: {currentPlan.minDailyReturn}% - {currentPlan.maxDailyReturn}% Diario</span>
                         </div>
                     ) : (
                         <div className="flex items-center justify-center space-x-2 py-2 px-4 rounded-lg text-xs sm:text-sm font-bold text-gray-400 border border-gray-700 w-full bg-gray-800/50">
