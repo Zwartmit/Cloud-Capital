@@ -4,7 +4,10 @@ import { BalanceCard } from '../components/dashboard/BalanceCard';
 import { StatsCards } from '../components/dashboard/StatsCards';
 import { ActivityFeed } from '../components/dashboard/ActivityFeed';
 import { TransactionTable } from '../components/dashboard/TransactionTable';
-import { Modal } from '../components/common/Modal';
+import { DepositModal } from '../components/modals/DepositModal';
+import { WithdrawalModal } from '../components/modals/WithdrawalModal';
+import { ReinvestModal } from '../components/modals/ReinvestModal';
+import { ProjectionsModal } from '../components/modals/ProjectionsModal';
 import { useAuthStore } from '../store/authStore';
 import { getPlanColor } from '../utils/planStyles';
 import { userService } from '../services/userService';
@@ -17,6 +20,7 @@ export const DashboardPage: React.FC = () => {
     const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
     const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
     const [isReinvestModalOpen, setIsReinvestModalOpen] = useState(false);
+    const [isProjectionsModalOpen, setIsProjectionsModalOpen] = useState(false);
     const [transactions, setTransactions] = useState<TransactionDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [btcPrice, setBtcPrice] = useState<number>(96500); // Default fallback price
@@ -144,6 +148,7 @@ export const DashboardPage: React.FC = () => {
                                 onDeposit={() => setIsDepositModalOpen(true)}
                                 onReinvest={() => setIsReinvestModalOpen(true)}
                                 onWithdraw={() => setIsWithdrawModalOpen(true)}
+                                onProjections={() => setIsProjectionsModalOpen(true)}
                             />
                         </section>
 
@@ -202,29 +207,42 @@ export const DashboardPage: React.FC = () => {
             </main>
 
             {/* Modals */}
-            <Modal
+            <DepositModal
                 isOpen={isDepositModalOpen}
                 onClose={() => setIsDepositModalOpen(false)}
-                title="Depositar Fondos"
-            >
-                <p className="text-gray-400">Modal de depósito - implementación pendiente</p>
-            </Modal>
+                userDepositAddress={user?.btcDepositAddress}
+                onSuccess={async () => {
+                    const data = await userService.getTransactions();
+                    setTransactions(data);
+                }}
+            />
 
-            <Modal
+            <WithdrawalModal
                 isOpen={isWithdrawModalOpen}
                 onClose={() => setIsWithdrawModalOpen(false)}
-                title="Retirar Ganancias"
-            >
-                <p className="text-gray-400">Modal de retiro - implementación pendiente</p>
-            </Modal>
+                availableProfit={profitUSDT}
+                btcPrice={btcPrice}
+                onSuccess={async () => {
+                    const data = await userService.getTransactions();
+                    setTransactions(data);
+                }}
+            />
 
-            <Modal
+            <ReinvestModal
                 isOpen={isReinvestModalOpen}
                 onClose={() => setIsReinvestModalOpen(false)}
-                title="Reinvertir Ganancias"
-            >
-                <p className="text-gray-400">Modal de reinversión - implementación pendiente</p>
-            </Modal>
+                availableProfit={profitUSDT}
+                currentCapital={capitalUSDT}
+                onSuccess={async () => {
+                    const data = await userService.getTransactions();
+                    setTransactions(data);
+                }}
+            />
+
+            <ProjectionsModal
+                isOpen={isProjectionsModalOpen}
+                onClose={() => setIsProjectionsModalOpen(false)}
+            />
         </div>
     );
 };

@@ -8,6 +8,7 @@ interface StatsCardsProps {
     onDeposit: () => void;
     onReinvest: () => void;
     onWithdraw: () => void;
+    onProjections: () => void;
 }
 
 export const StatsCards: React.FC<StatsCardsProps> = ({
@@ -17,14 +18,15 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
     onDeposit,
     onReinvest,
     onWithdraw,
+    onProjections,
 }) => {
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
             {/* CAPITAL INICIAL */}
             <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-accent">
                 <div className="flex justify-between items-center mb-2">
                     <h3 className="text-xs sm:text-sm font-bold text-white">CAPITAL INICIAL</h3>
-                    <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
+                    <Wallet className="w-4 h-4 text-accent" />
                 </div>
                 <p className="text-xl sm:text-2xl font-black text-white mb-1 data-metric">
                     ${formatUSDT(capitalUSDT)}
@@ -42,7 +44,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
             <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-profit">
                 <div className="flex justify-between items-center mb-2">
                     <h3 className="text-xs sm:text-sm font-bold text-white">PROFIT DISPONIBLE</h3>
-                    <PiggyBank className="w-4 h-4 sm:w-5 sm:h-5 text-profit" />
+                    <PiggyBank className="w-4 h-4 text-profit" />
                 </div>
                 <p className="text-xl sm:text-2xl font-black text-profit mb-1 data-metric">
                     ${formatUSDT(profitUSDT)}
@@ -65,18 +67,21 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
             </div>
 
             {/* TASA SEMANAL */}
-            <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-sky-500 flex flex-col justify-between">
-                <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <h3 className="text-xs sm:text-sm font-bold text-white">TASA SEMANAL</h3>
-                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-sky-500" />
-                    </div>
-                    <p className="text-xl sm:text-2xl font-black text-sky-400 mb-1 data-metric">
-                        +{weeklyRate.toFixed(1)}%
-                    </p>
-                    <p className="text-xs text-gray-400">Ganancia esperada</p>
+            <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-sky-500">
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-xs sm:text-sm font-bold text-white">TASA SEMANAL</h3>
+                    <TrendingUp className="w-4 h-4 text-sky-500" />
                 </div>
-                <div className="h-[30px]"></div> {/* Spacer to match height roughly or just leave empty */}
+                <p className="text-xl sm:text-2xl font-black text-sky-400 mb-1 data-metric">
+                    +{weeklyRate.toFixed(1)}%
+                </p>
+                <p className="text-xs text-gray-400 mb-2 sm:mb-3">Ganancia esperada</p>
+                <button
+                    onClick={onProjections}
+                    className="bg-gray-600 hover:bg-gray-500 text-white font-medium py-1.5 rounded-lg transition duration-200 text-xs w-full"
+                >
+                    Ver Proyecciones
+                </button>
             </div>
         </div>
     );

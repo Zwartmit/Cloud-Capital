@@ -127,11 +127,8 @@ export const ProfilePage: React.FC = () => {
                                     <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-secondary">
                                         <h3 className="text-xs text-gray-500 mb-2">CLASE DE INVERSIÓN</h3>
                                         <div className="text-center py-2 sm:py-3 px-3 sm:px-4 rounded-lg bg-secondary border border-gray-700">
-                                            <p className="text-xs sm:text-sm text-gray-400">
-                                                Sin clase asignada
-                                            </p>
                                             <p className="text-xs text-gray-500 mt-1">
-                                                Realiza tu primer depósito para obtener una clase
+                                                Aún no tienes un plan activo
                                             </p>
                                         </div>
                                     </div>

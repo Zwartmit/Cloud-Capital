@@ -56,5 +56,10 @@ export const userService = {
   async getReferrals(): Promise<UserDTO[]> {
     const response = await apiClient.get<UserDTO[]>('/user/referrals');
     return response.data;
+  },
+
+  async getReferralCommissions(): Promise<any[]> {
+    const response = await apiClient.get<any[]>('/user/referral-commissions');
+    return response.data;
   }
 };

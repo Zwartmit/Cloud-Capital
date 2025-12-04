@@ -381,17 +381,19 @@ export const AdminPage: React.FC = () => {
                                                 <h4 className="text-sm font-bold text-white mb-3">
                                                     Restablecer contraseña
                                                 </h4>
-                                                <div className="flex gap-2">
-                                                    <PasswordInput
-                                                        name="newPassword"
-                                                        placeholder="Nueva contraseña (mín. 6 caracteres)"
-                                                        value={newPassword}
-                                                        onChange={(e) => setNewPassword(e.target.value)}
-                                                        className="flex-grow p-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm"
-                                                    />
+                                                <div className="flex flex-col sm:flex-row gap-2">
+                                                    <div className="w-full sm:flex-grow">
+                                                        <PasswordInput
+                                                            name="newPassword"
+                                                            placeholder="Nueva contraseña (mín. 6 caracteres)"
+                                                            value={newPassword}
+                                                            onChange={(e) => setNewPassword(e.target.value)}
+                                                            className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm"
+                                                        />
+                                                    </div>
                                                     <button
                                                         onClick={handleResetPassword}
-                                                        className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg text-sm"
+                                                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg text-sm"
                                                     >
                                                         Resetear
                                                     </button>

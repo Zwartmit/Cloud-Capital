@@ -28,7 +28,7 @@ export const searchUsers = async (req: Request, res: Response): Promise<void> =>
     const { q } = req.query;
 
     if (!q || typeof q !== 'string') {
-      res.status(400).json({ error: 'Search query is required' });
+      res.status(400).json({ error: 'El término de búsqueda es requerido' });
       return;
     }
 
@@ -45,7 +45,7 @@ export const updateUserBalance = async (req: Request, res: Response): Promise<vo
     const { capitalUSDT, currentBalanceUSDT } = req.body;
 
     if (capitalUSDT === undefined || currentBalanceUSDT === undefined) {
-      res.status(400).json({ error: 'Both capitalUSDT and currentBalanceUSDT are required' });
+      res.status(400).json({ error: 'Capital y Balance actual son requeridos' });
       return;
     }
 
@@ -117,7 +117,7 @@ export const resetUserPassword = async (req: Request, res: Response): Promise<vo
     const { newPassword } = req.body;
 
     if (!newPassword) {
-      res.status(400).json({ error: 'New password is required' });
+      res.status(400).json({ error: 'La nueva contraseña es requerida' });
       return;
     }
 

@@ -182,8 +182,8 @@ export const approveTask = async (taskId: string, adminEmail: string, adminRole:
       await prisma.user.update({
         where: { id: task.userId },
         data: {
-          capitalUSDT: task.user.capitalUSDT + task.amountUSD,
-          currentBalanceUSDT: task.user.currentBalanceUSDT + task.amountUSD,
+          capitalUSDT: (task.user.capitalUSDT || 0) + task.amountUSD,
+          currentBalanceUSDT: (task.user.currentBalanceUSDT || 0) + task.amountUSD,
         }
       });
 
@@ -197,11 +197,76 @@ export const approveTask = async (taskId: string, adminEmail: string, adminRole:
           status: 'COMPLETED',
         }
       });
+
+      // Check if this is the user's first deposit and they have a referrer
+      const isFirstDeposit = !task.user.hasFirstDeposit;
+      
+      if (isFirstDeposit && task.user.referrerId) {
+        // Get the referrer's investment plan to determine commission rate
+        const referrer = await prisma.user.findUnique({
+          where: { id: task.user.referrerId },
+          select: { 
+            id: true, 
+            investmentClass: true,
+            currentBalanceUSDT: true 
+          }
+        });
+
+        if (referrer && referrer.investmentClass) {
+          // Get the investment plan to get the commission rate
+          const investmentPlan = await prisma.investmentPlan.findFirst({
+            where: { name: referrer.investmentClass }
+          });
+
+          if (investmentPlan) {
+            const commissionRate = investmentPlan.referralCommissionRate;
+            const commissionAmount = task.amountUSD * commissionRate;
+
+            // Update referrer's balance
+            await prisma.user.update({
+              where: { id: task.user.referrerId },
+              data: {
+                currentBalanceUSDT: (referrer.currentBalanceUSDT || 0) + commissionAmount
+              }
+            });
+
+            // Create commission transaction
+            const commissionTransaction = await prisma.transaction.create({
+              data: {
+                userId: task.user.referrerId,
+                type: 'REFERRAL_COMMISSION',
+                amountUSDT: commissionAmount,
+                reference: `Comisión por referido: ${task.user.name} (${(commissionRate * 100).toFixed(0)}%)`,
+                status: 'COMPLETED',
+              }
+            });
+
+            // Record the commission for audit trail
+            await prisma.referralCommission.create({
+              data: {
+                referrerId: task.user.referrerId,
+                referredUserId: task.userId,
+                depositAmount: task.amountUSD,
+                commissionRate: commissionRate,
+                commissionAmount: commissionAmount,
+                depositTaskId: task.id,
+                transactionId: commissionTransaction.id,
+              }
+            });
+          }
+        }
+
+        // Mark user as having made their first deposit
+        await prisma.user.update({
+          where: { id: task.userId },
+          data: { hasFirstDeposit: true }
+        });
+      }
     } else if (task.type === 'WITHDRAWAL') {
       await prisma.user.update({
         where: { id: task.userId },
         data: {
-          currentBalanceUSDT: task.user.currentBalanceUSDT - task.amountUSD,
+          currentBalanceUSDT: (task.user.currentBalanceUSDT || 0) - task.amountUSD,
         }
       });
 

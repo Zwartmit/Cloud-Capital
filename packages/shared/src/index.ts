@@ -41,6 +41,9 @@ export interface UserDTO {
   investmentClass: InvestmentClass;
   referralsCount?: number;
   referralCode?: string;
+  btcDepositAddress?: string;
+  btcWithdrawAddress?: string;
+  whatsappNumber?: string;
   createdAt: string;
 }
 

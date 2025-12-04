@@ -1,38 +1,33 @@
 import axios from 'axios';
 
-const COINGECKO_API = 'https://api.coingecko.com/api/v3';
+const BINANCE_API = 'https://api.binance.com/api/v3';
 
-interface CryptoPrice {
-    usd: number;
-    usd_24h_change: number;
-}
-
-interface CoinGeckoResponse {
-    bitcoin: CryptoPrice;
+interface BinanceTickerResponse {
+    symbol: string;
+    lastPrice: string;
+    priceChangePercent: string;
 }
 
 /**
- * Fetches the current Bitcoin price in USD from CoinGecko API
+ * Fetches the current Bitcoin price in USD from Binance API
  * @returns Promise with BTC price in USD
  */
 export const getBitcoinPrice = async (): Promise<number> => {
     try {
-        const response = await axios.get<CoinGeckoResponse>(
-            `${COINGECKO_API}/simple/price`,
+        const response = await axios.get<BinanceTickerResponse>(
+            `${BINANCE_API}/ticker/24hr`,
             {
                 params: {
-                    ids: 'bitcoin',
-                    vs_currencies: 'usd',
-                    include_24hr_change: 'true'
+                    symbol: 'BTCUSDT'
                 }
             }
         );
 
-        return response.data.bitcoin.usd;
+        return parseFloat(response.data.lastPrice);
     } catch (error) {
-        console.error('Error fetching Bitcoin price from CoinGecko:', error);
+        console.error('Error fetching Bitcoin price from Binance:', error);
         // Fallback to a default price if API fails
-        return 96500; // Approximate current BTC price as fallback
+        return 92500; // Updated fallback
     }
 };
 
@@ -45,25 +40,23 @@ export const getBitcoinPriceWithChange = async (): Promise<{
     change24h: number;
 }> => {
     try {
-        const response = await axios.get<CoinGeckoResponse>(
-            `${COINGECKO_API}/simple/price`,
+        const response = await axios.get<BinanceTickerResponse>(
+            `${BINANCE_API}/ticker/24hr`,
             {
                 params: {
-                    ids: 'bitcoin',
-                    vs_currencies: 'usd',
-                    include_24hr_change: 'true'
+                    symbol: 'BTCUSDT'
                 }
             }
         );
 
         return {
-            price: response.data.bitcoin.usd,
-            change24h: response.data.bitcoin.usd_24h_change
+            price: parseFloat(response.data.lastPrice),
+            change24h: parseFloat(response.data.priceChangePercent)
         };
     } catch (error) {
-        console.error('Error fetching Bitcoin price from CoinGecko:', error);
+        console.error('Error fetching Bitcoin price from Binance:', error);
         return {
-            price: 96500,
+            price: 92500,
             change24h: 0
         };
     }

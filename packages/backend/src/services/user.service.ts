@@ -260,3 +260,130 @@ export const getUserReferrals = async (userId: string) => {
 
   return referrals;
 };
+
+export const getUserReferralCommissions = async (userId: string) => {
+  const commissions = await prisma.referralCommission.findMany({
+    where: { referrerId: userId },
+    include: {
+      referredUser: {
+        select: {
+          name: true,
+          email: true,
+          username: true,
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  return commissions;
+};
+
+// Enhanced deposit functions for hybrid system
+export const createAutoDepositRequest = async (
+  userId: string,
+  amountUSDT: number,
+  txid?: string,
+  proof?: string
+) => {
+  const task = await prisma.task.create({
+    data: {
+      userId,
+      type: 'DEPOSIT_AUTO',
+      amountUSD: amountUSDT,
+      txid,
+      proof,
+      depositMethod: 'AUTO',
+      status: 'PENDING',
+    }
+  });
+
+  return task;
+};
+
+export const createManualDepositOrder = async (
+  userId: string,
+  amountUSDT: number,
+  txid: string,
+  collaboratorName: string,
+  notes?: string
+) => {
+  const task = await prisma.task.create({
+    data: {
+      userId,
+      type: 'DEPOSIT_MANUAL',
+      amountUSD: amountUSDT,
+      txid,
+      collaboratorName,
+      reference: notes,
+      depositMethod: 'MANUAL',
+      status: 'PENDING',
+    }
+  });
+
+  return task;
+};
+
+export const createWithdrawalRequestEnhanced = async (
+  userId: string,
+  amountUSDT: number,
+  btcAddress: string,
+  destinationType: 'PERSONAL' | 'COLLABORATOR',
+  destinationUserId?: string
+) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!user) {
+    throw new Error('Usuario no encontrado');
+  }
+
+  // Check if user has enough balance
+  const currentBalance = user.currentBalanceUSDT || 0;
+  const capital = user.capitalUSDT || 0;
+  const availableProfit = currentBalance - capital;
+  
+  if (availableProfit < amountUSDT) {
+    throw new Error('Saldo insuficiente');
+  }
+
+  if (amountUSDT < 50) {
+    throw new Error('El monto mínimo de retiro es $50 USDT');
+  }
+
+  const task = await prisma.task.create({
+    data: {
+      userId,
+      type: 'WITHDRAWAL',
+      amountUSD: amountUSDT,
+      btcAddress,
+      destinationType,
+      destinationUserId,
+      status: 'PENDING',
+    }
+  });
+
+  return task;
+};
+
+// Get list of collaborators (admins and subadmins)
+export const getCollaborators = async () => {
+  const collaborators = await prisma.user.findMany({
+    where: {
+      OR: [
+        { role: 'SUPERADMIN' },
+        { role: 'SUBADMIN' }
+      ]
+    },
+    select: {
+      id: true,
+      name: true,
+      whatsappNumber: true,
+      role: true,
+      btcDepositAddress: true,
+    }
+  });
+
+  return collaborators;
+};

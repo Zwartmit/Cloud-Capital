@@ -14,7 +14,7 @@ export const getPlanById = async (req: Request, res: Response) => {
   try {
     const plan = await investmentPlanService.getPlanById(req.params.id);
     if (!plan) {
-      return res.status(404).json({ error: 'Plan not found' });
+      return res.status(404).json({ error: 'Plan no encontrado' });
     }
     res.json(plan);
   } catch (error: any) {
@@ -45,7 +45,7 @@ export const updatePlan = async (req: Request, res: Response) => {
 export const deletePlan = async (req: Request, res: Response) => {
   try {
     await investmentPlanService.deletePlan(req.params.id);
-    res.json({ message: 'Plan deleted successfully' });
+    res.json({ message: 'Plan eliminado exitosamente' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

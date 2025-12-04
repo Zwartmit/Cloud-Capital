@@ -51,8 +51,15 @@ export const ReferralsModal: React.FC<ReferralsModalProps> = ({ isOpen, onClose 
                     <div className="space-y-3">
                         {referrals.map((referral) => (
                             <div key={referral.id} className="bg-gray-800/50 p-3 rounded-lg border border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                                <div>
-                                    <p className="font-bold text-white text-sm">{referral.name}</p>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-bold text-white text-sm">{referral.name}</p>
+                                        {(referral as any).hasFirstDeposit && (
+                                            <span className="text-xs bg-profit/20 text-profit px-2 py-0.5 rounded border border-profit/30">
+                                                ✓ Comisión pagada
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-xs text-gray-400">{referral.email}</p>
                                     <p className="text-xs text-gray-500 mt-1">
                                         Registrado: {new Date(referral.createdAt).toLocaleDateString()}

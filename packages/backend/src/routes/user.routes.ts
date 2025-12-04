@@ -37,4 +37,20 @@ router.put('/change-password', userController.changePassword);
 // GET /api/user/referrals
 router.get('/referrals', userController.getReferrals);
 
+// GET /api/user/referral-commissions
+router.get('/referral-commissions', userController.getReferralCommissions);
+
+// Enhanced deposit/withdrawal routes
+// POST /api/user/deposit/auto
+router.post('/deposit/auto', userController.requestAutoDeposit);
+
+// POST /api/user/deposit/manual
+router.post('/deposit/manual', userController.requestManualDepositOrder);
+
+// POST /api/user/withdraw/enhanced
+router.post('/withdraw/enhanced', userController.requestWithdrawalEnhanced);
+
+// GET /api/user/collaborators
+router.get('/collaborators', userController.getCollaborators);
+
 export default router;

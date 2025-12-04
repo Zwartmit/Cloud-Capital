@@ -134,3 +134,107 @@ export const getReferrals = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({ error: error.message });
   }
 };
+
+export const getReferralCommissions = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const commissions = await userService.getUserReferralCommissions(userId);
+    res.status(200).json(commissions);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Enhanced deposit endpoints
+export const requestAutoDeposit = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { amountUSDT, txid, proof } = req.body;
+
+    if (!amountUSDT || amountUSDT <= 0) {
+      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
+      return;
+    }
+
+    const task = await userService.createAutoDepositRequest(userId, amountUSDT, txid, proof);
+    res.status(201).json(task);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const requestManualDepositOrder = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { amountUSDT, txid, collaboratorName, notes } = req.body;
+
+    if (!amountUSDT || amountUSDT <= 0) {
+      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
+      return;
+    }
+
+    if (!txid || !collaboratorName) {
+      res.status(400).json({ error: 'TXID y nombre del colaborador son requeridos' });
+      return;
+    }
+
+    const task = await userService.createManualDepositOrder(userId, amountUSDT, txid, collaboratorName, notes);
+    res.status(201).json(task);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// Enhanced withdrawal endpoint
+export const requestWithdrawalEnhanced = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { amountUSDT, btcAddress, destinationType, destinationUserId } = req.body;
+
+    // Debug logging
+    console.log('Withdrawal request received:', {
+      userId,
+      amountUSDT,
+      btcAddress,
+      destinationType,
+      destinationUserId,
+      fullBody: req.body
+    });
+
+    if (!amountUSDT || amountUSDT <= 0) {
+      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
+      return;
+    }
+
+    if (!btcAddress) {
+      res.status(400).json({ error: 'Dirección BTC es requerida' });
+      return;
+    }
+
+    if (!destinationType || !['PERSONAL', 'COLLABORATOR'].includes(destinationType)) {
+      res.status(400).json({ error: 'Tipo de destino inválido' });
+      return;
+    }
+
+    const task = await userService.createWithdrawalRequestEnhanced(
+      userId,
+      amountUSDT,
+      btcAddress,
+      destinationType,
+      destinationUserId
+    );
+    res.status(201).json(task);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// Get collaborators list
+export const getCollaborators = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const collaborators = await userService.getCollaborators();
+    res.status(200).json(collaborators);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

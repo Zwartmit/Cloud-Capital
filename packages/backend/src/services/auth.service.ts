@@ -153,7 +153,7 @@ export const refreshAccessToken = async (refreshToken: string): Promise<{ access
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error('Usuario no encontrado');
     }
 
     // Generate new access token

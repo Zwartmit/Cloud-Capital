@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import * as authService from '../services/auth.service.js';
 
-export const register = async (req: Request, res: Response): Promise<void> => {
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, password, name, username, referralCode } = req.body;
 
@@ -14,11 +14,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const result = await authService.register({ email, password, name, username, referralCode });
     res.status(201).json(result);
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    next(error);
   }
 };
 
-export const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, password } = req.body;
 
@@ -31,7 +31,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const result = await authService.login({ email, password });
     res.status(200).json(result);
   } catch (error: any) {
-    res.status(401).json({ error: error.message });
+    next(error);
   }
 };
 
