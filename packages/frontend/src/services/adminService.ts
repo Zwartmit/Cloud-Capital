@@ -3,8 +3,13 @@ import { TaskDTO, UserDTO } from '@cloud-capital/shared';
 
 export const adminService = {
   // User Management
-  async getAllUsers(): Promise<UserDTO[]> {
-    const response = await apiClient.get<UserDTO[]>('/admin/users');
+  async getAllUsers(limit: number = 25, page: number = 1): Promise<{
+    users: UserDTO[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const response = await apiClient.get(`/admin/users?limit=${limit}&page=${page}`);
     return response.data;
   },
 
@@ -43,6 +48,13 @@ export const adminService = {
 
   async deleteUser(userId: string): Promise<{ message: string }> {
     const response = await apiClient.delete(`/admin/users/${userId}`);
+    return response.data;
+  },
+
+  async resetUserPassword(userId: string, newPassword: string): Promise<{ message: string }> {
+    const response = await apiClient.put(`/admin/users/${userId}/reset-password`, {
+      newPassword
+    });
     return response.data;
   },
 

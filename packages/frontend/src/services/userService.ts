@@ -39,4 +39,17 @@ export const userService = {
     const response = await apiClient.post('/user/reinvest', data);
     return response.data;
   },
+
+  async getBalanceHistory(days: number = 30): Promise<{ date: string; balance: number }[]> {
+    const response = await apiClient.get(`/user/balance-history?days=${days}`);
+    return response.data;
+  },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    const response = await apiClient.put('/user/change-password', {
+      currentPassword,
+      newPassword
+    });
+    return response.data;
+  }
 };

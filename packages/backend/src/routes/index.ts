@@ -8,7 +8,7 @@ const router = Router();
 
 // Mount routes
 router.use('/auth', authRoutes);
-router.use('/users', userRoutes);
+router.use('/user', userRoutes);
 router.use('/admin', adminRoutes);
 router.use('/investment-plans', investmentPlanRoutes);
 

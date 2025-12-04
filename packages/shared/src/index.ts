@@ -40,6 +40,7 @@ export interface UserDTO {
   currentBalanceUSDT: number;
   investmentClass: InvestmentClass;
   referralsCount?: number;
+  referralCode?: string;
   createdAt: string;
 }
 
@@ -116,6 +117,11 @@ export interface WithdrawalRequest {
 
 export interface ReinvestRequest {
   amountBTC: number;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface ApiError {

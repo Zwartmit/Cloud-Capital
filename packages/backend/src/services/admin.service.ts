@@ -7,6 +7,9 @@ export const getAllUsers = async (page: number = 1, limit: number = 20) => {
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
+      where: {
+        role: 'USER' // Only show regular users, not admins
+      },
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
@@ -22,7 +25,11 @@ export const getAllUsers = async (page: number = 1, limit: number = 20) => {
         createdAt: true,
       }
     }),
-    prisma.user.count()
+    prisma.user.count({
+      where: {
+        role: 'USER' // Count only regular users
+      }
+    })
   ]);
 
   return {
@@ -60,10 +67,17 @@ export const getUserById = async (userId: string) => {
 export const searchUsers = async (query: string) => {
   const users = await prisma.user.findMany({
     where: {
-      OR: [
-        { email: { contains: query } },
-        { name: { contains: query } },
-        { username: { contains: query } },
+      AND: [
+        {
+          OR: [
+            { email: { contains: query } },
+            { name: { contains: query } },
+            { username: { contains: query } },
+          ]
+        },
+        {
+          role: 'USER' // Only search regular users, not admins
+        }
       ]
     },
     select: {
@@ -228,4 +242,51 @@ export const rejectTask = async (taskId: string, adminEmail: string) => {
   });
 
   return updatedTask;
+};
+
+export const deleteUser = async (userId: string) => {
+  // Check if user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Delete user (this will cascade delete related records based on schema)
+  await prisma.user.delete({
+    where: { id: userId }
+  });
+
+  return { message: 'User deleted successfully' };
+};
+
+export const resetUserPassword = async (userId: string, newPassword: string) => {
+  const bcrypt = await import('bcrypt');
+
+  // Validate password length
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error('Password must be at least 6 characters long');
+  }
+
+  // Check if user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Update password
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword }
+  });
+
+  return { message: 'Password reset successfully' };
 };

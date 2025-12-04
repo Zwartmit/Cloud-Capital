@@ -48,10 +48,10 @@ model User {
   username           String           @unique
   role               UserRole         @default(USER)
   
-  capitalUSDT        Float            @default(0)
-  currentBalanceUSDT Float            @default(0)
+  capitalUSDT        Float?
+  currentBalanceUSDT Float?
   
-  investmentClass    InvestmentClass  @default(BRONCE)
+  investmentClass    InvestmentClass?
   
   referralCode       String?          @unique
   referrerId         String?

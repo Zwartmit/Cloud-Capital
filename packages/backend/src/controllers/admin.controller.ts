@@ -100,3 +100,30 @@ export const rejectTask = async (req: Request, res: Response): Promise<void> => 
     res.status(400).json({ error: error.message });
   }
 };
+
+export const deleteUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const result = await adminService.deleteUser(id);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const resetUserPassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      res.status(400).json({ error: 'New password is required' });
+      return;
+    }
+
+    const result = await adminService.resetUserPassword(id, newPassword);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};

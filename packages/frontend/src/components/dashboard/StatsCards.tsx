@@ -19,17 +19,17 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
     onWithdraw,
 }) => {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {/* CAPITAL INICIAL */}
-            <div className="card p-4 rounded-xl border-l-4 border-accent">
+            <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-accent">
                 <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-sm font-bold text-white">CAPITAL INICIAL</h3>
-                    <Wallet className="w-4 h-4 text-accent" />
+                    <h3 className="text-xs sm:text-sm font-bold text-white">CAPITAL INICIAL</h3>
+                    <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
                 </div>
-                <p className="text-2xl font-black text-white mb-1 data-metric">
+                <p className="text-xl sm:text-2xl font-black text-white mb-1 data-metric">
                     ${formatUSDT(capitalUSDT)}
                 </p>
-                <p className="text-xs text-gray-400 mb-3">Capital base USDT</p>
+                <p className="text-xs text-gray-400 mb-2 sm:mb-3">Capital base USDT</p>
                 <button
                     onClick={onDeposit}
                     className="bg-gray-700 hover:bg-gray-600 text-white font-medium py-1.5 px-3 rounded-lg transition duration-200 text-xs w-full"
@@ -39,15 +39,15 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
             </div>
 
             {/* PROFIT DISPONIBLE */}
-            <div className="card p-4 rounded-xl border-l-4 border-profit">
+            <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-profit">
                 <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-sm font-bold text-white">PROFIT DISPONIBLE</h3>
-                    <PiggyBank className="w-4 h-4 text-profit" />
+                    <h3 className="text-xs sm:text-sm font-bold text-white">PROFIT DISPONIBLE</h3>
+                    <PiggyBank className="w-4 h-4 sm:w-5 sm:h-5 text-profit" />
                 </div>
-                <p className="text-2xl font-black text-profit mb-1 data-metric">
+                <p className="text-xl sm:text-2xl font-black text-profit mb-1 data-metric">
                     ${formatUSDT(profitUSDT)}
                 </p>
-                <p className="text-xs text-gray-400 mb-3">Ganancias acumuladas</p>
+                <p className="text-xs text-gray-400 mb-2 sm:mb-3">Ganancias acumuladas</p>
                 <div className="flex gap-2">
                     <button
                         onClick={onReinvest}
@@ -65,20 +65,20 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
             </div>
 
             {/* TASA SEMANAL */}
-            <div className="card p-4 rounded-xl border-l-4 border-sky-500">
+            <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-sky-500">
                 <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-sm font-bold text-white">TASA SEMANAL</h3>
-                    <TrendingUp className="w-4 h-4 text-sky-500" />
+                    <h3 className="text-xs sm:text-sm font-bold text-white">TASA SEMANAL</h3>
+                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-sky-500" />
                 </div>
-                <p className="text-2xl font-black text-sky-400 mb-1 data-metric">
+                <p className="text-xl sm:text-2xl font-black text-sky-400 mb-1 data-metric">
                     +{weeklyRate.toFixed(1)}%
                 </p>
-                <p className="text-xs text-gray-400 mb-3">Ganancia esperada</p>
+                <p className="text-xs text-gray-400 mb-2 sm:mb-3">Ganancia esperada</p>
                 <a
                     href="#"
                     className="bg-gray-600 hover:bg-gray-500 text-white font-medium py-1.5 rounded-lg transition duration-200 text-xs w-full text-center inline-block"
                 >
-                    Ver Proyecciones
+                    Ver proyecciones
                 </a>
             </div>
         </div>

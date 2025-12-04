@@ -69,10 +69,10 @@ export const ClassesPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="mb-8 border-b border-secondary pb-4">
-                        <h1 className="text-4xl font-black text-white mb-2">
+                        <h1 className="text-2xl sm:text-3xl font-black text-white mb-2">
                             Planes de Inversión
                         </h1>
-                        <p className="text-gray-400">
+                        <p className="text-gray-400 text-sm sm:text-base">
                             Descubre los diferentes niveles de inversión y sus beneficios.
                         </p>
                         <div className="mt-4 inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-secondary border border-accent">
@@ -195,10 +195,10 @@ export const ClassesPage: React.FC = () => {
                                             onClick={() => handleJoinPlan(plan)}
                                             disabled={!isUnlocked || isCurrentClass}
                                             className={`w-full mt-4 py-2 rounded-lg font-bold transition-all duration-200 ${isCurrentClass
-                                                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                                    : isUnlocked
-                                                        ? 'bg-accent hover:bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                                                        : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                                : isUnlocked
+                                                    ? 'bg-accent hover:bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                                                    : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
                                                 }`}
                                         >
                                             {isCurrentClass ? 'Plan Actual' : isUnlocked ? 'Unirse al Plan' : 'Bloqueado'}

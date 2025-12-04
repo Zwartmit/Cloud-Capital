@@ -47,7 +47,7 @@ export const requestDeposit = async (req: Request, res: Response): Promise<void>
     const { amountUSD, reference, proof } = req.body;
 
     if (!amountUSD || amountUSD <= 0) {
-      res.status(400).json({ error: 'Invalid amount' });
+      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
       return;
     }
 
@@ -64,7 +64,7 @@ export const requestWithdrawal = async (req: Request, res: Response): Promise<vo
     const { amountUSD } = req.body;
 
     if (!amountUSD || amountUSD <= 0) {
-      res.status(400).json({ error: 'Invalid amount' });
+      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
       return;
     }
 
@@ -81,12 +81,45 @@ export const reinvest = async (req: Request, res: Response): Promise<void> => {
     const { amountUSD } = req.body;
 
     if (!amountUSD || amountUSD <= 0) {
-      res.status(400).json({ error: 'Invalid amount' });
+      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
       return;
     }
 
     const result = await userService.reinvestProfit(userId, amountUSD);
     res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const getBalanceHistory = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const days = parseInt(req.query.days as string) || 30;
+    const history = await userService.getBalanceHistory(userId, days);
+    res.status(200).json(history);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const changePassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ error: 'La contraseña actual y la nueva contraseña son requeridas' });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+      return;
+    }
+
+    await userService.changePassword(userId, currentPassword, newPassword);
+    res.status(200).json({ message: 'Contraseña cambiada exitosamente' });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

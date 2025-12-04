@@ -17,9 +17,6 @@ async function main() {
       name: 'Super Admin',
       username: 'superadmin',
       role: 'SUPERADMIN',
-      capitalUSDT: 0,
-      currentBalanceUSDT: 0,
-      investmentClass: 'DIAMOND',
       referralCode: 'ADMIN123',
     },
   });
@@ -36,9 +33,6 @@ async function main() {
       name: 'Sub Admin',
       username: 'subadmin',
       role: 'SUBADMIN',
-      capitalUSDT: 0,
-      currentBalanceUSDT: 0,
-      investmentClass: 'PLATINUM',
       referralCode: 'SUBADMIN123',
     },
   });

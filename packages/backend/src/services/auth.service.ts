@@ -63,6 +63,8 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
       username: data.username,
       referralCode: newReferralCode,
       referrerId: referrer.id,
+      capitalUSDT: 0,
+      currentBalanceUSDT: 0,
     }
   });
 

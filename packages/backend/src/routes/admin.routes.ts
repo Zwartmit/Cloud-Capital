@@ -33,4 +33,10 @@ router.put('/tasks/:id/approve', adminController.approveTask);
 // PUT /api/admin/tasks/:id/reject
 router.put('/tasks/:id/reject', adminController.rejectTask);
 
+// DELETE /api/admin/users/:id
+router.delete('/users/:id', adminController.deleteUser);
+
+// PUT /api/admin/users/:id/reset-password
+router.put('/users/:id/reset-password', adminController.resetUserPassword);
+
 export default router;

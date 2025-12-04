@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
+import { PasswordInput } from '../components/common/PasswordInput';
 
 export const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -55,20 +56,23 @@ export const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="w-full max-w-md card p-8 rounded-2xl border-t-4 border-accent">
-                <h1 className="text-4xl font-black text-center text-accent mb-4">Cloud Capital</h1>
-                <p className="text-center text-gray-400 mb-8">
+        <div className="min-h-screen flex items-center justify-center p-3 sm:p-4">
+            <div className="w-full max-w-md card p-5 sm:p-8 rounded-2xl border-t-4 border-accent">
+                <div className="flex justify-center mb-4">
+                    <img src="/logo.png" alt="Cloud Capital" className="w-16 h-16 object-contain" />
+                </div>
+                <h1 className="text-2xl sm:text-4xl font-black text-center text-accent mb-3 sm:mb-4">Cloud Capital</h1>
+                <p className="text-center text-gray-400 text-sm sm:text-base mb-5 sm:mb-8">
                     Accede a tu panel de inversión sostenible.
                 </p>
 
                 {error && (
-                    <div className="text-center text-sm font-semibold text-red-500 my-4 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                    <div className="text-center text-xs sm:text-sm font-semibold text-red-500 my-3 sm:my-4 p-2 sm:p-3 bg-red-500/10 rounded-lg border border-red-500/20">
                         {error}
                     </div>
                 )}
 
-                <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-3 sm:space-y-4">
                     <input
                         type="text"
                         value={email}
@@ -76,16 +80,15 @@ export const LoginPage: React.FC = () => {
                         placeholder="Correo electrónico o usuario"
                         required
                         disabled={loading}
-                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50"
+                        className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50"
                     />
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                    <PasswordInput
+                        name="password"
                         placeholder="Contraseña"
                         required
-                        disabled={loading}
-                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50"
                     />
 
                     <p className="text-center text-xs text-gray-500 mt-2">
@@ -104,13 +107,13 @@ export const LoginPage: React.FC = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 rounded-lg mt-6 transition duration-200 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2.5 sm:py-3 rounded-lg mt-4 sm:mt-6 transition duration-200 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                     >
                         {loading ? 'Iniciando sesión...' : 'Acceder a mi Cuenta'}
                     </button>
                 </form>
 
-                <div className="text-center text-sm text-gray-400 mt-4 space-y-2">
+                <div className="text-center text-xs sm:text-sm text-gray-400 mt-3 sm:mt-4 space-y-2">
                     <p>
                         ¿No tienes cuenta?{' '}
                         <button
@@ -136,7 +139,7 @@ export const LoginPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/')}
-                        className="w-auto px-6 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 rounded-lg mt-4 transition duration-200 text-sm"
+                        className="w-auto px-4 sm:px-6 bg-gray-600 hover:bg-gray-500 text-white font-bold py-1.5 sm:py-2 rounded-lg mt-3 sm:mt-4 transition duration-200 text-xs sm:text-sm"
                     >
                         Volver a la página principal
                     </button>
@@ -197,6 +200,6 @@ export const LoginPage: React.FC = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };

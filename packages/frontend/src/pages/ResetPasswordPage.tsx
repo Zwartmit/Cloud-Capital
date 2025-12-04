@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authService } from '../services/authService';
+import { PasswordInput } from '../components/common/PasswordInput';
 
 export const ResetPasswordPage: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -94,13 +95,12 @@ export const ResetPasswordPage: React.FC = () => {
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             Nueva Contraseña
                         </label>
-                        <input
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
+                        <PasswordInput
+                            name="newPassword"
                             placeholder="Mínimo 6 caracteres"
                             required
-                            disabled={loading || !token}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
                             className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50"
                         />
                     </div>
@@ -109,13 +109,12 @@ export const ResetPasswordPage: React.FC = () => {
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             Confirmar Contraseña
                         </label>
-                        <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
+                        <PasswordInput
+                            name="confirmPassword"
                             placeholder="Repite tu contraseña"
                             required
-                            disabled={loading || !token}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
                             className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50"
                         />
                     </div>

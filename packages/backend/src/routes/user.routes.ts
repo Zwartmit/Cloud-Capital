@@ -28,4 +28,10 @@ router.post('/withdraw', userController.requestWithdrawal);
 // POST /api/user/reinvest
 router.post('/reinvest', userController.reinvest);
 
+// GET /api/user/balance-history
+router.get('/balance-history', userController.getBalanceHistory);
+
+// PUT /api/user/change-password
+router.put('/change-password', userController.changePassword);
+
 export default router;
