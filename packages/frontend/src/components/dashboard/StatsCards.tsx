@@ -23,43 +23,47 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
             {/* CAPITAL INICIAL */}
-            <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-accent">
-                <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-xs sm:text-sm font-bold text-white">CAPITAL INICIAL</h3>
-                    <Wallet className="w-4 h-4 text-accent" />
+            <div className="card p-4 sm:p-5 rounded-2xl border-l-4 border-accent hover:border-l-[6px] transition-all duration-300 group">
+                <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-xs sm:text-sm font-bold text-gray-300 uppercase tracking-wider">Capital Inicial</h3>
+                    <div className="p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                        <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
+                    </div>
                 </div>
-                <p className="text-xl sm:text-2xl font-black text-white mb-1 data-metric">
+                <p className="text-2xl sm:text-3xl font-black gradient-text-primary data-metric mb-1">
                     ${formatUSDT(capitalUSDT)}
                 </p>
-                <p className="text-xs text-gray-400 mb-2 sm:mb-3">Capital base USDT</p>
+                <p className="text-xs text-gray-400 mb-3 sm:mb-4">Capital base USDT</p>
                 <button
                     onClick={onDeposit}
-                    className="bg-gray-700 hover:bg-gray-600 text-white font-medium py-1.5 px-3 rounded-lg transition duration-200 text-xs w-full"
+                    className="bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 text-xs w-full shadow-lg hover:shadow-xl hover:scale-[1.02]"
                 >
                     AÑADIR (+)
                 </button>
             </div>
 
             {/* PROFIT DISPONIBLE */}
-            <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-profit">
-                <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-xs sm:text-sm font-bold text-white">PROFIT DISPONIBLE</h3>
-                    <PiggyBank className="w-4 h-4 text-profit" />
+            <div className="card p-4 sm:p-5 rounded-2xl border-l-4 border-profit hover:border-l-[6px] transition-all duration-300 group">
+                <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-xs sm:text-sm font-bold text-gray-300 uppercase tracking-wider">Profit Disponible</h3>
+                    <div className="p-2 rounded-lg bg-profit/10 group-hover:bg-profit/20 transition-colors">
+                        <PiggyBank className="w-4 h-4 sm:w-5 sm:h-5 text-profit" />
+                    </div>
                 </div>
-                <p className="text-xl sm:text-2xl font-black text-profit mb-1 data-metric">
+                <p className="text-2xl sm:text-3xl font-black gradient-text-profit data-metric mb-1">
                     ${formatUSDT(profitUSDT)}
                 </p>
-                <p className="text-xs text-gray-400 mb-2 sm:mb-3">Ganancias acumuladas</p>
+                <p className="text-xs text-gray-400 mb-3 sm:mb-4">Ganancias acumuladas</p>
                 <div className="flex gap-2">
                     <button
                         onClick={onReinvest}
-                        className="bg-profit hover:bg-emerald-400 text-black font-bold py-1.5 rounded-lg transition duration-200 text-xs flex-grow"
+                        className="bg-profit hover:bg-emerald-400 text-black font-bold py-2 rounded-lg transition-all duration-200 text-xs flex-grow shadow-lg hover:shadow-profit/50 hover:scale-[1.02]"
                     >
                         REINVERTIR
                     </button>
                     <button
                         onClick={onWithdraw}
-                        className="bg-red-600 hover:bg-red-500 text-white font-bold py-1.5 rounded-lg transition duration-200 text-xs flex-grow"
+                        className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-bold py-2 rounded-lg transition-all duration-200 text-xs flex-grow shadow-lg hover:shadow-red-500/50 hover:scale-[1.02]"
                     >
                         RETIRAR
                     </button>
@@ -67,18 +71,20 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
             </div>
 
             {/* TASA SEMANAL */}
-            <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-sky-500">
-                <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-xs sm:text-sm font-bold text-white">TASA SEMANAL</h3>
-                    <TrendingUp className="w-4 h-4 text-sky-500" />
+            <div className="card p-4 sm:p-5 rounded-2xl border-l-4 border-accent hover:border-l-[6px] transition-all duration-300 group">
+                <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-xs sm:text-sm font-bold text-gray-300 uppercase tracking-wider">Tasa Semanal</h3>
+                    <div className="p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
+                    </div>
                 </div>
-                <p className="text-xl sm:text-2xl font-black text-sky-400 mb-1 data-metric">
+                <p className="text-2xl sm:text-3xl font-black gradient-text-primary data-metric mb-1">
                     +{weeklyRate.toFixed(1)}%
                 </p>
-                <p className="text-xs text-gray-400 mb-2 sm:mb-3">Ganancia esperada</p>
+                <p className="text-xs text-gray-400 mb-3 sm:mb-4">Ganancia esperada</p>
                 <button
                     onClick={onProjections}
-                    className="bg-gray-600 hover:bg-gray-500 text-white font-medium py-1.5 rounded-lg transition duration-200 text-xs w-full"
+                    className="bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white font-bold py-2 rounded-lg transition-all duration-200 text-xs w-full shadow-lg hover:shadow-xl hover:scale-[1.02]"
                 >
                     Ver Proyecciones
                 </button>

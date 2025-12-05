@@ -29,7 +29,10 @@ apiClient.interceptors.response.use(
     const isLoginRequest = error.config?.url?.includes('/auth/login');
     const isRegisterRequest = error.config?.url?.includes('/auth/register');
 
-    if (error.response?.status === 401 && !isLoginRequest && !isRegisterRequest) {
+    // Handle both 401 (Unauthorized) and 403 (Forbidden) as auth failures
+    const isAuthError = error.response?.status === 401 || error.response?.status === 403;
+    
+    if (isAuthError && !isLoginRequest && !isRegisterRequest) {
       // Token expired or invalid, but NOT during login or register attempt
       localStorage.removeItem('accessToken');
       window.location.href = '/login';

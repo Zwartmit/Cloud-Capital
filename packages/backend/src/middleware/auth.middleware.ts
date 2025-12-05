@@ -24,7 +24,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     req.user = payload;
     next();
   } catch (error) {
-    res.status(403).json({ error: 'Token inválido o expirado' });
+    res.status(401).json({ error: 'Token inválido o expirado' });
     return;
   }
 };

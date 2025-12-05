@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 
 interface ModalProps {
     isOpen: boolean;
@@ -16,7 +16,15 @@ export const Modal: React.FC<ModalProps> = ({
     children,
     maxWidth = 'lg',
 }) => {
-    if (!isOpen) return null;
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setIsAnimating(true);
+        }
+    }, [isOpen]);
+
+    if (!isOpen && !isAnimating) return null;
 
     const maxWidthClasses = {
         sm: 'max-w-sm',
@@ -26,18 +34,24 @@ export const Modal: React.FC<ModalProps> = ({
         '2xl': 'max-w-2xl',
     };
 
+    const handleClose = () => {
+        setIsAnimating(false);
+        setTimeout(onClose, 200);
+    };
+
     return (
-        <div className="modal fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className={`modal fixed inset-0 z-50 flex items-center justify-center p-4 ${isOpen ? 'fade-in' : ''}`}>
             <div
-                className="absolute inset-0 bg-black/80"
-                onClick={onClose}
+                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                onClick={handleClose}
             />
-            <div className={`card w-full ${maxWidthClasses[maxWidth]} p-6 rounded-xl shadow-2xl bg-secondary relative z-10`}>
-                <div className="flex justify-between items-center border-b border-gray-600 pb-3 mb-4">
-                    <h3 className="text-2xl font-bold text-white">{title}</h3>
+            <div className={`glass-strong w-full ${maxWidthClasses[maxWidth]} p-6 sm:p-8 rounded-2xl shadow-2xl relative z-10 border border-gray-700/50 ${isOpen ? 'scale-in' : ''}`}>
+                <div className="flex justify-between items-center border-b border-gray-700/50 pb-4 mb-6">
+                    <h3 className="text-xl sm:text-2xl font-black gradient-text-primary">{title}</h3>
                     <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-white text-3xl leading-none transition"
+                        onClick={handleClose}
+                        className="text-gray-400 hover:text-white transition-all duration-200 hover:rotate-90 hover:scale-110"
+                        aria-label="Cerrar"
                     >
                         <X className="w-6 h-6" />
                     </button>

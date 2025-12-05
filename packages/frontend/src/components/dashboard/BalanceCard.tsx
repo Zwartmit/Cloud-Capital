@@ -30,8 +30,6 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 
     const [balanceHistory, setBalanceHistory] = useState<{ date: string; balance: number }[]>([]);
 
-
-
     // Fetch real balance history from API
     useEffect(() => {
         const fetchBalanceHistory = async () => {
@@ -40,7 +38,6 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
                 setBalanceHistory(history);
             } catch (error) {
                 console.error('Error fetching balance history:', error);
-                // Fallback to empty array if API fails
                 setBalanceHistory([]);
             }
         };
@@ -51,22 +48,22 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
     const planColor = getPlanColor(currentPlan?.name || '');
 
     return (
-        <div className="card main-balance-card p-3 sm:p-4 lg:p-6 rounded-xl relative overflow-hidden">
+        <div className="card main-balance-card p-4 sm:p-5 lg:p-6 rounded-2xl relative overflow-hidden">
             {/* Sparkline background */}
             {balanceHistory.length > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 h-full opacity-20 z-0">
+                <div className="absolute bottom-0 left-0 right-0 h-full opacity-10 z-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={balanceHistory} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                    <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.8} />
+                                    <stop offset="95%" stopColor="#00d4ff" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
                             <Area
                                 type="monotone"
                                 dataKey="balance"
-                                stroke="#3b82f6"
+                                stroke="#00d4ff"
                                 strokeWidth={2}
                                 fill="url(#balanceGradient)"
                                 isAnimationActive={false}
@@ -77,55 +74,50 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
             )}
 
             <div className="z-10 relative">
-                <p className="text-xs sm:text-sm font-medium text-gray-400 mb-2 sm:mb-3 uppercase">
-                    Balance Total de la Cartera (USDT)
+                <p className="text-xs sm:text-sm font-semibold text-gray-400 mb-2 sm:mb-3 uppercase tracking-wider">
+                    Balance Total de Cartera
                 </p>
 
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-gray-700 pb-3 sm:pb-4 mb-3 sm:mb-4 gap-2 sm:gap-0">
-                    <h3 className="text-3xl sm:text-5xl lg:text-7xl font-black leading-none text-white data-metric">
-                        <span className="text-2xl sm:text-4xl lg:text-5xl mr-1 text-accent font-extrabold">$</span>
-                        <span className="text-accent">{formatUSDT(currentBalanceUSDT)}</span>
-                        <span className="text-white text-xl sm:text-2xl lg:text-3xl font-extrabold ml-1">USD</span>
-                    </h3>
-
-                    <div className="text-left sm:text-right flex flex-col items-start sm:items-end">
-                        <span className="text-xs font-semibold text-gray-400">Precio actual BTC/USD:</span>
-                        <div className="flex items-center justify-end gap-2">
-                            <span className="text-sm sm:text-base lg:text-lg font-black text-white data-metric">
-                                $ {formatUSDT(btcPrice)}
-                            </span>
-                            {btcChange !== 0 && (
-                                <div className={`flex items-center text-xs font-bold ${btcChange >= 0 ? 'text-profit' : 'text-red-500'}`}>
-                                    {btcChange >= 0 ? <ChevronsUp className="w-3 h-3" /> : <ChevronsDown className="w-3 h-3" />}
-                                    <span>{Math.abs(btcChange).toFixed(2)}%</span>
-                                </div>
-                            )}
-                        </div>
+                {/* Main Balance */}
+                <div className="mb-4 sm:mb-6">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black gradient-text-primary data-metric mb-2">
+                        ${formatUSDT(currentBalanceUSDT)}
+                    </h2>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <p className="text-sm sm:text-base text-gray-300">
+                            Precio BTC: <span className="font-bold text-white">${formatUSDT(btcPrice)}</span>
+                        </p>
+                        {btcChange !== 0 && (
+                            <div className={`flex items-center gap-1 text-xs font-bold ${btcChange >= 0 ? 'text-profit' : 'text-red-500'}`}>
+                                {btcChange >= 0 ? <ChevronsUp className="w-3 h-3" /> : <ChevronsDown className="w-3 h-3" />}
+                                <span>{Math.abs(btcChange).toFixed(2)}%</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4 pt-3 sm:pt-4 border-t border-gray-700">
+                <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-700/50">
                     {/* PROFIT Section */}
                     <div className="flex-1 flex flex-col justify-center">
                         <div className="flex items-center gap-2 mb-1">
                             <TrendingUp className="w-4 h-4 text-profit" />
-                            <h3 className="text-lg sm:text-xl font-black text-profit data-metric">
-                                + ${formatUSDT(profitUSDT)} PROFIT
+                            <h3 className="text-lg sm:text-xl font-black gradient-text-profit data-metric">
+                                +${formatUSDT(profitUSDT)} PROFIT
                             </h3>
                         </div>
-                        <p className="text-xs text-gray-400 mb-2">
+                        <p className="text-xs text-gray-400 mb-3">
                             +{profitPercent.toFixed(2)}% Rendimiento Total
                         </p>
                         <div className="flex gap-2">
                             <button
                                 onClick={onReinvest}
-                                className="bg-profit hover:bg-emerald-400 text-black font-bold py-1 px-3 rounded-lg transition duration-200 text-xs"
+                                className="bg-profit hover:bg-emerald-400 text-black font-bold py-1.5 px-4 rounded-lg transition-all duration-200 text-xs shadow-lg hover:shadow-profit/50"
                             >
                                 REINVERTIR
                             </button>
                             <button
                                 onClick={onWithdraw}
-                                className="bg-red-600 hover:bg-red-500 text-white font-bold py-1 px-3 rounded-lg transition duration-200 text-xs"
+                                className="bg-red-600 hover:bg-red-500 text-white font-bold py-1.5 px-4 rounded-lg transition-all duration-200 text-xs shadow-lg hover:shadow-red-500/50"
                             >
                                 RETIRAR
                             </button>
