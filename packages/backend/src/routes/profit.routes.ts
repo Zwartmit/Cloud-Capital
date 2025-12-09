@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import * as profitController from '../controllers/profit.controller';
+import * as profitController from '../controllers/profit.controller.js';
 // Middleware to ensure admin access would be good here, assuming we have one.
 // For now, I'll assume public or I'd check how other routes are protected.
 // Based on list_dir, there is an 'auth' middleware probably.

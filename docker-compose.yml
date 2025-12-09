@@ -48,6 +48,19 @@ services:
     networks:
       - cloud-network
 
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: cloud_capital_pma
+    environment:
+      PMA_HOST: database
+      PMA_PORT: 3306
+    ports:
+      - "8080:80"
+    depends_on:
+      - database
+    networks:
+      - cloud-network
+
 networks:
   cloud-network:
     driver: bridge

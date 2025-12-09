@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import * as profitService from '../services/profit.service';
+import * as profitService from '../services/profit.service.js';
 
 export const setRates = async (req: Request, res: Response) => {
     try {

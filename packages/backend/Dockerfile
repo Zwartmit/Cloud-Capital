@@ -40,12 +40,14 @@ COPY packages/database/package.json ./packages/database/
 COPY packages/shared/package.json ./packages/shared/
 
 # Install only production dependencies
-RUN npm install --omit=dev
+RUN npm install --omit=dev && \
+    apk add --no-cache openssl
 
 # Copy built artifacts from builder
 COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
 COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 WORKDIR /app/packages/backend
 
