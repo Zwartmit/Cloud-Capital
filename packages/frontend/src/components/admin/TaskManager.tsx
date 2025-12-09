@@ -306,13 +306,13 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
 
                                 {/* Task Info */}
                                 <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <span className={`font-bold ${getTypeColor(task.type)}`}>
+                                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                                        <span className={`font-bold ${getTypeColor(task.type)} whitespace-nowrap`}>
                                             {getTypeLabel(task.type)}
                                         </span>
-                                        <span className="text-gray-500 text-sm">•</span>
-                                        <span className="text-white font-bold">{formatUSDT(task.amountUSD)}</span>
-                                        <span className={`text-xs px-2 py-0.5 rounded border ${task.status === 'PENDING' ? 'border-yellow-500 text-yellow-500 bg-yellow-500/10' :
+                                        <span className="text-gray-500 text-sm hidden sm:inline">•</span>
+                                        <span className="text-white font-bold whitespace-nowrap">{formatUSDT(task.amountUSD)}</span>
+                                        <span className={`text-xs px-2 py-0.5 rounded border whitespace-nowrap ${task.status === 'PENDING' ? 'border-yellow-500 text-yellow-500 bg-yellow-500/10' :
                                             task.status === 'COMPLETED' ? 'border-green-500 text-green-500 bg-green-500/10' :
                                                 'border-red-500 text-red-500 bg-red-500/10'
                                             }`}>
@@ -328,14 +328,14 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex items-center gap-3 w-full md:w-auto">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
                                     {task.proof && (
                                         <button
                                             onClick={() => {
                                                 setSelectedProof(task.proof || null);
                                                 setShowProofModal(true);
                                             }}
-                                            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white"
+                                            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white self-center sm:self-auto w-full sm:w-auto flex justify-center"
                                             title="Ver comprobante"
                                         >
                                             <Eye className="w-5 h-5" />
@@ -345,11 +345,11 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                     {activeTab === 'pending' && (
                                         <>
                                             {actionStatus[task.id] === 'APPROVED' ? (
-                                                <div className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-500 font-bold rounded-lg animate-pulse">
+                                                <div className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500/20 text-green-500 font-bold rounded-lg animate-pulse w-full sm:w-auto">
                                                     <Check className="w-5 h-5" /> Tarea aprobada
                                                 </div>
                                             ) : actionStatus[task.id] === 'REJECTED' ? (
-                                                <div className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-500 font-bold rounded-lg animate-pulse">
+                                                <div className="flex items-center justify-center gap-2 px-4 py-2 bg-red-500/20 text-red-500 font-bold rounded-lg animate-pulse w-full sm:w-auto">
                                                     <X className="w-5 h-5" /> Tarea rechazada
                                                 </div>
                                             ) : (
@@ -357,14 +357,14 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                                     <button
                                                         onClick={() => handleApprove(task.id)}
                                                         disabled={processingId === task.id}
-                                                        className="flex-1 md:flex-none px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold rounded-lg flex items-center justify-center gap-2"
+                                                        className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-sm sm:text-base font-bold rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
                                                     >
                                                         <Check className="w-4 h-4" /> Aprobar
                                                     </button>
                                                     <button
                                                         onClick={() => openRejectModal(task.id)}
                                                         disabled={processingId === task.id}
-                                                        className="flex-1 md:flex-none px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold rounded-lg flex items-center justify-center gap-2"
+                                                        className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm sm:text-base font-bold rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
                                                     >
                                                         <X className="w-4 h-4" /> Rechazar
                                                     </button>

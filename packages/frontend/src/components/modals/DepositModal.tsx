@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
-import { Copy, QrCode, Upload, MessageCircle } from 'lucide-react';
+import { Copy, Upload, MessageCircle } from 'lucide-react';
 import { investmentService } from '../../services/investmentService';
 
 interface DepositModalProps {
@@ -103,6 +103,18 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                     {/* Direct Deposit Tab */}
                     {activeTab === 'direct' && (
                         <div className="space-y-3">
+                            <div className="bg-blue-900/20 border border-blue-700 p-3 rounded-lg">
+                                <h4 className="font-bold text-blue-400 mb-2 text-sm">Instrucciones:</h4>
+                                <ol className="text-xs text-gray-300 space-y-1.5 list-decimal list-inside">
+                                    <li>Copia la dirección BTC que aparece abajo</li>
+                                    <li>Envía BTC desde tu wallet personal a esa dirección</li>
+                                    <li>Ingresa el monto equivalente en USDT que depositaste</li>
+                                    <li>Proporciona el TXID de la transacción (recomendado para procesamiento rápido)</li>
+                                    <li>Adjunta un comprobante de la transacción (captura de pantalla)</li>
+                                    <li>Envía la solicitud y espera la confirmación</li>
+                                </ol>
+                            </div>
+
                             <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
                                 <p className="text-xs text-gray-400 mb-1">Tu dirección de depósito BTC:</p>
                                 <div className="flex items-center gap-2">
@@ -116,11 +128,6 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                     >
                                         <Copy className="w-4 h-4" />
                                     </button>
-                                </div>
-                                <div className="mt-3 flex justify-center">
-                                    <div className="bg-white p-2 rounded-lg shadow-lg">
-                                        <QrCode className="w-24 h-24 text-gray-800" />
-                                    </div>
                                 </div>
                             </div>
 
@@ -186,12 +193,15 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                     {activeTab === 'collaborator' && (
                         <div className="space-y-3">
                             <div className="bg-blue-900/20 border border-blue-700 p-3 rounded-lg">
-                                <h4 className="font-bold text-blue-400 mb-1 text-sm">Instrucciones:</h4>
-                                <ol className="text-xs text-gray-300 space-y-1 list-decimal list-inside">
-                                    <li>Contacta a un colaborador vía WhatsApp</li>
-                                    <li>Entrégale tu dinero FIAT</li>
-                                    <li>El colaborador te enviará BTC</li>
-                                    <li>Crea una orden manual aquí</li>
+                                <h4 className="font-bold text-blue-400 mb-2 text-sm">Instrucciones:</h4>
+                                <ol className="text-xs text-gray-300 space-y-1.5 list-decimal list-inside">
+                                    <li>Selecciona un colaborador de la lista y contáctalo vía WhatsApp</li>
+                                    <li>Acuerda el monto a depositar y el método de pago (transferencia, efectivo, etc.)</li>
+                                    <li>Realiza la transferencia de dinero FIAT al colaborador según sus instrucciones</li>
+                                    <li>El colaborador comprará BTC y lo enviará a tu dirección de depósito</li>
+                                    <li>El colaborador te proporcionará el TXID de la transacción BTC</li>
+                                    <li>Haz clic en "Crear orden manual" y completa los datos de la transacción</li>
+                                    <li>Espera la confirmación para que se acredite tu saldo</li>
                                 </ol>
                             </div>
 
@@ -291,11 +301,6 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
 
     return (
         <div className="space-y-4">
-            <div className="bg-yellow-900/20 border border-yellow-700 p-3 rounded-lg">
-                <p className="text-sm text-yellow-400">
-                    Completa los datos de la transacción que el colaborador te proporcionó
-                </p>
-            </div>
 
             <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">

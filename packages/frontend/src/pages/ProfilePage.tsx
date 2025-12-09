@@ -1,4 +1,10 @@
 import { useState, useEffect } from 'react';
+
+
+
+
+
+
 import { Sidebar } from '../components/layout/Sidebar';
 import { useAuthStore } from '../store/authStore';
 import { userService } from '../services/userService';
@@ -8,11 +14,13 @@ import { TransactionDTO } from '@cloud-capital/shared';
 import { PasswordInput } from '../components/common/PasswordInput';
 
 export const ProfilePage: React.FC = () => {
-    const { user } = useAuthStore();
+    const { user, updateUser } = useAuthStore();
     const [transactions, setTransactions] = useState<TransactionDTO[]>([]);
     const [investmentPlan, setInvestmentPlan] = useState<InvestmentPlan | null>(null);
     const [loading, setLoading] = useState(true);
     const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [btcAddressMessage, setBtcAddressMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [btcAddress, setBtcAddress] = useState(user?.btcDepositAddress || '');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -188,6 +196,61 @@ export const ProfilePage: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* BTC Address Section - Only for Collaborators/Admins */}
+                                {(user.role === 'SUBADMIN' || user.role === 'SUPERADMIN') && (
+                                    <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-secondary">
+                                        <h3 className="text-xs text-gray-500 mb-3">DIRECCIÓN BTC PARA RETIROS</h3>
+                                        <form onSubmit={async (e) => {
+                                            e.preventDefault();
+
+                                            // Validate BTC address format
+                                            const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
+                                            if (btcAddress && !btcAddressRegex.test(btcAddress)) {
+                                                setBtcAddressMessage({ type: 'error', text: 'Formato de dirección BTC inválido' });
+                                                return;
+                                            }
+
+                                            try {
+                                                const updatedUser = await userService.updateProfile({
+                                                    btcDepositAddress: btcAddress || undefined
+                                                });
+                                                updateUser(updatedUser);
+                                                setBtcAddressMessage({ type: 'success', text: 'Dirección BTC actualizada exitosamente' });
+                                                setTimeout(() => setBtcAddressMessage(null), 5000);
+                                            } catch (error: any) {
+                                                setBtcAddressMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar dirección BTC' });
+                                            }
+                                        }} className="space-y-3">
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    value={btcAddress}
+                                                    onChange={(e) => setBtcAddress(e.target.value)}
+                                                    placeholder="bc1q... o 1... o 3..."
+                                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white font-mono focus:ring-accent focus:border-accent focus:outline-none"
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1 italic">
+                                                    Esta dirección se usará para recibir BTC cuando usuarios soliciten retiros con colaborador
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition duration-200 text-sm"
+                                            >
+                                                Guardar dirección BTC
+                                            </button>
+                                        </form>
+                                        {btcAddressMessage && (
+                                            <div className={`mt-3 p-3 rounded-lg text-sm ${btcAddressMessage.type === 'success'
+                                                ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                                                : 'bg-red-500/10 border border-red-500/20 text-red-500'
+                                                }`}>
+                                                {btcAddressMessage.text}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 

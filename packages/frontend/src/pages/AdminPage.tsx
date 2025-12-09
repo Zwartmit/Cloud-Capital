@@ -14,7 +14,7 @@ import { UserDTO } from '@cloud-capital/shared';
 import { useAuthStore } from '../store/authStore';
 
 export const AdminPage: React.FC = () => {
-    const { user } = useAuthStore();
+    const { user, updateUser } = useAuthStore();
     const [activeTab, setActiveTab] = useState<'users' | 'plans' | 'profile' | 'tasks' | 'profit' | 'guide'>('tasks');
     const [searchEmail, setSearchEmail] = useState('');
     const [searchResults, setSearchResults] = useState<UserDTO[]>([]);
@@ -26,6 +26,8 @@ export const AdminPage: React.FC = () => {
     const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [balanceMessage, setBalanceMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [userListMessage, setUserListMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [btcAddressMessage, setBtcAddressMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [btcAddress, setBtcAddress] = useState(user?.btcDepositAddress || '');
 
     // User list state
     const [allUsers, setAllUsers] = useState<UserDTO[]>([]);
@@ -641,82 +643,144 @@ export const AdminPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Change Password Section - Simplified UI */}
+                                {/* Password & BTC Address Section - Two Column Layout */}
                                 <div className="mt-8 pt-6 border-t border-gray-700">
-                                    <h3 className="text-xl font-bold text-white mb-6">Cambiar contraseña</h3>
-                                    <form onSubmit={async (e) => {
-                                        e.preventDefault();
-                                        const form = e.currentTarget;
-                                        const formData = new FormData(form);
-                                        const currentPassword = formData.get('currentPassword') as string;
-                                        const newPassword = formData.get('newPassword') as string;
-                                        const confirmPassword = formData.get('confirmPassword') as string;
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                        {/* BTC Address Section - Left Column (Only for Collaborators/Admins) */}
+                                        {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
+                                            <div>
+                                                <h3 className="text-xl font-bold text-white mb-6">Dirección BTC para retiros</h3>
+                                                <form onSubmit={async (e) => {
+                                                    e.preventDefault();
 
-                                        if (newPassword !== confirmPassword) {
-                                            setPasswordMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
-                                            return;
-                                        }
+                                                    // Validate BTC address format
+                                                    const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
+                                                    if (btcAddress && !btcAddressRegex.test(btcAddress)) {
+                                                        setBtcAddressMessage({ type: 'error', text: 'Formato de dirección BTC inválido' });
+                                                        return;
+                                                    }
 
-                                        if (newPassword.length < 6) {
-                                            setPasswordMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
-                                            return;
-                                        }
+                                                    try {
+                                                        const updatedUser = await userService.updateProfile({
+                                                            btcDepositAddress: btcAddress || undefined
+                                                        });
+                                                        updateUser(updatedUser);
+                                                        setBtcAddressMessage({ type: 'success', text: 'Dirección BTC actualizada exitosamente' });
+                                                        setTimeout(() => setBtcAddressMessage(null), 5000);
+                                                    } catch (error: any) {
+                                                        setBtcAddressMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar dirección BTC' });
+                                                    }
+                                                }} className="space-y-4">
+                                                    <div>
+                                                        <label className="block text-sm text-gray-400 mb-2">Dirección BTC</label>
+                                                        <input
+                                                            type="text"
+                                                            value={btcAddress}
+                                                            onChange={(e) => setBtcAddress(e.target.value)}
+                                                            placeholder="bc1q... o 1... o 3..."
+                                                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono focus:ring-accent focus:border-accent focus:outline-none"
+                                                        />
+                                                        <p className="text-xs text-gray-500 mt-2 italic">
+                                                            Esta dirección se usará para recibir BTC cuando usuarios soliciten retiros con colaborador
+                                                        </p>
+                                                    </div>
+                                                    <div className="pt-2">
+                                                        <button
+                                                            type="submit"
+                                                            className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                                                        >
+                                                            Guardar dirección BTC
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                                {btcAddressMessage && (
+                                                    <div className={`mt-4 p-3 rounded-lg text-sm ${btcAddressMessage.type === 'success'
+                                                        ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                                                        : 'bg-red-500/10 border border-red-500/20 text-red-500'
+                                                        }`}>
+                                                        {btcAddressMessage.text}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
 
-                                        try {
-                                            await userService.changePassword(currentPassword, newPassword);
-                                            setPasswordMessage({ type: 'success', text: 'Contraseña cambiada exitosamente' });
-                                            form.reset();
-                                            setTimeout(() => setPasswordMessage(null), 5000);
-                                        } catch (error: any) {
-                                            setPasswordMessage({ type: 'error', text: error.response?.data?.error || 'Error al cambiar la contraseña' });
-                                        }
-                                    }} className="max-w-xl space-y-4">
+                                        {/* Change Password Section - Right Column */}
                                         <div>
-                                            <label className="block text-sm text-gray-400 mb-2">Contraseña actual</label>
-                                            <PasswordInput
-                                                name="currentPassword"
-                                                placeholder=""
-                                                required
-                                                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
-                                            />
+                                            <h3 className="text-xl font-bold text-white mb-6">Cambiar contraseña</h3>
+                                            <form onSubmit={async (e) => {
+                                                e.preventDefault();
+                                                const form = e.currentTarget;
+                                                const formData = new FormData(form);
+                                                const currentPassword = formData.get('currentPassword') as string;
+                                                const newPassword = formData.get('newPassword') as string;
+                                                const confirmPassword = formData.get('confirmPassword') as string;
+
+                                                if (newPassword !== confirmPassword) {
+                                                    setPasswordMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
+                                                    return;
+                                                }
+
+                                                if (newPassword.length < 6) {
+                                                    setPasswordMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
+                                                    return;
+                                                }
+
+                                                try {
+                                                    await userService.changePassword(currentPassword, newPassword);
+                                                    setPasswordMessage({ type: 'success', text: 'Contraseña cambiada exitosamente' });
+                                                    form.reset();
+                                                    setTimeout(() => setPasswordMessage(null), 5000);
+                                                } catch (error: any) {
+                                                    setPasswordMessage({ type: 'error', text: error.response?.data?.error || 'Error al cambiar la contraseña' });
+                                                }
+                                            }} className="space-y-4">
+                                                <div>
+                                                    <label className="block text-sm text-gray-400 mb-2">Contraseña actual</label>
+                                                    <PasswordInput
+                                                        name="currentPassword"
+                                                        placeholder=""
+                                                        required
+                                                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm text-gray-400 mb-2">Nueva contraseña</label>
+                                                    <PasswordInput
+                                                        name="newPassword"
+                                                        placeholder=""
+                                                        required
+                                                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm text-gray-400 mb-2">Confirmar nueva contraseña</label>
+                                                    <PasswordInput
+                                                        name="confirmPassword"
+                                                        placeholder=""
+                                                        required
+                                                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div className="pt-2">
+                                                    <button
+                                                        type="submit"
+                                                        className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                                                    >
+                                                        Cambiar contraseña
+                                                    </button>
+                                                </div>
+                                            </form>
+                                            {passwordMessage && (
+                                                <div className={`mt-4 p-3 rounded-lg text-sm ${passwordMessage.type === 'success'
+                                                    ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                                                    : 'bg-red-500/10 border border-red-500/20 text-red-500'
+                                                    }`}>
+                                                    {passwordMessage.text}
+                                                </div>
+                                            )}
                                         </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-2">Nueva contraseña</label>
-                                            <PasswordInput
-                                                name="newPassword"
-                                                placeholder=""
-                                                required
-                                                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-2">Confirmar nueva contraseña</label>
-                                            <PasswordInput
-                                                name="confirmPassword"
-                                                placeholder=""
-                                                required
-                                                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
-                                            />
-                                        </div>
-                                        <div className="pt-2 flex justify-center sm:justify-start">
-                                            <button
-                                                type="submit"
-                                                className="bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
-                                            >
-                                                Cambiar contraseña
-                                            </button>
-                                        </div>
-                                    </form>
-                                    {passwordMessage && (
-                                        <div className={`mt-4 p-3 rounded-lg text-sm max-w-xl ${passwordMessage.type === 'success'
-                                            ? 'bg-green-500/10 border border-green-500/20 text-green-500'
-                                            : 'bg-red-500/10 border border-red-500/20 text-red-500'
-                                            }`}>
-                                            {passwordMessage.text}
-                                        </div>
-                                    )}
+                                    </div>
                                 </div>
-
 
                             </div>
                         </div>
