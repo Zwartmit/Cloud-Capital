@@ -154,7 +154,7 @@ npm run build:backend    # Build del backend
 El proyecto está completamente dockerizado para facilitar el desarrollo y despliegue.
 
 ### Desarrollo con Docker Compose
-Para levantar todo el entorno (Frontend + Backend + MySQL):
+Para levantar todo el entorno (Frontend + Backend + MySQL + phpMyAdmin) ejecutar:
 
 ```bash
 docker-compose up --build
@@ -164,6 +164,30 @@ Esto iniciará:
 - **Frontend**: http://localhost:5173
 - **Backend**: http://localhost:3000
 - **Base de datos**: Puerto 3306
+
+### Inicialización de Base de Datos (Primera vez o nuevo dispositivo)
+
+Si es la primera vez que inicia el proyecto o si está en un dispositivo nuevo (donde el volumen de la base de datos está vacío), debe crear las tablas y poblar los datos:
+
+1. **Crear esquema de base de datos** (usa `db push` para sincronizar directamente el esquema):
+```bash
+docker-compose exec backend npx prisma db push --schema=../database/prisma/schema.prisma
+```
+
+2. **Poblar datos de prueba (Seed)**:
+```bash
+docker-compose exec backend npm run seed -w @cloud-capital/database
+```
+
+### Acceso a Base de Datos
+
+El proyecto incluye **phpMyAdmin** para gestionar la base de datos visualmente.
+
+- **URL**: http://localhost:8080
+- **Servidor**: `database`
+- **Usuario**: `root`
+- **Contraseña**: `admin` (verificar en `docker-compose.yml`)
+- **Base de datos**: `cloudcapital`
 
 ### Configuración de Producción
 El archivo `docker-compose.yml` está listo para ser usado en plataformas como Railway, Render o cualquier VPS con Docker.
