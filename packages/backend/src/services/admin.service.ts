@@ -23,6 +23,10 @@ export const getAllUsers = async (page: number = 1, limit: number = 20) => {
         currentBalanceUSDT: true,
         investmentClass: true,
         createdAt: true,
+        referralCode: true,
+        _count: {
+          select: { referrals: true }
+        }
       }
     }),
     prisma.user.count({
@@ -32,8 +36,14 @@ export const getAllUsers = async (page: number = 1, limit: number = 20) => {
     })
   ]);
 
+  const mappedUsers = users.map(user => ({
+    ...user,
+    referralsCount: (user as any)._count?.referrals || 0,
+    _count: undefined
+  }));
+
   return {
-    users,
+    users: mappedUsers,
     total,
     page,
     totalPages: Math.ceil(total / limit),
@@ -54,6 +64,10 @@ export const getUserById = async (userId: string) => {
       investmentClass: true,
       createdAt: true,
       updatedAt: true,
+      referralCode: true,
+      _count: {
+        select: { referrals: true }
+      }
     }
   });
 
@@ -61,7 +75,11 @@ export const getUserById = async (userId: string) => {
     throw new Error('User not found');
   }
 
-  return user;
+  return {
+    ...user,
+    referralsCount: (user as any)._count?.referrals || 0,
+    _count: undefined
+  };
 };
 
 export const searchUsers = async (query: string) => {
@@ -89,11 +107,19 @@ export const searchUsers = async (query: string) => {
       capitalUSDT: true,
       currentBalanceUSDT: true,
       investmentClass: true,
+      referralCode: true,
+       _count: {
+        select: { referrals: true }
+      }
     },
     take: 10,
   });
 
-  return users;
+  return users.map(user => ({
+    ...user,
+    referralsCount: (user as any)._count?.referrals || 0,
+    _count: undefined
+  }));
 };
 
 export const updateUserBalance = async (userId: string, capitalUSDT: number, currentBalanceUSDT: number) => {
@@ -327,6 +353,32 @@ export const deleteUser = async (userId: string) => {
   return { message: 'User deleted successfully' };
 };
 
+export const getUserReferrals = async (userId: string) => {
+  const referrals = await prisma.user.findMany({
+    where: { referrerId: userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      username: true,
+      role: true,
+      capitalUSDT: true,
+      currentBalanceUSDT: true,
+      investmentClass: true,
+      createdAt: true,
+      hasFirstDeposit: true,
+      _count: { select: { referrals: true } }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  // Map result to flatten referralsCount
+  return referrals.map(user => ({
+    ...user,
+    referralsCount: user._count.referrals
+  }));
+};
+
 export const resetUserPassword = async (userId: string, newPassword: string) => {
   const bcrypt = await import('bcrypt');
 
@@ -354,4 +406,18 @@ export const resetUserPassword = async (userId: string, newPassword: string) => 
   });
 
   return { message: 'Password reset successfully' };
+};
+
+export const getStats = async () => {
+  const pendingTasks = await prisma.task.count({
+    where: {
+      status: {
+        in: ['PENDING', 'PRE_APPROVED']
+      }
+    }
+  });
+
+  return {
+    pendingTasks
+  };
 };

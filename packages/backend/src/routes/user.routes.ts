@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as userController from '../controllers/user.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
+import { upload } from '../config/multer.js';
 
 const router = Router();
 
@@ -42,7 +43,7 @@ router.get('/referral-commissions', userController.getReferralCommissions);
 
 // Enhanced deposit/withdrawal routes
 // POST /api/user/deposit/auto
-router.post('/deposit/auto', userController.requestAutoDeposit);
+router.post('/deposit/auto', upload.single('proof'), userController.requestAutoDeposit);
 
 // POST /api/user/deposit/manual
 router.post('/deposit/manual', userController.requestManualDepositOrder);

@@ -8,8 +8,8 @@ export interface InvestmentPlan {
   maxDailyReturn: number;
   dailyAverage: number;
   monthlyCommission: number;
+  referralCommissionRate: number; // Added field
   doublingTime: string;
-  description?: string;
 }
 
 export const investmentPlanService = {

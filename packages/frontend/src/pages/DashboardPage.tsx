@@ -114,7 +114,7 @@ export const DashboardPage: React.FC = () => {
     // Calculate dynamic weekly rate
     const weeklyRate = currentPlan ? currentPlan.dailyAverage * 7 : 0;
 
-    const planColor = getPlanColor(userInvestmentClass || '');
+
 
     return (
         <div className="flex min-h-screen">
@@ -138,16 +138,15 @@ export const DashboardPage: React.FC = () => {
                                 currentBalanceUSDT={currentBalanceUSDT}
                                 btcPrice={btcPrice}
                                 currentPlan={currentPlan}
+                                onReinvest={() => setIsReinvestModalOpen(true)}
+                                onWithdraw={() => setIsWithdrawModalOpen(true)}
                             />
 
                             {/* Stats Cards */}
                             <StatsCards
                                 capitalUSDT={capitalUSDT}
-                                profitUSDT={profitUSDT}
                                 weeklyRate={weeklyRate}
                                 onDeposit={() => setIsDepositModalOpen(true)}
-                                onReinvest={() => setIsReinvestModalOpen(true)}
-                                onWithdraw={() => setIsWithdrawModalOpen(true)}
                                 onProjections={() => setIsProjectionsModalOpen(true)}
                             />
                         </section>

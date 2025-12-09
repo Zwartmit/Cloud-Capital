@@ -21,6 +21,9 @@ router.get('/users/:id', adminController.getUserById);
 // PUT /api/admin/users/:id/balance
 router.put('/users/:id/balance', adminController.updateUserBalance);
 
+// GET /api/admin/users/:id/referrals
+router.get('/users/:id/referrals', adminController.getUserReferrals);
+
 // GET /api/admin/tasks
 router.get('/tasks', adminController.getTasks);
 
@@ -38,5 +41,8 @@ router.delete('/users/:id', adminController.deleteUser);
 
 // PUT /api/admin/users/:id/reset-password
 router.put('/users/:id/reset-password', adminController.resetUserPassword);
+
+// GET /api/admin/stats
+router.get('/stats', adminController.getStats);
 
 export default router;

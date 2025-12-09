@@ -71,28 +71,31 @@ const faqs: FAQ[] = [
     },
 ];
 
+import { ScrollReveal } from '../common/ScrollReveal';
+
 export const FAQ: React.FC = () => {
     return (
         <section id="faq-section" className="max-w-4xl mx-auto mb-12 sm:mb-20 px-4 sm:px-6">
-            <h2 className="text-2xl sm:text-4xl font-bold text-center text-white mb-6 sm:mb-10">
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-white mb-6 sm:mb-10">
                 Preguntas frecuentes
             </h2>
             <div className="space-y-3 sm:space-y-4">
                 {faqs.map((faq, i) => (
-                    <details
-                        key={i}
-                        className="card bg-transparent border border-gray-700 rounded-xl p-3 sm:p-4 transition-all duration-300 group hover:border-accent"
-                    >
-                        <summary className="cursor-pointer text-sm sm:text-lg font-semibold text-white flex justify-between items-center py-1">
-                            {faq.question}
-                            <span className="text-accent text-xl transform group-open:rotate-180 transition-transform duration-300 ml-2 flex-shrink-0">
-                                <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
-                            </span>
-                        </summary>
-                        <p className="mt-2 sm:mt-3 text-gray-400 leading-relaxed border-t border-gray-700 pt-2 sm:pt-3 text-xs sm:text-sm">
-                            {faq.answer}
-                        </p>
-                    </details>
+                    <ScrollReveal key={i} animation="fade-in" delay={i * 0.05}>
+                        <details
+                            className="card !bg-[#0B1120] border border-gray-800 rounded-xl p-3 sm:p-4 transition-all duration-300 group hover:border-accent"
+                        >
+                            <summary className="cursor-pointer text-lg font-semibold text-white flex justify-between items-center py-1">
+                                {faq.question}
+                                <span className="text-accent text-lg transform group-open:rotate-180 transition-transform duration-300 ml-2 flex-shrink-0">
+                                    <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </span>
+                            </summary>
+                            <p className="mt-2 sm:mt-3 text-gray-400 leading-relaxed border-t border-gray-700 pt-2 sm:pt-3 text-base">
+                                {faq.answer}
+                            </p>
+                        </details>
+                    </ScrollReveal>
                 ))}
             </div>
         </section>

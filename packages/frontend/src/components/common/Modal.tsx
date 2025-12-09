@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { ReactNode, useEffect, useState } from 'react';
 
@@ -16,15 +17,27 @@ export const Modal: React.FC<ModalProps> = ({
     children,
     maxWidth = 'lg',
 }) => {
-    const [isAnimating, setIsAnimating] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
-            setIsAnimating(true);
+            setIsVisible(true);
+            document.body.style.overflow = 'hidden';
+        } else {
+            const timer = setTimeout(() => {
+                setIsVisible(false);
+                document.body.style.overflow = 'unset';
+            }, 300);
+            return () => clearTimeout(timer);
         }
+
+        // Safety cleanup to ensure overflow is restored if component unmounts while open
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
     }, [isOpen]);
 
-    if (!isOpen && !isAnimating) return null;
+    if (!isVisible) return null;
 
     const maxWidthClasses = {
         sm: 'max-w-sm',
@@ -35,17 +48,16 @@ export const Modal: React.FC<ModalProps> = ({
     };
 
     const handleClose = () => {
-        setIsAnimating(false);
-        setTimeout(onClose, 200);
+        onClose();
     };
 
-    return (
-        <div className={`modal fixed inset-0 z-50 flex items-center justify-center p-4 ${isOpen ? 'fade-in' : ''}`}>
+    return createPortal(
+        <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
             <div
-                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                className="absolute inset-0 bg-black/30 backdrop-blur-md"
                 onClick={handleClose}
             />
-            <div className={`glass-strong w-full ${maxWidthClasses[maxWidth]} p-6 sm:p-8 rounded-2xl shadow-2xl relative z-10 border border-gray-700/50 ${isOpen ? 'scale-in' : ''}`}>
+            <div className={`glass-strong w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] overflow-y-auto p-5 sm:p-8 rounded-2xl shadow-2xl relative z-10 border border-gray-700/50 transition-all duration-300 transform ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
                 <div className="flex justify-between items-center border-b border-gray-700/50 pb-4 mb-6">
                     <h3 className="text-xl sm:text-2xl font-black gradient-text-primary">{title}</h3>
                     <button
@@ -58,6 +70,7 @@ export const Modal: React.FC<ModalProps> = ({
                 </div>
                 {children}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

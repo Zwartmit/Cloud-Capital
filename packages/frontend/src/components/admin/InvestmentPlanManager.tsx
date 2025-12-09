@@ -17,8 +17,8 @@ export const InvestmentPlanManager: React.FC = () => {
         maxDailyReturn: '',
         dailyAverage: '',
         monthlyCommission: '',
+        referralCommissionRate: '', // Defaults to 0.10 (10%) usually but blank here
         doublingTime: '',
-        description: '',
     });
 
     // Delete modal state
@@ -55,6 +55,7 @@ export const InvestmentPlanManager: React.FC = () => {
                 maxDailyReturn: parseFloat(formData.maxDailyReturn),
                 dailyAverage: parseFloat(formData.dailyAverage),
                 monthlyCommission: parseFloat(formData.monthlyCommission),
+                referralCommissionRate: parseFloat(formData.referralCommissionRate),
             };
 
             if (editingPlan) {
@@ -106,8 +107,8 @@ export const InvestmentPlanManager: React.FC = () => {
             maxDailyReturn: plan.maxDailyReturn.toString(),
             dailyAverage: plan.dailyAverage.toString(),
             monthlyCommission: plan.monthlyCommission.toString(),
+            referralCommissionRate: (plan.referralCommissionRate || 0.10).toString(),
             doublingTime: plan.doublingTime,
-            description: plan.description || '',
         });
     };
 
@@ -120,13 +121,23 @@ export const InvestmentPlanManager: React.FC = () => {
             maxDailyReturn: '',
             dailyAverage: '',
             monthlyCommission: '',
+            referralCommissionRate: '',
             doublingTime: '',
-            description: '',
         });
     };
 
     return (
         <div className="space-y-8">
+            {/* Section Header */}
+            <div className="p-6 bg-gray-800 rounded-xl border border-gray-700">
+                <h3 className="text-xl font-bold text-white mb-2">Configuración de planes de inversión</h3>
+                <p className="text-gray-400">
+                    Define las reglas y parámetros de los planes de inversión ofrecidos.
+                    Estos valores (como el promedio diario) se utilizan para <b>marketing y proyecciones</b> en la calculadora del usuario,
+                    pero no determinan el pago real diario (eso se hace en "Rentabilidad").
+                </p>
+            </div>
+
             {!isSuperAdmin && (
                 <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 p-4 rounded-lg mb-6">
                     <p className="text-sm font-semibold">ℹ️ Como SUBADMIN, solo puedes visualizar los planes de inversión. No tienes permisos para crear, editar o eliminar.</p>
@@ -198,6 +209,17 @@ export const InvestmentPlanManager: React.FC = () => {
                                 step="0.01"
                                 value={formData.monthlyCommission}
                                 onChange={(e) => setFormData({ ...formData, monthlyCommission: e.target.value })}
+                                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">Comisión Referido (0.10 = 10% | 0.05 = 5%)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={formData.referralCommissionRate}
+                                onChange={(e) => setFormData({ ...formData, referralCommissionRate: e.target.value })}
                                 className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent"
                                 required
                             />
@@ -279,6 +301,10 @@ export const InvestmentPlanManager: React.FC = () => {
                                 <span className="font-bold text-white">{plan.monthlyCommission}%</span>
                             </p>
                             <p className="flex justify-between">
+                                <span>Comisión Referido:</span>
+                                <span className="font-bold text-profit">{(plan.referralCommissionRate * 100).toFixed(1)}%</span>
+                            </p>
+                            <p className="flex justify-between">
                                 <span>Duplica en:</span>
                                 <span className="font-bold text-accent">{plan.doublingTime}</span>
                             </p>
@@ -293,7 +319,7 @@ export const InvestmentPlanManager: React.FC = () => {
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={confirmDeletePlan}
                 title="Confirmar eliminación"
-                message={`¿Estás seguro de eliminar el plan "${planToDelete?.name}"? Esta acción no se puede deshacer.`}
+                message={`Deseas eliminar el plan "${planToDelete?.name}"? Esta acción no se puede deshacer.`}
                 confirmText="Eliminar"
                 cancelText="Cancelar"
                 confirmButtonClass="bg-red-600 hover:bg-red-500"

@@ -138,7 +138,6 @@ model InvestmentPlan {
   monthlyCommission      Float    // Percentage
   referralCommissionRate Float    @default(0.10) // Percentage (0.05 = 5%, 0.10 = 10%)
   doublingTime           String
-  description            String?
   
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
@@ -171,4 +170,18 @@ model ReferralCommission {
   @@map("referral_commissions")
   @@index([referrerId])
   @@index([referredUserId])
+}
+
+model DailyProfitRate {
+  id              String          @id @default(uuid())
+  date            DateTime        // We will store midnight UTC used for the day
+  investmentClass InvestmentClass
+  rate            Float           // Percentage (e.g. 0.8 for 0.8%)
+  processed       Boolean         @default(false)
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([date, investmentClass])
+  @@map("daily_profit_rates")
 }

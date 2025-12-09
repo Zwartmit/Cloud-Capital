@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
-import { Search, Users, ListChecks, TrendingUp, User } from 'lucide-react';
+import { Search, Users, ListChecks, TrendingUp, User, DollarSign, Book } from 'lucide-react';
 import { InvestmentPlanManager } from '../components/admin/InvestmentPlanManager';
+import { ProfitManager } from '../components/admin/ProfitManager';
+import { AdminGuide } from '../components/admin/AdminGuide';
+import { TaskManager } from '../components/admin/TaskManager';
 import { ConfirmModal } from '../components/modals/ConfirmModal';
 import { ReferralsModal } from '../components/modals/ReferralsModal';
 import { PasswordInput } from '../components/common/PasswordInput';
@@ -12,7 +15,7 @@ import { useAuthStore } from '../store/authStore';
 
 export const AdminPage: React.FC = () => {
     const { user } = useAuthStore();
-    const [activeTab, setActiveTab] = useState<'users' | 'plans' | 'profile'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'plans' | 'profile' | 'tasks' | 'profit' | 'guide'>('tasks');
     const [searchEmail, setSearchEmail] = useState('');
     const [searchResults, setSearchResults] = useState<UserDTO[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -40,6 +43,31 @@ export const AdminPage: React.FC = () => {
     const [newPassword, setNewPassword] = useState('');
     const [resetPasswordMessage, setResetPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
+    const [isUserReferralsModalOpen, setIsUserReferralsModalOpen] = useState(false);
+
+    const [pendingTasksCount, setPendingTasksCount] = useState(0);
+
+    // Fetch stats to get pending tasks count
+    const fetchStats = async () => {
+        try {
+            const stats = await adminService.getStats();
+            setPendingTasksCount(stats.pendingTasks);
+        } catch (error) {
+            console.error('Error fetching stats:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchStats();
+        // Refresh every minute
+        const interval = setInterval(fetchStats, 60000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // ... (rest of the file until render)
+
+    // Inside render:
+    // {activeTab === 'tasks' && <TaskManager onTaskProcessed={fetchStats} />}
 
     // Live search effect
     useEffect(() => {
@@ -206,6 +234,11 @@ export const AdminPage: React.FC = () => {
         }
     }, [activeTab, usersPage, usersLimit]);
 
+    // Helper to refresh stats when necessary (e.g. after a task is processed)
+    // We can pass this down or just rely on the interval/refresh trigger
+
+    // ... rest of the code ...
+
     return (
         <div className="flex min-h-screen">
             <Sidebar />
@@ -219,6 +252,16 @@ export const AdminPage: React.FC = () => {
 
                     {/* Tabs Navigation */}
                     <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-8 border-b border-gray-700 pb-2 sm:pb-0">
+                        <button
+                            onClick={() => setActiveTab('guide')}
+                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'guide'
+                                ? 'text-blue-400 border-b-2 border-blue-400'
+                                : 'text-gray-400 hover:text-blue-300'
+                                }`}
+                        >
+                            <Book className="w-5 h-5 inline mr-2" />
+                            Guía
+                        </button>
                         <button
                             onClick={() => setActiveTab('profile')}
                             className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'profile'
@@ -249,10 +292,46 @@ export const AdminPage: React.FC = () => {
                             <TrendingUp className="w-5 h-5 inline mr-2" />
                             Planes de inversión
                         </button>
+                        <button
+                            onClick={() => setActiveTab('profit')}
+                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'profit'
+                                ? 'text-accent border-b-2 border-accent'
+                                : 'text-gray-400 hover:text-white'
+                                }`}
+                        >
+                            <DollarSign className="w-5 h-5 inline mr-2" />
+                            Rentabilidad
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('tasks')}
+                            className={`relative pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'tasks'
+                                ? 'text-accent border-b-2 border-accent'
+                                : 'text-gray-400 hover:text-white'
+                                }`}
+                        >
+                            <ListChecks className="w-5 h-5 inline mr-2" />
+                            Tareas
+                            {pendingTasksCount > 0 && (
+                                <span className="absolute top-0 right-0 sm:-top-3 sm:-right-3 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+                                    {pendingTasksCount}
+                                </span>
+                            )}
+                        </button>
                     </div>
 
-                    {activeTab === 'users' ? (
+                    {activeTab === 'tasks' && <TaskManager onTaskProcessed={fetchStats} />}
+
+                    {activeTab === 'users' && (
                         <>
+                            {/* Section Header */}
+                            <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700">
+                                <h3 className="text-xl font-bold text-white mb-2">Gestión de usuarios</h3>
+                                <p className="text-gray-400">
+                                    Administra la base de usuarios de la plataforma. Puedes buscar usuarios específicos, ver sus detalles financieros,
+                                    modificar sus balances manualmente, restablecer contraseñas y eliminar cuentas si es necesario.
+                                </p>
+                            </div>
+
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                                 {/* Search Card */}
                                 <div className="lg:col-span-1 card p-6 rounded-xl border-t-4 border-accent relative">
@@ -336,6 +415,31 @@ export const AdminPage: React.FC = () => {
                                                         <p className="text-xl sm:text-2xl font-black text-profit">
                                                             ${selectedUser.currentBalanceUSDT.toFixed(2)}
                                                         </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t border-gray-700 pt-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                                    <div>
+                                                        <p className="text-xs sm:text-sm text-gray-400">Código de Referido</p>
+                                                        <p className="font-semibold text-white text-sm sm:text-base">
+                                                            {(selectedUser as any).referralCode || 'N/A'}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs sm:text-sm text-gray-400">Total Referidos</p>
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="font-semibold text-white text-sm sm:text-base">
+                                                                {(selectedUser as any).referralsCount || 0}
+                                                            </p>
+                                                            <button
+                                                                onClick={() => setIsUserReferralsModalOpen(true)}
+                                                                className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded transition"
+                                                            >
+                                                                Ver lista
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -526,130 +630,137 @@ export const AdminPage: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* Tasks Section */}
-                            <div className="card p-6 rounded-xl">
-                                <h3 className="text-xl font-bold mb-4 text-white flex items-center">
-                                    <ListChecks className="w-6 h-6 mr-2" />
-                                    Tareas pendientes
-                                </h3>
-                                <div className="text-center text-gray-500 py-8">
-                                    Panel de tareas - implementación pendiente
-                                </div>
-                            </div>
                         </>
-                    ) : activeTab === 'plans' ? (
-                        <InvestmentPlanManager />
-                    ) : (
+                    )}
+
+                    {activeTab === 'plans' && <InvestmentPlanManager />}
+
+                    {activeTab === 'profit' && <ProfitManager />}
+
+                    {activeTab === 'guide' && <AdminGuide />}
+
+                    {activeTab === 'profile' && (
                         // Profile Tab
-                        <div className="card p-8 rounded-xl border-t-4 border-accent">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <p className="text-sm text-gray-400 mb-1">Nombre</p>
-                                    <p className="text-lg font-semibold text-white">{user?.name}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-400 mb-1">Email</p>
-                                    <p className="text-lg font-semibold text-white">{user?.email}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-400 mb-1">Usuario</p>
-                                    <p className="text-lg font-semibold text-white">{user?.username}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-400 mb-1">Rol</p>
-                                    <p className="text-lg font-semibold text-admin">{user?.role}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-400 mb-1">Código de referido</p>
-                                    <p className="text-lg font-semibold text-accent">{user?.referralCode || 'N/A'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-400 mb-1">Usuarios referidos</p>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-lg font-semibold text-white">{user?.referralsCount || 0}</p>
-                                        <button
-                                            onClick={() => setIsReferralsModalOpen(true)}
-                                            className="p-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors"
-                                            title="Ver referidos"
-                                        >
-                                            <Search className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
+                        <div className="space-y-6">
+                            {/* Section Header */}
+                            <div className="p-6 bg-gray-800 rounded-xl border border-gray-700">
+                                <h3 className="text-xl font-bold text-white mb-2">Perfil de administrador</h3>
+                                <p className="text-gray-400">
+                                    Gestiona tu información personal y seguridad. Aquí puedes ver tus estadísticas de referido (si aplica)
+                                    y actualizar tu contraseña de acceso al panel.
+                                </p>
                             </div>
 
-                            {/* Change Password Section */}
-                            <div className="card p-8 rounded-xl border-t-4 border-accent mt-6">
-                                <h3 className="text-xl font-bold text-white mb-4">Cambiar contraseña</h3>
-                                <form onSubmit={async (e) => {
-                                    e.preventDefault();
-                                    const form = e.currentTarget;
-                                    const formData = new FormData(form);
-                                    const currentPassword = formData.get('currentPassword') as string;
-                                    const newPassword = formData.get('newPassword') as string;
-                                    const confirmPassword = formData.get('confirmPassword') as string;
-
-                                    if (newPassword !== confirmPassword) {
-                                        setPasswordMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
-                                        return;
-                                    }
-
-                                    if (newPassword.length < 6) {
-                                        setPasswordMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
-                                        return;
-                                    }
-
-                                    try {
-                                        await userService.changePassword(currentPassword, newPassword);
-                                        setPasswordMessage({ type: 'success', text: 'Contraseña cambiada exitosamente' });
-                                        form.reset();
-                                        setTimeout(() => setPasswordMessage(null), 5000);
-                                    } catch (error: any) {
-                                        setPasswordMessage({ type: 'error', text: error.response?.data?.error || 'Error al cambiar la contraseña' });
-                                    }
-                                }} className="space-y-2">
+                            <div className="card p-8 rounded-xl border-t-4 border-accent">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm text-gray-400 mb-2">Contraseña actual</label>
-                                        <PasswordInput
-                                            name="currentPassword"
-                                            placeholder=""
-                                            required
-                                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
-                                        />
+                                        <p className="text-sm text-gray-400 mb-1">Nombre</p>
+                                        <p className="text-lg font-semibold text-white">{user?.name}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-sm text-gray-400 mb-2">Nueva contraseña</label>
-                                        <PasswordInput
-                                            name="newPassword"
-                                            placeholder=""
-                                            required
-                                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
-                                        />
+                                        <p className="text-sm text-gray-400 mb-1">Email</p>
+                                        <p className="text-lg font-semibold text-white">{user?.email}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-sm text-gray-400 mb-2">Confirmar nueva contraseña</label>
-                                        <PasswordInput
-                                            name="confirmPassword"
-                                            placeholder=""
-                                            required
-                                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
-                                        />
+                                        <p className="text-sm text-gray-400 mb-1">Usuario</p>
+                                        <p className="text-lg font-semibold text-white">{user?.username}</p>
                                     </div>
-                                    <button
-                                        type="submit"
-                                        className="bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
-                                    >
-                                        Cambiar contraseña
-                                    </button>
-                                </form>
-                                {passwordMessage && (
-                                    <div className={`mt-4 p-3 rounded-lg text-sm ${passwordMessage.type === 'success'
-                                        ? 'bg-green-500/10 border border-green-500/20 text-green-500'
-                                        : 'bg-red-500/10 border border-red-500/20 text-red-500'
-                                        }`}>
-                                        {passwordMessage.text}
+                                    <div>
+                                        <p className="text-sm text-gray-400 mb-1">Rol</p>
+                                        <p className="text-lg font-semibold text-admin">{user?.role}</p>
                                     </div>
-                                )}
+                                    <div>
+                                        <p className="text-sm text-gray-400 mb-1">Código de referido</p>
+                                        <p className="text-lg font-semibold text-accent">{user?.referralCode || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-400 mb-1">Usuarios referidos</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-lg font-semibold text-white">{user?.referralsCount || 0}</p>
+                                            <button
+                                                onClick={() => setIsReferralsModalOpen(true)}
+                                                className="p-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors"
+                                                title="Ver referidos"
+                                            >
+                                                <Search className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Change Password Section */}
+                                <div className="card p-8 rounded-xl border-t-4 border-accent mt-6">
+                                    <h3 className="text-xl font-bold text-white mb-4">Cambiar contraseña</h3>
+                                    <form onSubmit={async (e) => {
+                                        e.preventDefault();
+                                        const form = e.currentTarget;
+                                        const formData = new FormData(form);
+                                        const currentPassword = formData.get('currentPassword') as string;
+                                        const newPassword = formData.get('newPassword') as string;
+                                        const confirmPassword = formData.get('confirmPassword') as string;
+
+                                        if (newPassword !== confirmPassword) {
+                                            setPasswordMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
+                                            return;
+                                        }
+
+                                        if (newPassword.length < 6) {
+                                            setPasswordMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
+                                            return;
+                                        }
+
+                                        try {
+                                            await userService.changePassword(currentPassword, newPassword);
+                                            setPasswordMessage({ type: 'success', text: 'Contraseña cambiada exitosamente' });
+                                            form.reset();
+                                            setTimeout(() => setPasswordMessage(null), 5000);
+                                        } catch (error: any) {
+                                            setPasswordMessage({ type: 'error', text: error.response?.data?.error || 'Error al cambiar la contraseña' });
+                                        }
+                                    }} className="space-y-2">
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-2">Contraseña actual</label>
+                                            <PasswordInput
+                                                name="currentPassword"
+                                                placeholder=""
+                                                required
+                                                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-2">Nueva contraseña</label>
+                                            <PasswordInput
+                                                name="newPassword"
+                                                placeholder=""
+                                                required
+                                                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-2">Confirmar nueva contraseña</label>
+                                            <PasswordInput
+                                                name="confirmPassword"
+                                                placeholder=""
+                                                required
+                                                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
+                                            />
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            className="bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                                        >
+                                            Cambiar contraseña
+                                        </button>
+                                    </form>
+                                    {passwordMessage && (
+                                        <div className={`mt-4 p-3 rounded-lg text-sm ${passwordMessage.type === 'success'
+                                            ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                                            : 'bg-red-500/10 border border-red-500/20 text-red-500'
+                                            }`}>
+                                            {passwordMessage.text}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -662,7 +773,7 @@ export const AdminPage: React.FC = () => {
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={confirmDeleteUser}
                 title="Confirmar eliminación"
-                message={`¿Estás seguro de eliminar al usuario "${userToDelete?.name}"? Esta acción no se puede deshacer.`}
+                message={`¿Deseas eliminar al usuario "${userToDelete?.name}"? Esta acción no se puede deshacer.`}
                 confirmText="Eliminar"
                 cancelText="Cancelar"
                 confirmButtonClass="bg-red-600 hover:bg-red-500"
@@ -671,6 +782,14 @@ export const AdminPage: React.FC = () => {
                 isOpen={isReferralsModalOpen}
                 onClose={() => setIsReferralsModalOpen(false)}
             />
+            {/* User Referrals Modal (Admin view) */}
+            {selectedUser && (
+                <ReferralsModal
+                    isOpen={isUserReferralsModalOpen}
+                    onClose={() => setIsUserReferralsModalOpen(false)}
+                    userId={selectedUser.id}
+                />
+            )}
         </div>
     );
 };

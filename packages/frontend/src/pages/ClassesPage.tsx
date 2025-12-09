@@ -105,7 +105,7 @@ export const ClassesPage: React.FC = () => {
                                         className={`card p-6 rounded-xl transition-all duration-300 ${isCurrentClass
                                             ? 'border-2 border-accent shadow-lg shadow-accent/20'
                                             : 'border border-secondary'
-                                            } ${!isUnlocked ? 'opacity-60' : ''}`}
+                                            } ${!isUnlocked ? '!bg-gray-900/95 backdrop-blur-xl border-gray-800' : ''}`}
                                     >
                                         {/* Header */}
                                         <div className="flex items-center justify-between mb-4">

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal } from '../common/Modal';
 import { userService } from '../../services/userService';
+import { adminService } from '../../services/adminService';
 import { UserDTO } from '@cloud-capital/shared';
 import { formatUSDT } from '../../utils/formatters';
 import { getPlanColor } from '../../utils/planStyles';
@@ -8,9 +9,10 @@ import { getPlanColor } from '../../utils/planStyles';
 interface ReferralsModalProps {
     isOpen: boolean;
     onClose: () => void;
+    userId?: string; // Optional userId for admin view
 }
 
-export const ReferralsModal: React.FC<ReferralsModalProps> = ({ isOpen, onClose }) => {
+export const ReferralsModal: React.FC<ReferralsModalProps> = ({ isOpen, onClose, userId }) => {
     const [referrals, setReferrals] = useState<UserDTO[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -19,13 +21,15 @@ export const ReferralsModal: React.FC<ReferralsModalProps> = ({ isOpen, onClose 
         if (isOpen) {
             loadReferrals();
         }
-    }, [isOpen]);
+    }, [isOpen, userId]);
 
     const loadReferrals = async () => {
         setLoading(true);
         setError('');
         try {
-            const data = await userService.getReferrals();
+            const data = userId
+                ? await adminService.getUserReferrals(userId)
+                : await userService.getReferrals();
             setReferrals(data);
         } catch (err) {
             console.error('Error loading referrals:', err);
@@ -36,7 +40,7 @@ export const ReferralsModal: React.FC<ReferralsModalProps> = ({ isOpen, onClose 
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Mis Referidos">
+        <Modal isOpen={isOpen} onClose={onClose} title={userId ? "Referidos del usuario" : "Mis referidos"}>
             <div className="max-h-[60vh] overflow-y-auto pr-2">
                 {loading ? (
                     <div className="text-center py-8 text-gray-400">Cargando referidos...</div>
@@ -44,8 +48,8 @@ export const ReferralsModal: React.FC<ReferralsModalProps> = ({ isOpen, onClose 
                     <div className="text-center py-8 text-red-500">{error}</div>
                 ) : referrals.length === 0 ? (
                     <div className="text-center py-8 text-gray-400">
-                        <p>Aún no tienes referidos.</p>
-                        <p className="text-xs mt-2">Comparte tu código para invitar usuarios.</p>
+                        <p>{userId ? "Este usuario aún no tiene referidos." : "Aún no tienes referidos."}</p>
+                        {!userId && <p className="text-xs mt-2">Comparte tu código para invitar usuarios.</p>}
                     </div>
                 ) : (
                     <div className="space-y-3">

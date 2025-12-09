@@ -23,7 +23,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
 
     return (
         <div className="card p-4 sm:p-6 rounded-xl mt-6 sm:mt-8">
-            <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-white">Registro de Transacciones</h3>
+            <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-white">Registro de transacciones</h3>
 
             <div className="overflow-x-auto rounded-lg">
                 <table className="min-w-full divide-y divide-gray-700">

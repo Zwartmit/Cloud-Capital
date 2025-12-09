@@ -103,8 +103,8 @@ async function main() {
       maxDailyReturn: 1.6,
       dailyAverage: 1.45,
       monthlyCommission: 0.50,
+      referralCommissionRate: 0.05,
       doublingTime: '6 meses',
-      description: 'Plan básico para iniciantes',
     },
     {
       name: 'SILVER',
@@ -113,8 +113,8 @@ async function main() {
       maxDailyReturn: 1.7,
       dailyAverage: 1.55,
       monthlyCommission: 0.45,
+      referralCommissionRate: 0.05,
       doublingTime: '5.5 meses',
-      description: 'Plan plata con mejores rendimientos',
     },
     {
       name: 'GOLD',
@@ -123,8 +123,8 @@ async function main() {
       maxDailyReturn: 1.9,
       dailyAverage: 1.70,
       monthlyCommission: 0.40,
+      referralCommissionRate: 0.05,
       doublingTime: '5 meses',
-      description: 'Plan oro para inversores serios',
     },
     {
       name: 'PLATINUM',
@@ -133,8 +133,8 @@ async function main() {
       maxDailyReturn: 2.3,
       dailyAverage: 2.10,
       monthlyCommission: 0.35,
+      referralCommissionRate: 0.10,
       doublingTime: '4.5 meses',
-      description: 'Plan platino de alto rendimiento',
     },
     {
       name: 'DIAMOND',
@@ -143,8 +143,8 @@ async function main() {
       maxDailyReturn: 3.2,
       dailyAverage: 3.00,
       monthlyCommission: 0.20,
+      referralCommissionRate: 0.10,
       doublingTime: '3 meses',
-      description: 'Plan diamante para máxima rentabilidad',
     },
   ];
 
@@ -168,11 +168,32 @@ async function main() {
     }
   }
 
+  // Create a Referred User (Referred by 'Test User')
+  const referredUserPassword = await bcrypt.hash('referred123', 10);
+  const referredUser = await prisma.user.upsert({
+    where: { email: 'referred@example.com' },
+    update: {},
+    create: {
+      email: 'referred@example.com',
+      password: referredUserPassword,
+      name: 'Referred User',
+      username: 'referreduser',
+      role: 'USER',
+      // No capital/balance yet (simulating new user)
+      capitalUSDT: 0,
+      currentBalanceUSDT: 0,
+      referralCode: 'REF456',
+      referrerId: user.id, // Referred by Test User
+    },
+  });
+  console.log('✅ Created referred user:', referredUser.email, '(Referred by Test User)');
+
   console.log('🎉 Seeding completed!');
   console.log('\n📝 Test credentials:');
   console.log('Admin: admin@cloudcapital.com / admin123');
   console.log('Subadmin: subadmin@cloudcapital.com / subadmin123');
   console.log('User: user@example.com / user123');
+  console.log('Referred User: referred@example.com / referred123');
 }
 
 main()

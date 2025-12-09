@@ -3,7 +3,7 @@ import { apiClient } from './api';
 interface AutoDepositRequest {
     amountUSDT: number;
     txid?: string;
-    proof?: string;
+    proof?: File | null;
 }
 
 interface ManualDepositRequest {
@@ -22,6 +22,7 @@ interface WithdrawalRequest {
 
 interface ReinvestRequest {
     amountUSD: number;
+    btcAddress: string;
 }
 
 interface Collaborator {
@@ -34,7 +35,16 @@ interface Collaborator {
 
 // Auto deposit (direct BTC)
 export const createAutoDeposit = async (data: AutoDepositRequest) => {
-    const response = await apiClient.post('/user/deposit/auto', data);
+    const formData = new FormData();
+    formData.append('amountUSDT', data.amountUSDT.toString());
+    if (data.txid) formData.append('txid', data.txid);
+    if (data.proof) formData.append('proof', data.proof);
+
+    const response = await apiClient.post('/user/deposit/auto', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
     return response.data;
 };
 

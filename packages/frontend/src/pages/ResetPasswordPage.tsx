@@ -93,7 +93,7 @@ export const ResetPasswordPage: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Nueva Contraseña
+                            Nueva contraseña
                         </label>
                         <PasswordInput
                             name="newPassword"
@@ -107,7 +107,7 @@ export const ResetPasswordPage: React.FC = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Confirmar Contraseña
+                            Confirmar contraseña
                         </label>
                         <PasswordInput
                             name="confirmPassword"
@@ -124,7 +124,7 @@ export const ResetPasswordPage: React.FC = () => {
                         disabled={loading || !token}
                         className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 rounded-lg mt-6 transition duration-200 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? 'Restableciendo...' : 'Restablecer Contraseña'}
+                        {loading ? 'Restableciendo...' : 'Restablecer contraseña'}
                     </button>
                 </form>
 
@@ -133,7 +133,7 @@ export const ResetPasswordPage: React.FC = () => {
                         onClick={() => navigate('/login')}
                         className="text-sm text-gray-400 hover:text-accent transition duration-200"
                     >
-                        Volver al Login
+                        Volver al login
                     </button>
                 </div>
             </div>

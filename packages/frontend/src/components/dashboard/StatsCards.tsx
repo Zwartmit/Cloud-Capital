@@ -1,27 +1,21 @@
-import { Wallet, PiggyBank, TrendingUp } from 'lucide-react';
+import { Wallet, TrendingUp } from 'lucide-react';
 import { formatUSDT } from '../../utils/formatters';
 
 interface StatsCardsProps {
     capitalUSDT: number;
-    profitUSDT: number;
     weeklyRate: number;
     onDeposit: () => void;
-    onReinvest: () => void;
-    onWithdraw: () => void;
     onProjections: () => void;
 }
 
 export const StatsCards: React.FC<StatsCardsProps> = ({
     capitalUSDT,
-    profitUSDT,
     weeklyRate,
     onDeposit,
-    onReinvest,
-    onWithdraw,
     onProjections,
 }) => {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {/* CAPITAL INICIAL */}
             <div className="card p-4 sm:p-5 rounded-2xl border-l-4 border-accent hover:border-l-[6px] transition-all duration-300 group">
                 <div className="flex justify-between items-center mb-3">
@@ -42,34 +36,6 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
                 </button>
             </div>
 
-            {/* PROFIT DISPONIBLE */}
-            <div className="card p-4 sm:p-5 rounded-2xl border-l-4 border-profit hover:border-l-[6px] transition-all duration-300 group">
-                <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-xs sm:text-sm font-bold text-gray-300 uppercase tracking-wider">Profit Disponible</h3>
-                    <div className="p-2 rounded-lg bg-profit/10 group-hover:bg-profit/20 transition-colors">
-                        <PiggyBank className="w-4 h-4 sm:w-5 sm:h-5 text-profit" />
-                    </div>
-                </div>
-                <p className="text-2xl sm:text-3xl font-black gradient-text-profit data-metric mb-1">
-                    ${formatUSDT(profitUSDT)}
-                </p>
-                <p className="text-xs text-gray-400 mb-3 sm:mb-4">Ganancias acumuladas</p>
-                <div className="flex gap-2">
-                    <button
-                        onClick={onReinvest}
-                        className="bg-profit hover:bg-emerald-400 text-black font-bold py-2 rounded-lg transition-all duration-200 text-xs flex-grow shadow-lg hover:shadow-profit/50 hover:scale-[1.02]"
-                    >
-                        REINVERTIR
-                    </button>
-                    <button
-                        onClick={onWithdraw}
-                        className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-bold py-2 rounded-lg transition-all duration-200 text-xs flex-grow shadow-lg hover:shadow-red-500/50 hover:scale-[1.02]"
-                    >
-                        RETIRAR
-                    </button>
-                </div>
-            </div>
-
             {/* TASA SEMANAL */}
             <div className="card p-4 sm:p-5 rounded-2xl border-l-4 border-accent hover:border-l-[6px] transition-all duration-300 group">
                 <div className="flex justify-between items-center mb-3">
@@ -86,7 +52,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
                     onClick={onProjections}
                     className="bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white font-bold py-2 rounded-lg transition-all duration-200 text-xs w-full shadow-lg hover:shadow-xl hover:scale-[1.02]"
                 >
-                    Ver Proyecciones
+                    Ver proyecciones
                 </button>
             </div>
         </div>

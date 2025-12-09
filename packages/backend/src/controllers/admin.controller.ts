@@ -111,6 +111,16 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
+export const getUserReferrals = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const referrals = await adminService.getUserReferrals(id);
+    res.status(200).json(referrals);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const resetUserPassword = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -125,5 +135,14 @@ export const resetUserPassword = async (req: Request, res: Response): Promise<vo
     res.status(200).json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+};
+
+export const getStats = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const stats = await adminService.getStats();
+    res.status(200).json(stats);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 };

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { BackgroundCanvas } from './components/common/BackgroundCanvas'
+import { ParticlesBackground } from './components/common/ParticlesBackground'
+import { ScrollToTop } from './components/common/ScrollToTop'
 import { LandingPage } from './pages/LandingPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -13,7 +14,8 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute'
 function App() {
     return (
         <Router>
-            <BackgroundCanvas />
+            <ParticlesBackground />
+            <ScrollToTop />
             <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />

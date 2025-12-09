@@ -25,12 +25,10 @@ export const Sidebar: React.FC = () => {
     const isAdmin = user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN';
 
     return (
-        <aside className="w-16 sm:w-20 glass-strong p-3 sm:p-4 flex flex-col items-center border-r border-gray-700/50 transition-all duration-300">
+        <aside className="bg-black w-16 sm:w-20 p-3 sm:p-4 flex flex-col items-center border-r border-gray-700/50 transition-all duration-300 sticky top-0 h-screen">
             {/* Logo */}
             <div className="mb-6 sm:mb-8 mt-2">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 hover:from-accent/30 hover:to-accent/10 transition-all duration-300">
-                    <img src="/logo.png" alt="Cloud Capital" className="w-8 sm:w-10 h-auto object-contain" />
-                </div>
+                <img src="/logo.png" alt="Cloud Capital" className="w-8 sm:w-12 h-auto object-contain" />
             </div>
 
             <div className="space-y-4 flex flex-col flex-grow">
@@ -39,15 +37,12 @@ export const Sidebar: React.FC = () => {
                     <button
                         onClick={() => navigate('/dashboard')}
                         className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/dashboard')
-                                ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
-                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+                            ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
+                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
                             }`}
                         title="Dashboard"
                     >
                         <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                        {isActive('/dashboard') && (
-                            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-accent rounded-r-full" />
-                        )}
                     </button>
                 )}
 
@@ -56,15 +51,12 @@ export const Sidebar: React.FC = () => {
                     <button
                         onClick={() => navigate('/classes')}
                         className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/classes')
-                                ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
-                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+                            ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
+                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
                             }`}
                         title="Planes de Inversión"
                     >
                         <Layers3 className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                        {isActive('/classes') && (
-                            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-accent rounded-r-full" />
-                        )}
                     </button>
                 )}
 
@@ -73,15 +65,12 @@ export const Sidebar: React.FC = () => {
                     <button
                         onClick={() => navigate('/profile')}
                         className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/profile')
-                                ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
-                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+                            ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
+                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
                             }`}
                         title="Perfil"
                     >
                         <User className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                        {isActive('/profile') && (
-                            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-accent rounded-r-full" />
-                        )}
                     </button>
                 )}
 
@@ -90,15 +79,12 @@ export const Sidebar: React.FC = () => {
                     <button
                         onClick={() => navigate('/admin')}
                         className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin')
-                                ? 'bg-gradient-to-br from-admin to-admin/80 text-black shadow-lg shadow-admin/30'
-                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-admin'
+                            ? 'bg-gradient-to-br from-admin to-admin/80 text-black shadow-lg shadow-admin/30'
+                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-admin'
                             }`}
                         title="Panel Admin"
                     >
                         <ShieldHalf className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                        {isActive('/admin') && (
-                            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-admin rounded-r-full" />
-                        )}
                     </button>
                 )}
             </div>

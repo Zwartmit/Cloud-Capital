@@ -79,21 +79,21 @@ export const RegisterPage: React.FC = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-3 sm:p-4">
-            <div className="w-full max-w-md card p-5 sm:p-8 rounded-2xl border-t-4 border-profit">
-                <h1 className="text-2xl sm:text-4xl font-black text-center text-profit mb-3 sm:mb-4">Crear cuenta</h1>
-                <p className="text-center text-gray-400 text-sm sm:text-base mb-5 sm:mb-8">
+            <div className="w-full max-w-3xl card p-5 sm:p-8 rounded-2xl border-t-4 border-profit">
+                <h1 className="text-4xl font-black text-center text-profit mb-3 sm:mb-4">Crear cuenta</h1>
+                <p className="text-center text-gray-400 text-lg mb-5">
                     Únete a Cloud Capital y comienza a invertir
                 </p>
 
                 {error && (
-                    <div className="text-center text-xs sm:text-sm font-semibold text-red-500 my-3 sm:my-4 p-2 sm:p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                    <div className="text-center text-base font-semibold text-red-500 my-3 sm:my-4 p-2 sm:p-3 bg-red-500/10 rounded-lg border border-red-500/20">
                         {error}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
+                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
                             Nombre completo
                         </label>
                         <input
@@ -104,12 +104,12 @@ export const RegisterPage: React.FC = () => {
                             required
                             disabled={loading}
                             placeholder="Digita tu nombre completo"
-                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
+                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
                             Nombre de usuario
                         </label>
                         <input
@@ -120,12 +120,12 @@ export const RegisterPage: React.FC = () => {
                             required
                             disabled={loading}
                             placeholder="Digita tu nombre de usuario"
-                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
+                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
                             Código de referido
                         </label>
                         <input
@@ -136,12 +136,12 @@ export const RegisterPage: React.FC = () => {
                             required
                             disabled={loading}
                             placeholder="Ingresa el código de quien te invitó"
-                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
+                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
                             Correo electrónico
                         </label>
                         <input
@@ -152,12 +152,12 @@ export const RegisterPage: React.FC = () => {
                             required
                             disabled={loading}
                             placeholder="Digita tu correo electrónico"
-                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
+                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
                             Contraseña
                         </label>
                         <PasswordInput
@@ -166,12 +166,12 @@ export const RegisterPage: React.FC = () => {
                             required
                             value={formData.password}
                             onChange={handleChange}
-                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
+                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
                             Confirmar contraseña
                         </label>
                         <PasswordInput
@@ -180,20 +180,22 @@ export const RegisterPage: React.FC = () => {
                             required
                             value={formData.confirmPassword}
                             onChange={handleChange}
-                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                            className="w-full p-2.5 sm:p-3 mb-4 sm:mb-0 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-profit hover:bg-emerald-500 text-white font-bold py-2.5 sm:py-3 rounded-lg mt-4 sm:mt-6 transition duration-200 shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-                    >
-                        {loading ? 'Creando cuenta...' : 'Crear cuenta'}
-                    </button>
+                    <div className="md:col-span-2">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-profit hover:bg-emerald-500 text-white font-bold py-2.5 sm:py-3 rounded-lg mt-2 sm:mt-4 transition duration-200 shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-base"
+                        >
+                            {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+                        </button>
+                    </div>
                 </form>
 
-                <div className="text-center text-xs sm:text-sm text-gray-400 mt-3 sm:mt-4 space-y-2">
+                <div className="text-center text-base text-gray-400 mt-6 sm:mt-6 space-y-2">
                     <p>
                         ¿Ya tienes cuenta?{' '}
                         <button
@@ -205,15 +207,6 @@ export const RegisterPage: React.FC = () => {
                     </p>
                 </div>
 
-                <div className="flex justify-center mt-4 sm:mt-6">
-                    <button
-                        onClick={() => navigate('/')}
-                        className="w-auto px-4 sm:px-6 bg-gray-600 hover:bg-gray-500 text-white font-bold py-1.5 sm:py-2 rounded-lg transition duration-200 text-xs sm:text-sm"
-                    >
-                        Volver a la página principal
-                    </button>
-                </div>
-
                 {/* Success Modal */}
                 {showSuccessModal && (
                     <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-3 sm:p-4 z-50">
@@ -221,7 +214,7 @@ export const RegisterPage: React.FC = () => {
                             <div className="text-center">
                                 <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">✅</div>
                                 <h2 className="text-xl sm:text-3xl font-bold text-profit mb-3 sm:mb-4">¡Cuenta creada exitosamente!</h2>
-                                <p className="text-gray-400 text-sm sm:text-base mb-4 sm:mb-6">
+                                <p className="text-gray-400 text-base mb-4 sm:mb-6">
                                     Bienvenido a Cloud Capital, <span className="text-white font-semibold">{formData.name}</span>.
                                     Tu cuenta ha sido creada y ya puedes comenzar a invertir.
                                 </p>
@@ -229,13 +222,13 @@ export const RegisterPage: React.FC = () => {
                                 <div className="space-y-2.5 sm:space-y-3">
                                     <button
                                         onClick={() => navigate('/dashboard')}
-                                        className="w-full bg-profit hover:bg-emerald-500 text-white font-bold py-2.5 sm:py-3 rounded-lg transition duration-200 shadow-lg shadow-emerald-500/30 text-sm sm:text-base"
+                                        className="w-full bg-profit hover:bg-emerald-500 text-white font-bold py-2.5 sm:py-3 rounded-lg transition duration-200 shadow-lg shadow-emerald-500/30 text-base"
                                     >
                                         Ir al Dashboard
                                     </button>
                                     <button
                                         onClick={() => navigate('/')}
-                                        className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2.5 sm:py-3 rounded-lg transition duration-200 text-sm sm:text-base"
+                                        className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2.5 sm:py-3 rounded-lg transition duration-200 text-base"
                                     >
                                         Volver a la página principal
                                     </button>

@@ -58,9 +58,15 @@ export const adminService = {
     return response.data;
   },
 
+  async getUserReferrals(userId: string): Promise<UserDTO[]> {
+    const response = await apiClient.get<UserDTO[]>(`/admin/users/${userId}/referrals`);
+    return response.data;
+  },
+
   // Task Management
-  async getAllTasks(): Promise<TaskDTO[]> {
-    const response = await apiClient.get<TaskDTO[]>('/admin/tasks');
+  async getAllTasks(status?: string): Promise<TaskDTO[]> {
+    const query = status ? `?status=${status}` : '';
+    const response = await apiClient.get<TaskDTO[]>(`/admin/tasks${query}`);
     return response.data;
   },
 
@@ -70,12 +76,12 @@ export const adminService = {
   },
 
   async approveTask(taskId: string): Promise<{ message: string; task: TaskDTO }> {
-    const response = await apiClient.post(`/admin/tasks/${taskId}/approve`);
+    const response = await apiClient.put(`/admin/tasks/${taskId}/approve`);
     return response.data;
   },
 
   async rejectTask(taskId: string, reason?: string): Promise<{ message: string; task: TaskDTO }> {
-    const response = await apiClient.post(`/admin/tasks/${taskId}/reject`, { reason });
+    const response = await apiClient.put(`/admin/tasks/${taskId}/reject`, { reason });
     return response.data;
   },
 
@@ -89,4 +95,20 @@ export const adminService = {
     const response = await apiClient.get('/admin/stats');
     return response.data;
   },
+
+  // Profit Management
+  async setDailyRates(date: string, rates: { investmentClass: string, rate: number }[]) {
+    const response = await apiClient.post('/profit/rates', { date, rates });
+    return response.data;
+  },
+
+  async getDailyRates(date: string) {
+    const response = await apiClient.get(`/profit/rates?date=${date}`);
+    return response.data;
+  },
+
+  async triggerProfitProcess(date?: string) {
+    const response = await apiClient.post('/profit/process', { date });
+    return response.data;
+  }
 };

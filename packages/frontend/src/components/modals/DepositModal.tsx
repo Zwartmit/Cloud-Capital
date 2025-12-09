@@ -59,7 +59,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             await investmentService.createAutoDeposit({
                 amountUSDT: parseFloat(amount),
                 txid,
-                proof: proof?.name, // TODO: Upload file to server
+                proof: proof, // Updated to send File object
             });
             alert('Solicitud de depósito enviada. Pendiente de aprobación.');
             onSuccess();
@@ -75,58 +75,57 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     // Collaborators list is now fetched from API
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Depositar Fondos" maxWidth="xl">
+        <Modal isOpen={isOpen} onClose={onClose} title="Depositar fondos" maxWidth="xl">
             {!showManualOrder ? (
                 <>
                     {/* Tabs */}
-                    <div className="flex gap-2 mb-6">
+                    <div className="flex flex-col sm:flex-row gap-2 mb-4">
                         <button
                             onClick={() => setActiveTab('direct')}
-                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${activeTab === 'direct'
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition ${activeTab === 'direct'
                                 ? 'bg-accent text-white'
                                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 }`}
                         >
-                            Depósito Directo (BTC)
+                            Depósito directo (BTC)
                         </button>
                         <button
                             onClick={() => setActiveTab('collaborator')}
-                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${activeTab === 'collaborator'
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition ${activeTab === 'collaborator'
                                 ? 'bg-profit text-black'
                                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 }`}
                         >
-                            Con Colaborador (FIAT)
+                            Con colaborador (FIAT)
                         </button>
                     </div>
 
                     {/* Direct Deposit Tab */}
                     {activeTab === 'direct' && (
-                        <div className="space-y-4">
-                            <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                                <p className="text-sm text-gray-400 mb-2">Tu dirección de depósito BTC:</p>
+                        <div className="space-y-3">
+                            <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
+                                <p className="text-xs text-gray-400 mb-1">Tu dirección de depósito BTC:</p>
                                 <div className="flex items-center gap-2">
-                                    <code className="flex-1 bg-gray-900 p-3 rounded text-accent text-sm break-all">
+                                    <code className="flex-1 bg-gray-900 p-2 rounded text-accent text-xs break-all font-mono">
                                         {userDepositAddress}
                                     </code>
                                     <button
                                         onClick={handleCopyAddress}
-                                        className="p-3 bg-accent hover:bg-blue-500 rounded transition"
+                                        className="p-2 bg-accent hover:bg-blue-500 rounded transition shrink-0"
                                         title="Copiar dirección"
                                     >
-                                        <Copy className="w-5 h-5" />
+                                        <Copy className="w-4 h-4" />
                                     </button>
                                 </div>
                                 <div className="mt-3 flex justify-center">
-                                    <div className="bg-white p-3 rounded">
-                                        <QrCode className="w-32 h-32 text-gray-800" />
-                                        <p className="text-xs text-gray-600 text-center mt-1">QR Code</p>
+                                    <div className="bg-white p-2 rounded-lg shadow-lg">
+                                        <QrCode className="w-24 h-24 text-gray-800" />
                                     </div>
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                <label className="block text-xs font-medium text-gray-300 mb-1">
                                     Monto depositado (USDT)
                                 </label>
                                 <input
@@ -134,12 +133,12 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
                                     placeholder="Ej: 1000"
-                                    className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                                    className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                <label className="block text-xs font-medium text-gray-300 mb-1">
                                     TXID (Opcional)
                                 </label>
                                 <input
@@ -147,13 +146,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                     value={txid}
                                     onChange={(e) => setTxid(e.target.value)}
                                     placeholder="ID de transacción blockchain"
-                                    className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                                    className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Comprobante de transacción
+                                <label className="block text-xs font-medium text-gray-300 mb-1">
+                                    Comprobante
                                 </label>
                                 <div className="flex items-center gap-2">
                                     <input
@@ -165,10 +164,10 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                     />
                                     <label
                                         htmlFor="proof-upload"
-                                        className="flex-1 p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 cursor-pointer hover:border-accent transition flex items-center gap-2"
+                                        className="flex-1 p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 text-sm cursor-pointer hover:border-accent hover:text-white transition-all flex items-center justify-center gap-2"
                                     >
-                                        <Upload className="w-5 h-5" />
-                                        {proof ? proof.name : 'Seleccionar archivo'}
+                                        <Upload className="w-4 h-4" />
+                                        <span className="truncate">{proof ? proof.name : 'Seleccionar archivo'}</span>
                                     </label>
                                 </div>
                             </div>
@@ -176,46 +175,51 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                             <button
                                 onClick={handleDirectDeposit}
                                 disabled={loading}
-                                className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
+                                className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-accent/20 hover:shadow-accent/40 text-sm"
                             >
-                                {loading ? 'Enviando...' : 'Enviar Solicitud de Depósito'}
+                                {loading ? 'Enviando...' : 'Enviar solicitud'}
                             </button>
                         </div>
                     )}
 
                     {/* Collaborator Tab */}
                     {activeTab === 'collaborator' && (
-                        <div className="space-y-4">
-                            <div className="bg-blue-900/20 border border-blue-700 p-4 rounded-lg">
-                                <h4 className="font-bold text-blue-400 mb-2">Instrucciones:</h4>
-                                <ol className="text-sm text-gray-300 space-y-1 list-decimal list-inside">
+                        <div className="space-y-3">
+                            <div className="bg-blue-900/20 border border-blue-700 p-3 rounded-lg">
+                                <h4 className="font-bold text-blue-400 mb-1 text-sm">Instrucciones:</h4>
+                                <ol className="text-xs text-gray-300 space-y-1 list-decimal list-inside">
                                     <li>Contacta a un colaborador vía WhatsApp</li>
-                                    <li>Entrega tu dinero FIAT (USD, etc.)</li>
-                                    <li>El colaborador depositará BTC a tu wallet</li>
-                                    <li>Regresa aquí y crea una orden manual</li>
+                                    <li>Entrégale tu dinero FIAT</li>
+                                    <li>El colaborador te enviará BTC</li>
+                                    <li>Crea una orden manual aquí</li>
                                 </ol>
                             </div>
 
                             <div>
-                                <h4 className="font-semibold text-white mb-3">Colaboradores Disponibles:</h4>
-                                <div className="space-y-2">
+                                <h4 className="font-semibold text-white mb-2 text-sm">Colaboradores Disponibles:</h4>
+                                <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1 custom-scrollbar">
                                     {collaborators.map((collab) => (
                                         <div
                                             key={collab.id}
-                                            className="flex items-center justify-between p-3 bg-gray-800 rounded-lg border border-gray-700"
+                                            className="flex items-center justify-between p-2.5 bg-gray-800 rounded-lg border border-gray-700 gap-2 hover:border-gray-600 transition-colors"
                                         >
-                                            <div>
-                                                <p className="font-semibold text-white">{collab.name}</p>
-                                                <p className="text-xs text-gray-400">{collab.role}</p>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center text-sm font-bold text-gray-300">
+                                                    {collab.name.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-white text-sm">{collab.name}</p>
+                                                    <p className="text-[10px] text-gray-400">{collab.role}</p>
+                                                </div>
                                             </div>
                                             <a
                                                 href={`https://wa.me/${collab.whatsappNumber?.replace(/[^0-9]/g, '')}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg transition"
+                                                className="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg transition shadow-md shadow-green-600/20 hover:shadow-green-600/40"
                                             >
-                                                <MessageCircle className="w-4 h-4" />
-                                                WhatsApp
+                                                <MessageCircle className="w-3.5 h-3.5" />
+                                                <span className="text-xs font-medium">WhatsApp</span>
                                             </a>
                                         </div>
                                     ))}
@@ -224,9 +228,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
                             <button
                                 onClick={() => setShowManualOrder(true)}
-                                className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-3 rounded-lg transition"
+                                className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-2.5 rounded-lg transition shadow-lg shadow-profit/20 hover:shadow-profit/40 mt-1 text-sm"
                             >
-                                Ya Realicé el Depósito - Crear Orden Manual
+                                Ya realicé el depósito - Crear orden manual
                             </button>
                         </div>
                     )}
@@ -295,7 +299,7 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
 
             <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Monto Depositado (USDT) *
+                    Monto depositado (USDT) *
                 </label>
                 <input
                     type="number"
@@ -308,7 +312,7 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
 
             <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                    TXID de la Transacción BTC *
+                    TXID de la transacción BTC *
                 </label>
                 <input
                     type="text"
@@ -321,7 +325,7 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
 
             <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Colaborador que Realizó el Depósito *
+                    Colaborador que realizó el depósito *
                 </label>
                 <select
                     value={collaboratorId}
@@ -339,7 +343,7 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
 
             <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Notas Adicionales (Opcional)
+                    Notas adicionales (Opcional)
                 </label>
                 <textarea
                     value={notes}
@@ -362,7 +366,7 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
                     disabled={loading}
                     className="flex-1 bg-profit hover:bg-emerald-500 text-black font-bold py-3 rounded-lg transition disabled:opacity-50"
                 >
-                    {loading ? 'Creando...' : 'Crear Orden de Depósito'}
+                    {loading ? 'Creando...' : 'Crear orden de depósito'}
                 </button>
             </div>
         </div>

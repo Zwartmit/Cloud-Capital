@@ -149,14 +149,21 @@ export const getReferralCommissions = async (req: Request, res: Response): Promi
 export const requestAutoDeposit = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
-    const { amountUSDT, txid, proof } = req.body;
+    const { amountUSDT, txid } = req.body;
+    let proof = req.body.proof;
 
-    if (!amountUSDT || amountUSDT <= 0) {
+    if (req.file) {
+      // If file was uploaded, use its path relative to server root
+      // In production, you'd likely use a full URL or cloud storage URL
+      proof = `/uploads/proofs/${req.file.filename}`;
+    }
+
+    if (!amountUSDT || parseFloat(amountUSDT) <= 0) {
       res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
       return;
     }
 
-    const task = await userService.createAutoDepositRequest(userId, amountUSDT, txid, proof);
+    const task = await userService.createAutoDepositRequest(userId, parseFloat(amountUSDT), txid, proof);
     res.status(201).json(task);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

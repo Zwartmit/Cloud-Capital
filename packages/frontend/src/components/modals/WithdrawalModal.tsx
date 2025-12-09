@@ -93,49 +93,49 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Retirar Ganancias" maxWidth="xl">
+        <Modal isOpen={isOpen} onClose={onClose} title="Retirar ganancias" maxWidth="xl">
             {/* Balance Info */}
-            <div className="bg-profit/10 border border-profit p-4 rounded-lg mb-6">
-                <p className="text-sm text-gray-400">Profit Disponible para Retiro:</p>
-                <p className="text-3xl font-black text-profit">${availableProfit.toFixed(2)} USDT</p>
+            <div className="bg-profit/10 border border-profit p-3 rounded-lg mb-4 text-center">
+                <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Profit Disponible para Retiro</p>
+                <p className="text-2xl font-black text-profit">${availableProfit.toFixed(2)} USDT</p>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 mb-6">
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
                 <button
                     onClick={() => setActiveTab('direct')}
-                    className={`flex-1 py-2 px-4 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${activeTab === 'direct'
-                            ? 'bg-accent text-white'
-                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    className={`flex-1 py-2 px-3 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2 ${activeTab === 'direct'
+                        ? 'bg-accent text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                         }`}
                 >
                     <Wallet className="w-4 h-4" />
-                    Mi Wallet Personal
+                    Mi Wallet personal
                 </button>
                 <button
                     onClick={() => setActiveTab('collaborator')}
-                    className={`flex-1 py-2 px-4 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${activeTab === 'collaborator'
-                            ? 'bg-profit text-black'
-                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    className={`flex-1 py-2 px-3 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2 ${activeTab === 'collaborator'
+                        ? 'bg-profit text-black'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                         }`}
                 >
                     <Users className="w-4 h-4" />
-                    Intercambio con Colaborador
+                    Intercambio con colaborador
                 </button>
             </div>
 
             {/* Direct Withdrawal Tab */}
             {activeTab === 'direct' && (
-                <div className="space-y-4">
-                    <div className="bg-blue-900/20 border border-blue-700 p-4 rounded-lg">
-                        <p className="text-sm text-blue-400">
+                <div className="space-y-3">
+                    <div className="bg-blue-900/20 border border-blue-700 p-3 rounded-lg">
+                        <p className="text-xs text-blue-400 text-center">
                             Retira tus ganancias directamente a tu wallet personal de BTC
                         </p>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Monto a Retirar (USDT)
+                        <label className="block text-xs font-medium text-gray-300 mb-1">
+                            Monto a retirar (USDT)
                         </label>
                         <input
                             type="number"
@@ -143,55 +143,53 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="Ej: 500"
                             max={availableProfit}
-                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                            className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                         />
-                        <p className="text-xs text-gray-400 mt-1">
-                            Equivalente: {btcEquivalent} BTC
+                        <p className="text-[10px] text-gray-400 mt-1">
+                            Equivalente estimado: <span className="text-accent">{btcEquivalent} BTC</span>
                         </p>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Dirección BTC de Destino
+                        <label className="block text-xs font-medium text-gray-300 mb-1">
+                            Dirección BTC de destino
                         </label>
                         <input
                             type="text"
                             value={btcAddress}
                             onChange={(e) => setBtcAddress(e.target.value)}
                             placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
-                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono text-sm"
+                            className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono text-xs focus:border-accent transition-colors"
                         />
-                        <p className="text-xs text-gray-400 mt-1">
-                            Asegúrate de que la dirección sea correcta. Las transacciones BTC son irreversibles.
+                        <p className="text-[10px] text-gray-500 mt-1 italic">
+                            Verifica bien la dirección. Las transacciones son irreversibles.
                         </p>
                     </div>
 
                     <button
                         onClick={handleWithdrawal}
                         disabled={loading}
-                        className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
+                        className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-accent/20 hover:shadow-accent/40 text-sm mt-1"
                     >
-                        {loading ? 'Enviando...' : 'Solicitar Retiro'}
+                        {loading ? 'Enviando...' : 'Solicitar retiro'}
                     </button>
                 </div>
             )}
 
             {/* Collaborator Withdrawal Tab */}
             {activeTab === 'collaborator' && (
-                <div className="space-y-4">
-                    <div className="bg-green-900/20 border border-green-700 p-4 rounded-lg">
-                        <h4 className="font-bold text-green-400 mb-2">Intercambio BTC → FIAT:</h4>
-                        <ol className="text-sm text-gray-300 space-y-1 list-decimal list-inside">
-                            <li>Selecciona un colaborador</li>
-                            <li>Ingresa el monto a retirar</li>
-                            <li>El sistema enviará BTC a la wallet del colaborador</li>
-                            <li>El colaborador te entregará el equivalente en FIAT (USD, etc.)</li>
+                <div className="space-y-3">
+                    <div className="bg-green-900/20 border border-green-700 p-3 rounded-lg">
+                        <h4 className="font-bold text-green-400 mb-1 text-xs">Intercambio BTC → FIAT:</h4>
+                        <ol className="text-[10px] text-gray-300 space-y-1 list-decimal list-inside">
+                            <li>El sistema enviará BTC al colaborador</li>
+                            <li>El colaborador te entregará FIAT (USD, etc.)</li>
                         </ol>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Monto a Retirar (USDT)
+                        <label className="block text-xs font-medium text-gray-300 mb-1">
+                            Monto a retirar (USDT)
                         </label>
                         <input
                             type="number"
@@ -199,21 +197,21 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="Ej: 500"
                             max={availableProfit}
-                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                            className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                         />
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-[10px] text-gray-400 mt-1">
                             Equivalente: {btcEquivalent} BTC
                         </p>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Colaborador que Realizará el Cambio
+                        <label className="block text-xs font-medium text-gray-300 mb-1">
+                            Colaborador
                         </label>
                         <select
                             value={collaboratorId}
                             onChange={(e) => setCollaboratorId(e.target.value)}
-                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                            className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                         >
                             <option value="">Selecciona un colaborador</option>
                             {collaborators.map((collab) => (
@@ -223,9 +221,9 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                             ))}
                         </select>
                         {collaboratorId && (
-                            <div className="mt-2 p-3 bg-gray-800 rounded border border-gray-700">
-                                <p className="text-xs text-gray-400">Wallet del colaborador:</p>
-                                <code className="text-xs text-accent break-all">
+                            <div className="mt-2 p-2 bg-gray-800 rounded border border-gray-700 flex flex-col gap-1">
+                                <p className="text-[10px] text-gray-400">Wallet del colaborador:</p>
+                                <code className="text-[10px] text-accent break-all font-mono">
                                     {collaborators.find(c => c.id === collaboratorId)?.btcDepositAddress}
                                 </code>
                             </div>
@@ -235,17 +233,18 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     <button
                         onClick={handleWithdrawal}
                         disabled={loading}
-                        className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-3 rounded-lg transition disabled:opacity-50"
+                        className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-profit/20 hover:shadow-profit/40 text-sm mt-1"
                     >
-                        {loading ? 'Enviando...' : 'Solicitar Retiro con Colaborador'}
+                        {loading ? 'Enviando...' : 'Solicitar retiro con colaborador'}
                     </button>
                 </div>
             )}
 
             {/* Warnings */}
-            <div className="mt-4 bg-yellow-900/20 border border-yellow-700 p-3 rounded-lg">
-                <p className="text-xs text-yellow-400">
-                    ⚠️ Monto mínimo de retiro: $50 USDT. Las solicitudes serán revisadas y aprobadas por un administrador.
+            <div className="mt-4 bg-yellow-900/20 border border-yellow-700 p-2.5 rounded-lg flex gap-2 items-center">
+                <span className="text-yellow-400 text-xs">⚠️</span>
+                <p className="text-[10px] text-yellow-400 leading-tight">
+                    Monto mínimo: $50 USDT. Las solicitudes requieren aprobación.
                 </p>
             </div>
         </Modal>
