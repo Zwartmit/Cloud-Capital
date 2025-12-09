@@ -311,7 +311,7 @@ export const approveTask = async (taskId: string, adminEmail: string, adminRole:
   return updatedTask;
 };
 
-export const rejectTask = async (taskId: string, adminEmail: string) => {
+export const rejectTask = async (taskId: string, adminEmail: string, rejectionReason?: string) => {
   const task = await prisma.task.findUnique({
     where: { id: taskId }
   });
@@ -329,6 +329,7 @@ export const rejectTask = async (taskId: string, adminEmail: string) => {
     data: {
       status: 'REJECTED',
       approvedByAdmin: adminEmail,
+      rejectionReason: rejectionReason || 'No se especificó motivo',
     }
   });
 

@@ -54,4 +54,7 @@ router.post('/withdraw/enhanced', userController.requestWithdrawalEnhanced);
 // GET /api/user/collaborators
 router.get('/collaborators', userController.getCollaborators);
 
+// GET /api/user/tasks
+router.get('/tasks', userController.getTasks);
+
 export default router;

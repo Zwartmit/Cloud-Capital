@@ -10,12 +10,12 @@ import { useAuthStore } from '../store/authStore';
 import { userService } from '../services/userService';
 import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
 import { User, Mail, Calendar, TrendingUp, Wallet } from 'lucide-react';
-import { TransactionDTO } from '@cloud-capital/shared';
 import { PasswordInput } from '../components/common/PasswordInput';
+import { NotificationCenter } from '../components/profile/NotificationCenter';
 
 export const ProfilePage: React.FC = () => {
     const { user, updateUser } = useAuthStore();
-    const [transactions, setTransactions] = useState<TransactionDTO[]>([]);
+    const [tasks, setTasks] = useState<any[]>([]);
     const [investmentPlan, setInvestmentPlan] = useState<InvestmentPlan | null>(null);
     const [loading, setLoading] = useState(true);
     const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -25,9 +25,9 @@ export const ProfilePage: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch transactions
-                const transactionsData = await userService.getTransactions();
-                setTransactions(transactionsData);
+                // Fetch user tasks
+                const tasksData = await userService.getUserTasks();
+                setTasks(tasksData);
 
                 // Fetch investment plan if user has one assigned
                 if (user?.investmentClass) {
@@ -294,70 +294,8 @@ export const ProfilePage: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Recent Transactions */}
-                            <div className="card p-4 sm:p-6 rounded-xl border border-secondary">
-                                <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">
-                                    Transacciones recientes
-                                </h3>
-
-                                {loading ? (
-                                    <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-gray-400">
-                                        Cargando transacciones...
-                                    </div>
-                                ) : transactions.length === 0 ? (
-                                    <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-gray-400">
-                                        No hay transacciones registradas
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2 sm:space-y-3">
-                                        {transactions.slice(0, 5).map((transaction) => {
-                                            const typeColors = {
-                                                DEPOSIT: 'text-accent',
-                                                WITHDRAWAL: 'text-red-400',
-                                                PROFIT: 'text-profit',
-                                                REINVEST: 'text-yellow-400',
-                                            };
-
-                                            const typeLabels = {
-                                                DEPOSIT: 'Depósito',
-                                                WITHDRAWAL: 'Retiro',
-                                                PROFIT: 'Ganancia',
-                                                REINVEST: 'Reinversión',
-                                            };
-
-                                            return (
-                                                <div
-                                                    key={transaction.id}
-                                                    className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-secondary border border-gray-700 hover:border-gray-600 transition"
-                                                >
-                                                    <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-                                                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${typeColors[transaction.type as keyof typeof typeColors] || 'bg-gray-400'}`} />
-                                                        <div className="min-w-0 flex-1">
-                                                            <p className="text-xs sm:text-sm font-semibold text-white truncate">
-                                                                {typeLabels[transaction.type as keyof typeof typeLabels] || transaction.type}
-                                                            </p>
-                                                            <p className="text-xs text-gray-500">
-                                                                {new Date(transaction.createdAt).toLocaleDateString('es-ES')}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right flex-shrink-0 ml-2">
-                                                        <p className={`text-xs sm:text-sm font-bold ${typeColors[transaction.type as keyof typeof typeColors] || 'text-white'}`}>
-                                                            {transaction.type === 'WITHDRAWAL' ? '-' : '+'}
-                                                            ${transaction.amountUSDT.toLocaleString()}
-                                                        </p>
-                                                        {transaction.amountBTC && (
-                                                            <p className="text-xs text-gray-500">
-                                                                {transaction.amountBTC} BTC
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
+                            {/* Notification Center */}
+                            <NotificationCenter tasks={tasks} loading={loading} />
                         </div>
                     </div>
                 </div>

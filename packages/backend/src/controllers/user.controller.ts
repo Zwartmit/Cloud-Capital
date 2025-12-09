@@ -256,3 +256,14 @@ export const getCollaborators = async (_req: Request, res: Response): Promise<vo
     res.status(500).json({ error: error.message });
   }
 };
+
+export const getTasks = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const tasks = await userService.getUserTasks(userId);
+    res.status(200).json(tasks);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+

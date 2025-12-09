@@ -387,3 +387,14 @@ export const getCollaborators = async () => {
 
   return collaborators;
 };
+
+export const getUserTasks = async (userId: string) => {
+  const tasks = await prisma.task.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    take: 20, // Limit to last 20 tasks
+  });
+
+  return tasks;
+};
+

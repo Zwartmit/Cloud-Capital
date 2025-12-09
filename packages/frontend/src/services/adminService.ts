@@ -81,7 +81,7 @@ export const adminService = {
   },
 
   async rejectTask(taskId: string, reason?: string): Promise<{ message: string; task: TaskDTO }> {
-    const response = await apiClient.put(`/admin/tasks/${taskId}/reject`, { reason });
+    const response = await apiClient.put(`/admin/tasks/${taskId}/reject`, { rejectionReason: reason });
     return response.data;
   },
 

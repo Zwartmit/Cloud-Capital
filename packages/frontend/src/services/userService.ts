@@ -66,5 +66,10 @@ export const userService = {
   async getReferralCommissions(): Promise<any[]> {
     const response = await apiClient.get<any[]>('/user/referral-commissions');
     return response.data;
+  },
+
+  async getUserTasks(): Promise<any[]> {
+    const response = await apiClient.get<any[]>('/user/tasks');
+    return response.data;
   }
 };

@@ -109,6 +109,7 @@ model Task {
   proof              String?    // URL to proof image
   
   approvedByAdmin    String?    // Email of admin who approved
+  rejectionReason    String?    // Reason for rejection if status is REJECTED
   
   // BTC Transaction Fields
   btcAddress         String?    // Dirección BTC origen/destino
