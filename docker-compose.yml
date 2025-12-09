@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  database:
+    image: mysql:8.0
+    container_name: cloud_capital_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-admin}
+      MYSQL_DATABASE: ${DB_NAME:-cloudcapital}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - cloud-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile
+    container_name: cloud_capital_backend
+    environment:
+      DATABASE_URL: mysql://root:${DB_PASSWORD:-admin}@database:3306/${DB_NAME:-cloudcapital}
+      JWT_SECRET: ${JWT_SECRET:-dev_secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_refresh_secret}
+      PORT: 3000
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "3000:3000"
+    depends_on:
+      - database
+    networks:
+      - cloud-network
+    restart: always
+
+  frontend:
+    build:
+      context: .
+      dockerfile: packages/frontend/Dockerfile
+      # Pass build arguments if needed
+      # args:
+      #   VITE_API_URL: http://localhost:3000
+    container_name: cloud_capital_frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - cloud-network
+
+networks:
+  cloud-network:
+    driver: bridge
+
+volumes:
+  db_data:

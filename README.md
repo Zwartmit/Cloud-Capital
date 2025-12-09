@@ -149,6 +149,28 @@ npm run build:frontend   # Build del frontend
 npm run build:backend    # Build del backend
 ```
 
+## 🐳 Despliegue con Docker
+
+El proyecto está completamente dockerizado para facilitar el desarrollo y despliegue.
+
+### Desarrollo con Docker Compose
+Para levantar todo el entorno (Frontend + Backend + MySQL):
+
+```bash
+docker-compose up --build
+```
+
+Esto iniciará:
+- **Frontend**: http://localhost:5173
+- **Backend**: http://localhost:3000
+- **Base de datos**: Puerto 3306
+
+### Configuración de Producción
+El archivo `docker-compose.yml` está listo para ser usado en plataformas como Railway, Render o cualquier VPS con Docker.
+
+Asegúrate de configurar las variables de entorno en tu plataforma de despliegue o en un archivo `.env` seguro.
+
+
 ## 🔐 Autenticación y Roles
 
 El sistema implementa autenticación basada en JWT con tres roles:
