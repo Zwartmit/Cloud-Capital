@@ -1,4 +1,4 @@
-import { Cloud, Crown, Activity, Server, Star, Gem, TrendingUp, LucideIcon } from 'lucide-react';
+import { Cloud, Crown, Activity, Server, Star, Gem, LucideIcon } from 'lucide-react';
 
 export const getPlanColor = (name: string): string => {
     if (!name) return 'text-gray-400';

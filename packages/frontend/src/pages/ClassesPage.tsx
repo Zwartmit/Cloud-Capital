@@ -3,7 +3,7 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { Search } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
-import { UserDTO } from '@cloud-capital/shared';
+
 import { getPlanColor, getPlanIcon } from '../utils/planStyles';
 import { ReferralsModal } from '../components/modals/ReferralsModal';
 

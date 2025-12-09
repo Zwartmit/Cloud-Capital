@@ -3,7 +3,7 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { useAuthStore } from '../store/authStore';
 import { userService } from '../services/userService';
 import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
-import { User, Mail, Shield, Calendar, TrendingUp, Wallet } from 'lucide-react';
+import { User, Mail, Calendar, TrendingUp, Wallet } from 'lucide-react';
 import { TransactionDTO } from '@cloud-capital/shared';
 import { PasswordInput } from '../components/common/PasswordInput';
 
@@ -46,17 +46,7 @@ export const ProfilePage: React.FC = () => {
         ? ((totalProfit / (user.capitalUSDT ?? 0)) * 100).toFixed(2)
         : '0.00';
 
-    const roleColors = {
-        USER: 'text-profit',
-        SUBADMIN: 'text-admin',
-        SUPERADMIN: 'text-pink-400',
-    };
 
-    const roleLabels = {
-        USER: 'Usuario',
-        SUBADMIN: 'Sub Administrador',
-        SUPERADMIN: 'Super Administrador',
-    };
 
     return (
         <div className="flex min-h-screen">

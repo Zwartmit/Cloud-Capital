@@ -22,7 +22,7 @@ interface WithdrawalRequest {
 
 interface ReinvestRequest {
     amountUSD: number;
-    btcAddress: string;
+    btcAddress?: string;
 }
 
 interface Collaborator {

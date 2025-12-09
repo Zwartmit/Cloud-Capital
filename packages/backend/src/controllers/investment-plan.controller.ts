@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { investmentPlanService } from '../services/investment-plan.service.js';
 
-export const getPlans = async (req: Request, res: Response) => {
+export const getPlans = async (_req: Request, res: Response) => {
   try {
     const plans = await investmentPlanService.getAllPlans();
     res.json(plans);

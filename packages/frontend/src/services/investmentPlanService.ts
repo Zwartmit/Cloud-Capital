@@ -10,6 +10,7 @@ export interface InvestmentPlan {
   monthlyCommission: number;
   referralCommissionRate: number; // Added field
   doublingTime: string;
+  description?: string;
 }
 
 export const investmentPlanService = {

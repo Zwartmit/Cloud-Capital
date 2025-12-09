@@ -138,7 +138,7 @@ export const resetUserPassword = async (req: Request, res: Response): Promise<vo
   }
 };
 
-export const getStats = async (req: Request, res: Response): Promise<void> => {
+export const getStats = async (_req: Request, res: Response): Promise<void> => {
   try {
     const stats = await adminService.getStats();
     res.status(200).json(stats);

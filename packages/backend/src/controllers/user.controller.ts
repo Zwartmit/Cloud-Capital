@@ -237,7 +237,7 @@ export const requestWithdrawalEnhanced = async (req: Request, res: Response): Pr
 };
 
 // Get collaborators list
-export const getCollaborators = async (req: Request, res: Response): Promise<void> => {
+export const getCollaborators = async (_req: Request, res: Response): Promise<void> => {
   try {
     const collaborators = await userService.getCollaborators();
     res.status(200).json(collaborators);
