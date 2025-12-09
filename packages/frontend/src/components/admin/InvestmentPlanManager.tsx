@@ -127,7 +127,7 @@ export const InvestmentPlanManager: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="card p-6 rounded-xl border-t-4 border-accent space-y-8">
             {/* Section Header */}
             <div className="p-6 bg-gray-800 rounded-xl border border-gray-700">
                 <h3 className="text-xl font-bold text-white mb-2">Configuración de planes de inversión</h3>
@@ -144,7 +144,7 @@ export const InvestmentPlanManager: React.FC = () => {
                 </div>
             )}
             {isSuperAdmin && (
-                <div className="card p-4 sm:p-6 rounded-xl border border-gray-700">
+                <div className="card-s p-4 sm:p-6 rounded-xl border border-gray-700">
                     <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">
                         {editingPlan ? 'Editar plan' : 'Crear nuevo plan de inversión'}
                     </h2>
@@ -259,7 +259,7 @@ export const InvestmentPlanManager: React.FC = () => {
                 {plans.map((plan) => (
                     <div
                         key={plan.id}
-                        className={`card p-4 sm:p-6 rounded-xl border border-gray-700 bg-gray-800/50 ${deletingPlanId === plan.id ? 'disintegrate' : ''
+                        className={`card-s p-4 sm:p-6 rounded-xl border border-gray-700 bg-gray-800/50 ${deletingPlanId === plan.id ? 'disintegrate' : ''
                             }`}
                     >
                         <div className="flex justify-between items-start mb-4">

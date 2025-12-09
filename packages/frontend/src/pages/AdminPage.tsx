@@ -39,9 +39,7 @@ export const AdminPage: React.FC = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [userToDelete, setUserToDelete] = useState<{ id: string, name: string } | null>(null);
 
-    // Password reset state
-    const [newPassword, setNewPassword] = useState('');
-    const [resetPasswordMessage, setResetPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
     const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
     const [isUserReferralsModalOpen, setIsUserReferralsModalOpen] = useState(false);
 
@@ -208,24 +206,7 @@ export const AdminPage: React.FC = () => {
         }
     };
 
-    // Reset user password
-    const handleResetPassword = async () => {
-        if (!selectedUser) return;
 
-        if (!newPassword || newPassword.length < 6) {
-            setResetPasswordMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
-            return;
-        }
-
-        try {
-            await adminService.resetUserPassword(selectedUser.id, newPassword);
-            setNewPassword('');
-            setResetPasswordMessage({ type: 'success', text: 'Contraseña restablecida exitosamente' });
-            setTimeout(() => setResetPasswordMessage(null), 5000);
-        } catch (err: any) {
-            setResetPasswordMessage({ type: 'error', text: err.response?.data?.error || 'Error al restablecer contraseña' });
-        }
-    };
 
     // Load users when tab changes to users or pagination changes
     useEffect(() => {
@@ -322,7 +303,7 @@ export const AdminPage: React.FC = () => {
                     {activeTab === 'tasks' && <TaskManager onTaskProcessed={fetchStats} />}
 
                     {activeTab === 'users' && (
-                        <>
+                        <div className="card p-6 rounded-xl border-t-4 border-blue-500">
                             {/* Section Header */}
                             <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700">
                                 <h3 className="text-xl font-bold text-white mb-2">Gestión de usuarios</h3>
@@ -334,7 +315,7 @@ export const AdminPage: React.FC = () => {
 
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                                 {/* Search Card */}
-                                <div className="lg:col-span-1 card p-6 rounded-xl border-t-4 border-accent relative">
+                                <div className="lg:col-span-1 card-s p-6 rounded-xl border-t-4 border-accent relative">
                                     <h3 className="text-xl font-bold mb-4 text-white">1. Buscar usuario</h3>
                                     <div className="relative">
                                         <input
@@ -375,7 +356,7 @@ export const AdminPage: React.FC = () => {
                                 </div>
 
                                 {/* User Info Card */}
-                                <div className="lg:col-span-2 card p-4 sm:p-6 rounded-xl border-t-4 border-profit">
+                                <div className="lg:col-span-2 card-s p-4 sm:p-6 rounded-xl border-t-4 border-profit">
                                     <h3 className="text-lg sm:text-xl font-bold mb-4 text-white">
                                         2. Información del usuario
                                     </h3>
@@ -480,34 +461,7 @@ export const AdminPage: React.FC = () => {
                                                 )}
                                             </div>
 
-                                            {/* Password Reset Section */}
-                                            <div className="border-t border-gray-700 pt-4">
-                                                <h4 className="text-sm font-bold text-white mb-3">
-                                                    Restablecer contraseña
-                                                </h4>
-                                                <div className="flex flex-col sm:flex-row gap-2">
-                                                    <div className="w-full sm:flex-grow">
-                                                        <PasswordInput
-                                                            name="newPassword"
-                                                            placeholder="Nueva contraseña (mín. 6 caracteres)"
-                                                            value={newPassword}
-                                                            onChange={(e) => setNewPassword(e.target.value)}
-                                                            className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm"
-                                                        />
-                                                    </div>
-                                                    <button
-                                                        onClick={handleResetPassword}
-                                                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg text-sm"
-                                                    >
-                                                        Resetear
-                                                    </button>
-                                                </div>
-                                                {resetPasswordMessage && (
-                                                    <div className={`mt-2 p-2 rounded text-sm ${resetPasswordMessage.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                                                        {resetPasswordMessage.text}
-                                                    </div>
-                                                )}
-                                            </div>
+
                                         </div>
                                     ) : (
                                         <div className="text-center text-gray-500 py-8">
@@ -518,7 +472,7 @@ export const AdminPage: React.FC = () => {
                             </div>
 
                             {/* User List Section */}
-                            <div className="card p-4 sm:p-6 rounded-xl border-t-4 border-accent mb-8">
+                            <div className="card-s p-4 sm:p-6 rounded-xl border-t-4 border-accent mb-8">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
                                     <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
                                         <Users className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
@@ -629,8 +583,7 @@ export const AdminPage: React.FC = () => {
                                     </>
                                 )}
                             </div>
-
-                        </>
+                        </div>
                     )}
 
                     {activeTab === 'plans' && <InvestmentPlanManager />}
@@ -641,7 +594,7 @@ export const AdminPage: React.FC = () => {
 
                     {activeTab === 'profile' && (
                         // Profile Tab
-                        <div className="space-y-6">
+                        <div className="card p-6 rounded-xl border-t-4 border-purple-500 space-y-6">
                             {/* Section Header */}
                             <div className="p-6 bg-gray-800 rounded-xl border border-gray-700">
                                 <h3 className="text-xl font-bold text-white mb-2">Perfil de administrador</h3>
@@ -651,7 +604,7 @@ export const AdminPage: React.FC = () => {
                                 </p>
                             </div>
 
-                            <div className="card p-8 rounded-xl border-t-4 border-accent">
+                            <div className="card-s p-8 rounded-xl border-t-4 border-accent">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <p className="text-sm text-gray-400 mb-1">Nombre</p>
@@ -688,9 +641,9 @@ export const AdminPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Change Password Section */}
-                                <div className="card p-8 rounded-xl border-t-4 border-accent mt-6">
-                                    <h3 className="text-xl font-bold text-white mb-4">Cambiar contraseña</h3>
+                                {/* Change Password Section - Simplified UI */}
+                                <div className="mt-8 pt-6 border-t border-gray-700">
+                                    <h3 className="text-xl font-bold text-white mb-6">Cambiar contraseña</h3>
                                     <form onSubmit={async (e) => {
                                         e.preventDefault();
                                         const form = e.currentTarget;
@@ -717,7 +670,7 @@ export const AdminPage: React.FC = () => {
                                         } catch (error: any) {
                                             setPasswordMessage({ type: 'error', text: error.response?.data?.error || 'Error al cambiar la contraseña' });
                                         }
-                                    }} className="space-y-2">
+                                    }} className="max-w-xl space-y-4">
                                         <div>
                                             <label className="block text-sm text-gray-400 mb-2">Contraseña actual</label>
                                             <PasswordInput
@@ -745,15 +698,17 @@ export const AdminPage: React.FC = () => {
                                                 className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
                                             />
                                         </div>
-                                        <button
-                                            type="submit"
-                                            className="bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
-                                        >
-                                            Cambiar contraseña
-                                        </button>
+                                        <div className="pt-2 flex justify-center sm:justify-start">
+                                            <button
+                                                type="submit"
+                                                className="bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                                            >
+                                                Cambiar contraseña
+                                            </button>
+                                        </div>
                                     </form>
                                     {passwordMessage && (
-                                        <div className={`mt-4 p-3 rounded-lg text-sm ${passwordMessage.type === 'success'
+                                        <div className={`mt-4 p-3 rounded-lg text-sm max-w-xl ${passwordMessage.type === 'success'
                                             ? 'bg-green-500/10 border border-green-500/20 text-green-500'
                                             : 'bg-red-500/10 border border-red-500/20 text-red-500'
                                             }`}>
@@ -761,14 +716,16 @@ export const AdminPage: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
+
+
                             </div>
                         </div>
                     )}
                 </div>
-            </main>
+            </main >
 
             {/* Delete Confirmation Modal */}
-            <ConfirmModal
+            < ConfirmModal
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={confirmDeleteUser}
@@ -783,13 +740,15 @@ export const AdminPage: React.FC = () => {
                 onClose={() => setIsReferralsModalOpen(false)}
             />
             {/* User Referrals Modal (Admin view) */}
-            {selectedUser && (
-                <ReferralsModal
-                    isOpen={isUserReferralsModalOpen}
-                    onClose={() => setIsUserReferralsModalOpen(false)}
-                    userId={selectedUser.id}
-                />
-            )}
-        </div>
+            {
+                selectedUser && (
+                    <ReferralsModal
+                        isOpen={isUserReferralsModalOpen}
+                        onClose={() => setIsUserReferralsModalOpen(false)}
+                        userId={selectedUser.id}
+                    />
+                )
+            }
+        </div >
     );
 };

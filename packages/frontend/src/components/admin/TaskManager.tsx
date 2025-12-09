@@ -205,9 +205,9 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     );
 
     return (
-        <div className="space-y-6">
+        <div className="card p-6 rounded-xl border-t-4 border-gray-700">
             {/* Section Header */}
-            <div className="p-6 bg-gray-800 rounded-xl border border-gray-700">
+            <div className="p-6 bg-gray-800 rounded-xl border border-gray-700 mb-6">
                 <h3 className="text-xl font-bold text-white mb-2">Centro de tareas</h3>
                 <p className="text-gray-400">
                     Administra las solicitudes de depósito y retiro de los usuarios. Revisa los comprobantes de pago, verifica los montos
@@ -216,7 +216,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
             </div>
 
             {/* Tabs */}
-            <div className="flex space-x-4 border-b border-gray-700">
+            <div className="flex space-x-4 border-b mb-4 border-gray-700">
                 <button
                     onClick={() => setActiveTab('pending')}
                     className={`pb-3 px-4 font-bold transition-colors ${activeTab === 'pending'
@@ -241,7 +241,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
 
             {/* Filters (Only for History) */}
             {activeTab === 'history' && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 mt-6">
                     <div className="md:col-span-1">
                         <input
                             type="text"

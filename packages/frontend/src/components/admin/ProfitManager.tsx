@@ -72,7 +72,6 @@ export const ProfitManager: React.FC = () => {
                     if (r.processed) isProcessed = true;
                 });
             }
-
             setRates(newRates);
             setProcessedStatus(isProcessed);
         } catch (error) {
@@ -150,9 +149,7 @@ export const ProfitManager: React.FC = () => {
                 </p>
             </div>
 
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center">
-                Control de rentabilidad diaria
-            </h3>
+
 
             {/* Date Selection */}
             <div className="mb-8">
@@ -216,7 +213,7 @@ export const ProfitManager: React.FC = () => {
             )}
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-4 border-t border-gray-700 pt-6">
+            <div className="flex flex-col items-center sm:flex-row gap-4 border-t border-gray-700 pt-6">
                 <button
                     onClick={handleSave}
                     disabled={loading || processedStatus}
@@ -230,7 +227,7 @@ export const ProfitManager: React.FC = () => {
                     <button
                         onClick={handleProcess}
                         disabled={processing}
-                        className="flex items-center justify-center px-6 py-3 bg-profit hover:bg-emerald-400 text-black font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+                        className="flex items-center justify-center px-6 py-3 bg-profit hover:bg-emerald-400 text-black font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed sm:ml-auto"
                     >
                         <Play className="w-5 h-5 mr-2" />
                         {processing ? 'Procesando...' : 'Procesar pagos ahora'}
