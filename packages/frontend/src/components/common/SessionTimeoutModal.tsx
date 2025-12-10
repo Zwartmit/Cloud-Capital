@@ -27,8 +27,10 @@ export const SessionTimeoutModal: React.FC<SessionTimeoutModalProps> = ({
             setSeconds((prev) => {
                 if (prev <= 1) {
                     clearInterval(interval);
-                    // Auto-close and logout when countdown reaches 0
-                    onClose();
+                    // Defer the onClose call to avoid updating parent state during render
+                    setTimeout(() => {
+                        onClose();
+                    }, 0);
                     return 0;
                 }
                 return prev - 1;
