@@ -35,6 +35,10 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'REJECTED'>('ALL');
     const [typeFilter, setTypeFilter] = useState<'ALL' | 'DEPOSIT' | 'WITHDRAWAL'>('ALL');
 
+    // Date filters
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
+
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -42,7 +46,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     // Reset page when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, statusFilter, typeFilter, activeTab]);
+    }, [searchTerm, statusFilter, typeFilter, dateFrom, dateTo, activeTab]);
 
     useEffect(() => {
         loadTasks();
@@ -102,7 +106,12 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                 (typeFilter === 'DEPOSIT' && task.type.includes('DEPOSIT')) ||
                 (typeFilter === 'WITHDRAWAL' && task.type === 'WITHDRAWAL');
 
-            return matchesSearch && matchesStatus && matchesType;
+            // Date filter
+            const taskDate = new Date(task.createdAt);
+            const matchesDateFrom = !dateFrom || taskDate >= new Date(dateFrom);
+            const matchesDateTo = !dateTo || taskDate <= new Date(dateTo + 'T23:59:59');
+
+            return matchesSearch && matchesStatus && matchesType && matchesDateFrom && matchesDateTo;
         }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     };
 
@@ -300,53 +309,96 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
 
             {/* Filters */}
             {(activeTab === 'pending' || activeTab === 'preapproved' || activeTab === 'history') && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 mt-6">
-                    <div className="md:col-span-1">
-                        <input
-                            type="text"
-                            placeholder="Buscar por nombre, email o referencia..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
-                        />
-                    </div>
-                    {activeTab === 'history' && (
-                        <div>
+                <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 mt-6 space-y-4">
+                    {/* First row: Search, Status (history only), Type, Items per page */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="md:col-span-1">
+                            <input
+                                type="text"
+                                placeholder="Buscar por nombre, email o referencia..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
+                            />
+                        </div>
+                        {activeTab === 'history' && (
+                            <div>
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                                    className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
+                                >
+                                    <option value="ALL">Todos los estados</option>
+                                    <option value="COMPLETED">Completados</option>
+                                    <option value="REJECTED">Rechazados</option>
+                                </select>
+                            </div>
+                        )}
+                        <div className={activeTab === 'history' ? '' : 'md:col-span-2'}>
                             <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value as any)}
+                                value={typeFilter}
+                                onChange={(e) => setTypeFilter(e.target.value as any)}
                                 className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
                             >
-                                <option value="ALL">Todos los estados</option>
-                                <option value="COMPLETED">Completados</option>
-                                <option value="REJECTED">Rechazados</option>
+                                <option value="ALL">Todos los tipos</option>
+                                <option value="DEPOSIT">Depósitos</option>
+                                <option value="WITHDRAWAL">Retiros</option>
                             </select>
                         </div>
+                        {/* Items per page selector */}
+                        <div>
+                            <select
+                                value={itemsPerPage}
+                                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                                className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
+                            >
+                                <option value={10}>10 por página</option>
+                                <option value={25}>25 por página</option>
+                                <option value={50}>50 por página</option>
+                                <option value={100}>100 por página</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Second row: Date filters */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs text-gray-400 mb-1.5">Desde</label>
+                            <input
+                                type="date"
+                                value={dateFrom}
+                                onChange={(e) => setDateFrom(e.target.value)}
+                                className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs text-gray-400 mb-1.5">Hasta</label>
+                            <input
+                                type="date"
+                                value={dateTo}
+                                onChange={(e) => setDateTo(e.target.value)}
+                                className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Clear filters button */}
+                    {(searchTerm || statusFilter !== 'ALL' || typeFilter !== 'ALL' || dateFrom || dateTo) && (
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setStatusFilter('ALL');
+                                    setTypeFilter('ALL');
+                                    setDateFrom('');
+                                    setDateTo('');
+                                }}
+                                className="text-sm text-gray-400 hover:text-white transition-colors"
+                            >
+                                Limpiar filtros
+                            </button>
+                        </div>
                     )}
-                    <div className={activeTab === 'history' ? '' : 'md:col-span-2'}>
-                        <select
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value as any)}
-                            className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
-                        >
-                            <option value="ALL">Todos los tipos</option>
-                            <option value="DEPOSIT">Depósitos</option>
-                            <option value="WITHDRAWAL">Retiros</option>
-                        </select>
-                    </div>
-                    {/* Items per page selector */}
-                    <div>
-                        <select
-                            value={itemsPerPage}
-                            onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                            className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
-                        >
-                            <option value={10}>10 por página</option>
-                            <option value={25}>25 por página</option>
-                            <option value={50}>50 por página</option>
-                            <option value={100}>100 por página</option>
-                        </select>
-                    </div>
                 </div>
             )}
 

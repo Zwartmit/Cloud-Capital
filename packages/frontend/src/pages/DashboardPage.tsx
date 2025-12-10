@@ -200,7 +200,7 @@ export const DashboardPage: React.FC = () => {
                             Cargando transacciones...
                         </div>
                     ) : (
-                        <TransactionTable transactions={transactions} />
+                        <TransactionTable transactions={transactions} btcPrice={btcPrice} />
                     )}
                 </div>
             </main>

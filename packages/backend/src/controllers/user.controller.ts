@@ -209,16 +209,6 @@ export const requestWithdrawalEnhanced = async (req: Request, res: Response): Pr
     const userId = req.user!.userId;
     const { amountUSDT, btcAddress, destinationType, destinationUserId } = req.body;
 
-    // Debug logging
-    console.log('Withdrawal request received:', {
-      userId,
-      amountUSDT,
-      btcAddress,
-      destinationType,
-      destinationUserId,
-      fullBody: req.body
-    });
-
     if (!amountUSDT || amountUSDT <= 0) {
       res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
       return;
@@ -284,3 +274,14 @@ export const changeInvestmentPlan = async (req: Request, res: Response): Promise
   }
 };
 
+export const getRecentActivity = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    // Import admin service to use getRecentTransactions
+    const adminService = await import('../services/admin.service.js');
+    const transactions = await adminService.getRecentTransactions(limit);
+    res.status(200).json(transactions);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

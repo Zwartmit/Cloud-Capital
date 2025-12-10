@@ -148,3 +148,13 @@ export const getStats = async (_req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const getRecentActivity = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const transactions = await adminService.getRecentTransactions(limit);
+    res.status(200).json(transactions);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

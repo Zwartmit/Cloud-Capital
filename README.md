@@ -4,7 +4,7 @@ Plataforma moderna de inversión en criptomonedas.
 
 ## 📊 Estado del Proyecto
 
-**Progreso General**: 92% completado
+**Progreso General**: 95% completado
 
 - ✅ **Fase 1**: Monorepo Setup - COMPLETADA
 - ✅ **Fase 2**: Frontend Implementation - COMPLETADA
@@ -12,7 +12,7 @@ Plataforma moderna de inversión en criptomonedas.
 - ✅ **Fase 4**: Database Setup (MySQL) - COMPLETADA
 - ⏳ **Fase 5**: Configuration, Integration, Testing & Deployment - EN PROGRESO
 
-**Último Update**: 2025-12-09
+**Último Update**: 2025-12-10
 
 > 💡 **Nota**: El sistema está funcional con autenticación completa, gestión de planes de inversión, dashboard interactivo, panel administrativo avanzado, sistema de depósitos/retiros/reinversión con BTC, y gestión de colaboradores.
 
@@ -112,8 +112,10 @@ Aplicación React con Vite y diseño responsive moderno.
 - **Admin Panel Avanzado**: 
   - Gestión de usuarios con perfiles detallados
   - Administración de planes de inversión
-  - Sistema de aprobación de tareas (depósitos/retiros)
+  - Sistema de aprobación de tareas (`TaskManager`) con filtros, búsqueda y paginación
+  - Tabla de transacciones mejorada con búsqueda, filtros por tipo/estado, rango de fechas y conversión BTC
   - Gestión de ganancias (`ProfitManager`)
+  - Gestión de direcciones BTC para colaboradores y admins
   - UI optimizada para mobile y tablet
 
 **Puerto**: 5173 (desarrollo)
@@ -193,6 +195,10 @@ El proyecto incluye **phpMyAdmin** para gestionar la base de datos visualmente.
 El archivo `docker-compose.yml` está listo para ser usado en plataformas como Railway, Render o cualquier VPS con Docker.
 
 Asegúrate de configurar las variables de entorno en tu plataforma de despliegue o en un archivo `.env` seguro.
+
+## 📚 Documentación Adicional
+
+- [Wallet Management Strategy](./wallet_management.md) - Estrategia completa de gestión de wallets (custodial/no-custodial/híbrido) con detalles de arquitectura, flujos de transacciones y esquema de base de datos.
 
 
 ## 🔐 Autenticación y Roles

@@ -61,8 +61,6 @@ export const AdminPage: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // ... (rest of the file until render)
-
     // Inside render:
     // {activeTab === 'tasks' && <TaskManager onTaskProcessed={fetchStats} />}
 
@@ -171,11 +169,6 @@ export const AdminPage: React.FC = () => {
             loadAllUsers();
         }
     }, [activeTab, usersPage, usersLimit]);
-
-    // Helper to refresh stats when necessary (e.g. after a task is processed)
-    // We can pass this down or just rely on the interval/refresh trigger
-
-    // ... rest of the code ...
 
     return (
         <div className="flex min-h-screen">

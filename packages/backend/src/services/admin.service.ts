@@ -426,3 +426,22 @@ export const getStats = async () => {
     pendingTasks
   };
 };
+
+export const getRecentTransactions = async (limit: number = 10) => {
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      status: 'COMPLETED'
+    },
+    include: {
+      user: {
+        select: {
+          username: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+    take: limit
+  });
+  
+  return transactions;
+};

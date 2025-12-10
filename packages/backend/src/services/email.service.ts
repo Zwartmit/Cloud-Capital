@@ -76,7 +76,7 @@ export const sendPasswordResetEmail = async (email: string, resetToken: string) 
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Password reset email sent to: ${email}`);
+    // Email sent successfully (removed email logging for security)
   } catch (error) {
     console.error('❌ Error sending email:', error);
     throw new Error('Failed to send password reset email');
@@ -134,7 +134,7 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Welcome email sent to: ${email}`);
+    // Welcome email sent successfully (removed email logging for security)
   } catch (error) {
     console.error('❌ Error sending welcome email:', error);
     // Don't throw error for welcome email, it's not critical

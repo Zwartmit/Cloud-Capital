@@ -60,4 +60,7 @@ router.get('/tasks', userController.getTasks);
 // PUT /api/user/investment-plan
 router.put('/investment-plan', userController.changeInvestmentPlan);
 
+// GET /api/user/recent-activity
+router.get('/recent-activity', userController.getRecentActivity);
+
 export default router;

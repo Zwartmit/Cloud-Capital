@@ -45,4 +45,7 @@ router.put('/users/:id/reset-password', adminController.resetUserPassword);
 // GET /api/admin/stats
 router.get('/stats', adminController.getStats);
 
+// GET /api/admin/recent-activity
+router.get('/recent-activity', adminController.getRecentActivity);
+
 export default router;

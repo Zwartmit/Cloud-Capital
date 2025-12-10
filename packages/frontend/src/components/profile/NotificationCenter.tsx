@@ -20,13 +20,18 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'REJECTED' | 'PENDING'>('ALL');
     const [typeFilter, setTypeFilter] = useState<'ALL' | 'DEPOSIT' | 'WITHDRAWAL'>('ALL');
+
+    // Date filters
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
     // Reset page when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, statusFilter, typeFilter]);
+    }, [searchTerm, statusFilter, typeFilter, dateFrom, dateTo]);
 
     const getTaskIcon = (status: string) => {
         switch (status) {
@@ -118,9 +123,14 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
                 (typeFilter === 'DEPOSIT' && task.type.includes('DEPOSIT')) ||
                 (typeFilter === 'WITHDRAWAL' && task.type === 'WITHDRAWAL');
 
-            return matchesSearch && matchesStatus && matchesType;
+            // Date filter
+            const taskDate = new Date(task.createdAt);
+            const matchesDateFrom = !dateFrom || taskDate >= new Date(dateFrom);
+            const matchesDateTo = !dateTo || taskDate <= new Date(dateTo + 'T23:59:59');
+
+            return matchesSearch && matchesStatus && matchesType && matchesDateFrom && matchesDateTo;
         });
-    }, [tasks, searchTerm, statusFilter, typeFilter]);
+    }, [tasks, searchTerm, statusFilter, typeFilter, dateFrom, dateTo]);
 
     // Pagination logic
     const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
@@ -139,55 +149,98 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
             </div>
 
             {/* Filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-                {/* Search */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
-                    <input
-                        type="text"
-                        placeholder="Buscar..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
-                    />
+            <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-4 space-y-4">
+                {/* First row: Search, Status, Type, Items per page */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {/* Search */}
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
+                        />
+                    </div>
+
+                    {/* Status Filter */}
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as any)}
+                        className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
+                    >
+                        <option value="ALL">Estado: Todos</option>
+                        <option value="PENDING">Pendientes</option>
+                        <option value="COMPLETED">Aprobadas</option>
+                        <option value="REJECTED">Rechazadas</option>
+                    </select>
+
+                    {/* Type Filter */}
+                    <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value as any)}
+                        className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
+                    >
+                        <option value="ALL">Tipo: Todos</option>
+                        <option value="DEPOSIT">Depósitos</option>
+                        <option value="WITHDRAWAL">Retiros</option>
+                    </select>
+
+                    {/* Items per page */}
+                    <select
+                        value={itemsPerPage}
+                        onChange={(e) => {
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                        }}
+                        className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
+                    >
+                        <option value={10}>10 por página</option>
+                        <option value={25}>25 por página</option>
+                        <option value={50}>50 por página</option>
+                    </select>
                 </div>
 
-                {/* Status Filter */}
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
-                >
-                    <option value="ALL">Estado: Todos</option>
-                    <option value="PENDING">Pendientes</option>
-                    <option value="COMPLETED">Aprobadas</option>
-                    <option value="REJECTED">Rechazadas</option>
-                </select>
+                {/* Second row: Date filters */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Desde</label>
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Hasta</label>
+                        <input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
+                        />
+                    </div>
+                </div>
 
-                {/* Type Filter */}
-                <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
-                >
-                    <option value="ALL">Tipo: Todos</option>
-                    <option value="DEPOSIT">Depósitos</option>
-                    <option value="WITHDRAWAL">Retiros</option>
-                </select>
-
-                {/* Items per page */}
-                <select
-                    value={itemsPerPage}
-                    onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                    }}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
-                >
-                    <option value={10}>10 por página</option>
-                    <option value={25}>25 por página</option>
-                    <option value={50}>50 por página</option>
-                </select>
+                {/* Clear filters button */}
+                {(searchTerm || statusFilter !== 'ALL' || typeFilter !== 'ALL' || dateFrom || dateTo) && (
+                    <div className="flex justify-end">
+                        <button
+                            onClick={() => {
+                                setSearchTerm('');
+                                setStatusFilter('ALL');
+                                setTypeFilter('ALL');
+                                setDateFrom('');
+                                setDateTo('');
+                            }}
+                            className="text-sm text-gray-400 hover:text-white transition-colors"
+                        >
+                            Limpiar filtros
+                        </button>
+                    </div>
+                )}
             </div>
 
             {loading ? (
