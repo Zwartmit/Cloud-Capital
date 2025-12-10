@@ -157,7 +157,7 @@ El proyecto está completamente dockerizado para facilitar el desarrollo y despl
 Para levantar todo el entorno (Frontend + Backend + MySQL + phpMyAdmin) ejecutar:
 
 ```bash
-docker-compose up --build
+docker-compose up --build -d
 ```
 
 Esto iniciará:
