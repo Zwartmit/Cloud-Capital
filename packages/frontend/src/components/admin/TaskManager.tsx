@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import { TaskDTO } from '@cloud-capital/shared';
-import { Check, X, Eye, Clock, ListChecks, Download, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, X, Eye, Clock, ListChecks, Download, ExternalLink, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { formatUSDT } from '../../utils/formatters';
 import { Modal } from '../common/Modal';
+import { useAuthStore } from '../../store/authStore';
 
 interface TaskManagerProps {
     onTaskProcessed?: () => void;
 }
 
 export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => {
-    const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
+    const { user } = useAuthStore();
+    const [activeTab, setActiveTab] = useState<'pending' | 'preapproved' | 'history'>('pending');
     const [tasks, setTasks] = useState<TaskDTO[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -49,14 +51,26 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
         setLoading(true);
         setError('');
         try {
-            const fetchedTasks = await adminService.getAllTasks(activeTab === 'pending' ? 'PENDING' : undefined);
-
+            let fetchedTasks;
             if (activeTab === 'pending') {
-                setTasks(fetchedTasks);
+                fetchedTasks = await adminService.getAllTasks('PENDING');
+            } else if (activeTab === 'preapproved') {
+                // Fetch both PRE_APPROVED and PRE_REJECTED tasks
+                const preApproved = await adminService.getAllTasks('PRE_APPROVED');
+                const preRejected = await adminService.getAllTasks('PRE_REJECTED');
+                fetchedTasks = [...preApproved, ...preRejected].sort((a, b) =>
+                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                );
             } else {
-                // Filter out pending for history view
-                setTasks(fetchedTasks.filter(t => t.status !== 'PENDING'));
+                // History: all tasks except PENDING, PRE_APPROVED, and PRE_REJECTED
+                fetchedTasks = await adminService.getAllTasks();
+                fetchedTasks = fetchedTasks.filter(t =>
+                    t.status !== 'PENDING' &&
+                    t.status !== 'PRE_APPROVED' &&
+                    t.status !== 'PRE_REJECTED'
+                );
             }
+            setTasks(fetchedTasks);
         } catch (err) {
             console.error('Error loading tasks:', err);
             setError('Error al cargar las tareas');
@@ -228,6 +242,16 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                     Pendientes
                 </button>
                 <button
+                    onClick={() => setActiveTab('preapproved')}
+                    className={`pb-3 px-4 font-bold transition-colors ${activeTab === 'preapproved'
+                        ? 'text-yellow-400 border-b-2 border-yellow-400'
+                        : 'text-gray-400 hover:text-white'
+                        }`}
+                >
+                    <AlertCircle className="w-4 h-4 inline mr-2" />
+                    Pre-aprobadas
+                </button>
+                <button
                     onClick={() => setActiveTab('history')}
                     className={`pb-3 px-4 font-bold transition-colors ${activeTab === 'history'
                         ? 'text-accent border-b-2 border-accent'
@@ -296,7 +320,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                 <div className="text-center py-12 text-red-500">{error}</div>
             ) : filteredTasks.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                    No hay tareas {activeTab === 'pending' ? 'pendientes' : 'que coincidan con los filtros'}
+                    No hay tareas {activeTab === 'pending' ? 'pendientes' : activeTab === 'preapproved' ? 'pre-aprobadas o pre-rechazadas' : 'que coincidan con los filtros'}
                 </div>
             ) : (
                 <>
@@ -313,15 +337,21 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                         <span className="text-gray-500 text-sm hidden sm:inline">•</span>
                                         <span className="text-white font-bold whitespace-nowrap">{formatUSDT(task.amountUSD)}</span>
                                         <span className={`text-xs px-2 py-0.5 rounded border whitespace-nowrap ${task.status === 'PENDING' ? 'border-yellow-500 text-yellow-500 bg-yellow-500/10' :
-                                            task.status === 'COMPLETED' ? 'border-green-500 text-green-500 bg-green-500/10' :
-                                                'border-red-500 text-red-500 bg-red-500/10'
+                                            task.status === 'PRE_APPROVED' ? 'border-orange-500 text-orange-500 bg-orange-500/10' :
+                                                task.status === 'COMPLETED' ? 'border-green-500 text-green-500 bg-green-500/10' :
+                                                    'border-red-500 text-red-500 bg-red-500/10'
                                             }`}>
-                                            {task.status}
+                                            {task.status === 'PRE_APPROVED' ? 'PRE-APROBADA' : task.status}
                                         </span>
                                     </div>
                                     <div className="text-sm text-gray-400">
                                         <span className="text-gray-300 font-medium">{task.user?.name}</span> ({task.user?.email})
                                     </div>
+                                    {activeTab === 'preapproved' && task.approvedByAdmin && (
+                                        <div className="text-xs text-orange-400 mt-1">
+                                            Pre-aprobada por: {task.approvedByAdmin}
+                                        </div>
+                                    )}
                                     <div className="text-xs text-gray-500 mt-1">
                                         Ref: {task.reference || 'N/A'} • {new Date(task.createdAt).toLocaleString()}
                                     </div>
@@ -342,7 +372,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                         </button>
                                     )}
 
-                                    {activeTab === 'pending' && (
+                                    {(activeTab === 'pending' || activeTab === 'preapproved') && (
                                         <>
                                             {actionStatus[task.id] === 'APPROVED' ? (
                                                 <div className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500/20 text-green-500 font-bold rounded-lg animate-pulse w-full sm:w-auto">
@@ -352,6 +382,30 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                                 <div className="flex items-center justify-center gap-2 px-4 py-2 bg-red-500/20 text-red-500 font-bold rounded-lg animate-pulse w-full sm:w-auto">
                                                     <X className="w-5 h-5" /> Tarea rechazada
                                                 </div>
+                                            ) : activeTab === 'preapproved' && user?.role !== 'SUPERADMIN' ? (
+                                                <div className="text-xs text-gray-500 italic px-4 py-2 bg-gray-700/50 rounded-lg w-full sm:w-auto text-center">
+                                                    Solo SUPERADMIN puede tomar decisión final
+                                                </div>
+                                            ) : task.status === 'PRE_REJECTED' && user?.role === 'SUPERADMIN' ? (
+                                                // PRE_REJECTED: SUPERADMIN can confirm rejection or override to approve
+                                                <>
+                                                    <button
+                                                        onClick={() => handleApprove(task.id)}
+                                                        disabled={processingId === task.id}
+                                                        className="px-3 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs sm:text-sm font-bold rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                        title="Aprobar de todas formas"
+                                                    >
+                                                        <Check className="w-4 h-4" /> Aprobar override
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openRejectModal(task.id)}
+                                                        disabled={processingId === task.id}
+                                                        className="px-3 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs sm:text-sm font-bold rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                        title="Confirmar rechazo"
+                                                    >
+                                                        <X className="w-4 h-4" /> Confirmar rechazo
+                                                    </button>
+                                                </>
                                             ) : (
                                                 <>
                                                     <button

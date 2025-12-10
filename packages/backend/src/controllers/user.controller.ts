@@ -267,3 +267,20 @@ export const getTasks = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+export const changeInvestmentPlan = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { planName } = req.body;
+
+    if (!planName) {
+      res.status(400).json({ error: 'El nombre del plan es requerido' });
+      return;
+    }
+
+    const user = await userService.changeInvestmentPlan(userId, planName);
+    res.status(200).json(user);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+

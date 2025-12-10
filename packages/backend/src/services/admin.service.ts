@@ -311,7 +311,7 @@ export const approveTask = async (taskId: string, adminEmail: string, adminRole:
   return updatedTask;
 };
 
-export const rejectTask = async (taskId: string, adminEmail: string, rejectionReason?: string) => {
+export const rejectTask = async (taskId: string, adminEmail: string, adminRole: string, rejectionReason?: string) => {
   const task = await prisma.task.findUnique({
     where: { id: taskId }
   });
@@ -324,10 +324,14 @@ export const rejectTask = async (taskId: string, adminEmail: string, rejectionRe
     throw new Error('Task already processed');
   }
 
+  // If subadmin, set to PRE_REJECTED
+  // If superadmin, set to final REJECTED
+  const newStatus = adminRole === 'SUPERADMIN' ? 'REJECTED' : 'PRE_REJECTED';
+
   const updatedTask = await prisma.task.update({
     where: { id: taskId },
     data: {
-      status: 'REJECTED',
+      status: newStatus,
       approvedByAdmin: adminEmail,
       rejectionReason: rejectionReason || 'No se especificó motivo',
     }
@@ -413,7 +417,7 @@ export const getStats = async () => {
   const pendingTasks = await prisma.task.count({
     where: {
       status: {
-        in: ['PENDING', 'PRE_APPROVED']
+        in: ['PENDING', 'PRE_APPROVED', 'PRE_REJECTED']
       }
     }
   });

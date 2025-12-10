@@ -32,4 +32,9 @@ export const investmentPlanService = {
   async deletePlan(id: string): Promise<void> {
     await apiClient.delete(`/investment-plans/${id}`);
   },
+
+  async changeInvestmentPlan(planName: string): Promise<any> {
+    const response = await apiClient.put('/user/investment-plan', { planName });
+    return response.data;
+  },
 };

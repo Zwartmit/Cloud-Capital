@@ -93,9 +93,10 @@ export const rejectTask = async (req: Request, res: Response): Promise<void> => 
   try {
     const { id } = req.params;
     const adminEmail = req.user!.email;
+    const adminRole = req.user!.role;
     const { rejectionReason } = req.body;
 
-    const task = await adminService.rejectTask(id, adminEmail, rejectionReason);
+    const task = await adminService.rejectTask(id, adminEmail, adminRole, rejectionReason);
     res.status(200).json(task);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

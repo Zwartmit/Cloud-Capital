@@ -398,3 +398,78 @@ export const getUserTasks = async (userId: string) => {
   return tasks;
 };
 
+export const changeInvestmentPlan = async (userId: string, planName: string) => {
+  // Get user with referral count
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      _count: {
+        select: { referrals: true }
+      }
+    }
+  });
+
+  if (!user) {
+    throw new Error('Usuario no encontrado');
+  }
+
+  // Get the target plan
+  const plan = await prisma.investmentPlan.findFirst({
+    where: { name: planName }
+  });
+
+  if (!plan) {
+    throw new Error('Plan de inversión no encontrado');
+  }
+
+  // Check if user already has this plan
+  if (user.investmentClass === planName) {
+    throw new Error('Ya tienes este plan de inversión');
+  }
+
+  // Validate capital requirement
+  const currentBalance = user.currentBalanceUSDT || 0;
+  if (currentBalance < plan.minCapital) {
+    throw new Error(`Capital insuficiente. Se requieren $${plan.minCapital} USDT`);
+  }
+
+  // Validate referral requirement for Platinum and Diamond
+  const upperName = planName.toUpperCase();
+  if (upperName.includes('PLATINUM') || upperName.includes('DIAMOND')) {
+    const referralsCount = user._count.referrals;
+    if (referralsCount < 1) {
+      throw new Error('Se requiere al menos 1 referido activo para este plan');
+    }
+  }
+
+  // Update user's investment class
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      investmentClass: planName as any,
+    },
+    include: {
+      _count: {
+        select: { referrals: true }
+      }
+    }
+  });
+
+  // Create a transaction record for audit purposes
+  await prisma.transaction.create({
+    data: {
+      userId,
+      type: 'REINVEST', // Using REINVEST type as it's a plan change
+      amountUSDT: 0,
+      reference: `Cambio de plan a ${planName}`,
+      status: 'COMPLETED',
+    }
+  });
+
+  const { password: _, _count, ...userWithoutPassword } = updatedUser;
+  return {
+    ...userWithoutPassword,
+    referralsCount: _count.referrals
+  };
+};
+

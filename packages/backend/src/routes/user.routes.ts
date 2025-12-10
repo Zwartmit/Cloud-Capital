@@ -57,4 +57,7 @@ router.get('/collaborators', userController.getCollaborators);
 // GET /api/user/tasks
 router.get('/tasks', userController.getTasks);
 
+// PUT /api/user/investment-plan
+router.put('/investment-plan', userController.changeInvestmentPlan);
+
 export default router;

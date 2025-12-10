@@ -36,9 +36,25 @@ export const ClassesPage: React.FC = () => {
     };
 
     const handleJoinPlan = async (plan: InvestmentPlan) => {
-        // Here we would call an API to join the plan
-        // For now, we just show an alert or console log
-        alert(`Has solicitado unirte al plan ${plan.name}. Esta funcionalidad estará disponible pronto.`);
+        try {
+            setLoading(true);
+            const updatedUser = await investmentPlanService.changeInvestmentPlan(plan.name);
+
+            // Update the auth store with the new user data
+            useAuthStore.getState().updateUser(updatedUser);
+
+            // Show success message
+            alert(`¡Felicidades! Te has unido exitosamente al plan ${plan.name}`);
+
+            // Reload plans to refresh the UI
+            await loadPlans();
+        } catch (err: any) {
+            console.error('Error joining plan:', err);
+            setError(err.response?.data?.error || 'Error al unirse al plan');
+            alert(err.response?.data?.error || 'Error al unirse al plan. Por favor intenta de nuevo.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
