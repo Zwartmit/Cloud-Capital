@@ -45,6 +45,8 @@ export interface UserDTO {
   btcDepositAddress?: string;
   btcWithdrawAddress?: string;
   whatsappNumber?: string;
+  contactEmail?: string;
+  contactTelegram?: string;
   createdAt: string;
 }
 
@@ -126,6 +128,11 @@ export interface ReinvestRequest {
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
+}
+
+export interface ContactInfoDTO {
+  email?: string;
+  telegram?: string;
 }
 
 export interface ApiError {

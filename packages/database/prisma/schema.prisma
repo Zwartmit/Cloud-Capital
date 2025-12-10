@@ -66,6 +66,10 @@ model User {
   btcDepositAddress  String?          @unique  // Dirección BTC para depósitos
   btcWithdrawAddress String?                   // Dirección BTC personal del usuario
   whatsappNumber     String?                   // Número de WhatsApp (para colaboradores)
+  
+  // Contact Information (for landing page)
+  contactEmail       String?                   // Email de contacto público
+  contactTelegram    String?                   // Usuario de Telegram para contacto
 
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt

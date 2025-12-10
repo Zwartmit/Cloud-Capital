@@ -285,3 +285,13 @@ export const getRecentActivity = async (req: Request, res: Response): Promise<vo
     res.status(500).json({ error: error.message });
   }
 };
+
+// Get public contact information for landing page (no auth required)
+export const getPublicContactInfo = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const contactInfo = await userService.getPublicContactInfo();
+    res.status(200).json(contactInfo);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

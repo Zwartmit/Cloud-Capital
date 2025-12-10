@@ -5,6 +5,7 @@ import { BackgroundCanvas } from '../components/common/BackgroundCanvas';
 import { Hero } from '../components/landing/Hero';
 import { Features } from '../components/landing/Features';
 import { FAQ } from '../components/landing/FAQ';
+import { Contact } from '../components/landing/Contact';
 import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
 import { ScrollReveal } from '../components/common/ScrollReveal';
 
@@ -51,7 +52,7 @@ export const LandingPage: React.FC = () => {
                         <a href="#faq-section" className="hover:text-accent transition-all duration-200 hover:scale-105">
                             FAQ
                         </a>
-                        <a href="#" className="hover:text-accent transition-all duration-200 hover:scale-105">
+                        <a href="#contact-section" className="hover:text-accent transition-all duration-200 hover:scale-105">
                             Contacto
                         </a>
                     </nav>
@@ -110,7 +111,7 @@ export const LandingPage: React.FC = () => {
                                         <span className="text-sm font-bold text-gray-300 group-hover:text-white uppercase tracking-wider">FAQ</span>
                                     </a>
                                     <a
-                                        href="#"
+                                        href="#contact-section"
                                         className="flex flex-col items-center justify-center p-4 bg-gray-900 border border-gray-800 rounded-xl hover:border-accent hover:bg-gray-800 transition-all duration-300 group"
                                         onClick={() => setMobileMenuOpen(false)}
                                     >
@@ -243,6 +244,9 @@ export const LandingPage: React.FC = () => {
                     </div>
                 </section>
             </ScrollReveal>
+
+            {/* Contact Section */}
+            <Contact />
 
             {/* Footer */}
             <footer className="text-center text-lg text-gray-500 py-8 border-t border-gray-700/50 max-w-7xl mx-auto px-4 sm:px-6">

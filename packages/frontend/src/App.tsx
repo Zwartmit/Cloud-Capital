@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { ParticlesBackground } from './components/common/ParticlesBackground'
 import { ScrollToTop } from './components/common/ScrollToTop'
@@ -23,16 +23,22 @@ function AppContent() {
     const location = useLocation();
     const navigate = useNavigate();
     const logout = useAuthStore((state) => state.logout);
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
     // Check if user is on a protected route
     const isProtectedRoute = !['/login', '/register', '/reset-password', '/'].includes(location.pathname);
 
-    // Only activate session timeout on protected routes
+    // Reset warning modal when route changes or user logs out
+    useEffect(() => {
+        setShowWarning(false);
+    }, [location.pathname, isAuthenticated]);
+
+    // Only activate session timeout on protected routes AND when authenticated
     const { resetTimer } = useSessionTimeout({
         timeoutMinutes: 2.5, // 2.5 minutes timeout
         warningMinutes: 0.5, // 30 seconds warning
         onWarning: () => {
-            if (isProtectedRoute) {
+            if (isProtectedRoute && isAuthenticated) {
                 setShowWarning(true);
             }
         },
@@ -47,6 +53,8 @@ function AppContent() {
     };
 
     const handleCloseSession = () => {
+        // Clear warning modal first
+        setShowWarning(false);
         // Clear auth store
         logout();
         // Clear tokens from localStorage
@@ -61,7 +69,7 @@ function AppContent() {
             <ParticlesBackground />
             <ScrollToTop />
             <SessionTimeoutModal
-                isOpen={showWarning && isProtectedRoute}
+                isOpen={showWarning && isProtectedRoute && isAuthenticated}
                 onClose={handleCloseSession}
                 onContinue={handleContinueSession}
                 remainingSeconds={30}

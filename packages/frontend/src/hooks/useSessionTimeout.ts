@@ -61,6 +61,13 @@ export const useSessionTimeout = ({
   }, [timeoutMinutes, warningMinutes, onWarning, handleLogout]);
 
   useEffect(() => {
+    const isAuthenticated = useAuthStore.getState().isAuthenticated;
+    
+    // Don't start timers if user is not authenticated
+    if (!isAuthenticated) {
+      return;
+    }
+
     // Events that indicate user activity
     const events = [
       'mousedown',

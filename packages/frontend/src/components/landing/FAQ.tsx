@@ -76,7 +76,7 @@ import { ScrollReveal } from '../common/ScrollReveal';
 export const FAQ: React.FC = () => {
     return (
         <section id="faq-section" className="max-w-4xl mx-auto mb-12 sm:mb-20 px-4 sm:px-6">
-            <h2 className="text-3xl sm:text-4xl font-bold text-center text-white mb-6 sm:mb-10">
+            <h2 className="text-3xl sm:text-5xl font-black text-center text-white mb-6 sm:mb-10">
                 Preguntas frecuentes
             </h2>
             <div className="space-y-3 sm:space-y-4">

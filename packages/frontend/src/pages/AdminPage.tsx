@@ -25,6 +25,9 @@ export const AdminPage: React.FC = () => {
     const [userListMessage, setUserListMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [btcAddressMessage, setBtcAddressMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [btcAddress, setBtcAddress] = useState(user?.btcDepositAddress || '');
+    const [contactMessage, setContactMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [contactEmail, setContactEmail] = useState(user?.contactEmail || '');
+    const [contactTelegram, setContactTelegram] = useState(user?.contactTelegram || '');
 
     // User list state
     const [allUsers, setAllUsers] = useState<UserDTO[]>([]);
@@ -506,40 +509,116 @@ export const AdminPage: React.FC = () => {
                             </div>
 
                             <div className="card-s p-8 rounded-xl border-t-4 border-accent">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    {/* Profile Information - Left Column - Compact Layout */}
                                     <div>
-                                        <p className="text-sm text-gray-400 mb-1">Nombre</p>
-                                        <p className="text-lg font-semibold text-white">{user?.name}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-400 mb-1">Email</p>
-                                        <p className="text-lg font-semibold text-white">{user?.email}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-400 mb-1">Usuario</p>
-                                        <p className="text-lg font-semibold text-white">{user?.username}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-400 mb-1">Rol</p>
-                                        <p className="text-lg font-semibold text-admin">{user?.role}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-400 mb-1">Código de referido</p>
-                                        <p className="text-lg font-semibold text-accent">{user?.referralCode || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-400 mb-1">Usuarios referidos</p>
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-lg font-semibold text-white">{user?.referralsCount || 0}</p>
-                                            <button
-                                                onClick={() => setIsReferralsModalOpen(true)}
-                                                className="p-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors"
-                                                title="Ver referidos"
-                                            >
-                                                <Search className="w-4 h-4" />
-                                            </button>
+                                        <h3 className="text-xl font-bold text-white mb-6">Información del perfil</h3>
+                                        <div className="space-y-3">
+                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Nombre</p>
+                                                <p className="text-base font-semibold text-white">{user?.name}</p>
+                                            </div>
+                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Email</p>
+                                                <p className="text-base font-semibold text-white break-all">{user?.email}</p>
+                                            </div>
+                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Usuario</p>
+                                                <p className="text-base font-semibold text-white">{user?.username}</p>
+                                            </div>
+                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Rol</p>
+                                                <p className="text-base font-semibold text-admin">{user?.role}</p>
+                                            </div>
+                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Código de referido</p>
+                                                <p className="text-base font-semibold text-accent">{user?.referralCode || 'N/A'}</p>
+                                            </div>
+                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Usuarios referidos</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-base font-semibold text-white">{user?.referralsCount || 0}</p>
+                                                    <button
+                                                        onClick={() => setIsReferralsModalOpen(true)}
+                                                        className="p-1 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors"
+                                                        title="Ver referidos"
+                                                    >
+                                                        <Search className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
+
+                                    {/* Contact Information - Right Column (Only for Admins) */}
+                                    {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white mb-6">Información de contacto pública</h3>
+                                            <p className="text-sm text-gray-400 mb-6">
+                                                Esta información se mostrará en la sección de contacto de la landing page
+                                            </p>
+                                            <form onSubmit={async (e) => {
+                                                e.preventDefault();
+
+                                                // Validate email format if provided
+                                                if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+                                                    setContactMessage({ type: 'error', text: 'Formato de email inválido' });
+                                                    return;
+                                                }
+
+                                                try {
+                                                    const updatedUser = await userService.updateProfile({
+                                                        contactEmail: contactEmail || undefined,
+                                                        contactTelegram: contactTelegram || undefined
+                                                    });
+                                                    updateUser(updatedUser);
+                                                    setContactMessage({ type: 'success', text: 'Información de contacto actualizada exitosamente' });
+                                                    setTimeout(() => setContactMessage(null), 5000);
+                                                } catch (error: any) {
+                                                    setContactMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar información de contacto' });
+                                                }
+                                            }} className="space-y-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm text-gray-400 mb-2">Email de contacto</label>
+                                                        <input
+                                                            type="email"
+                                                            value={contactEmail}
+                                                            onChange={(e) => setContactEmail(e.target.value)}
+                                                            placeholder="contacto@cloudcapital.com"
+                                                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm text-gray-400 mb-2">Usuario de Telegram</label>
+                                                        <input
+                                                            type="text"
+                                                            value={contactTelegram}
+                                                            onChange={(e) => setContactTelegram(e.target.value)}
+                                                            placeholder="@cloudcapital"
+                                                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="pt-2">
+                                                    <button
+                                                        type="submit"
+                                                        className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                                                    >
+                                                        Guardar información de contacto
+                                                    </button>
+                                                </div>
+                                            </form>
+                                            {contactMessage && (
+                                                <div className={`mt-4 p-3 rounded-lg text-sm ${contactMessage.type === 'success'
+                                                    ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                                                    : 'bg-red-500/10 border border-red-500/20 text-red-500'
+                                                    }`}>
+                                                    {contactMessage.text}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Password & BTC Address Section - Two Column Layout */}

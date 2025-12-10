@@ -473,3 +473,24 @@ export const changeInvestmentPlan = async (userId: string, planName: string) => 
   };
 };
 
+// Get public contact information for landing page
+export const getPublicContactInfo = async () => {
+  const admin = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { role: 'SUPERADMIN' },
+        { role: 'SUBADMIN' }
+      ]
+    },
+    select: {
+      contactEmail: true,
+      contactTelegram: true,
+    },
+    orderBy: { createdAt: 'asc' } // Get the first admin created
+  });
+
+  return {
+    email: admin?.contactEmail || null,
+    telegram: admin?.contactTelegram || null,
+  };
+};
