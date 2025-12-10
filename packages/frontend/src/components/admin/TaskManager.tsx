@@ -75,18 +75,18 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     };
 
     const getFilteredTasks = () => {
-        if (activeTab === 'pending') return tasks;
-
         return tasks.filter(task => {
             // Search filter (User name, email, or Reference)
             const searchLower = searchTerm.toLowerCase();
-            const matchesSearch =
+            const matchesSearch = !searchTerm ||
                 task.user?.name.toLowerCase().includes(searchLower) ||
                 task.user?.email.toLowerCase().includes(searchLower) ||
                 (task.reference && task.reference.toLowerCase().includes(searchLower));
 
-            // Status filter
-            const matchesStatus = statusFilter === 'ALL' || task.status === statusFilter;
+            // Status filter (only for history tab)
+            const matchesStatus = activeTab === 'history'
+                ? (statusFilter === 'ALL' || task.status === statusFilter)
+                : true;
 
             // Type filter
             const matchesType = typeFilter === 'ALL' ||
@@ -258,30 +258,32 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                 </button>
             </div>
 
-            {/* Filters (Only for History) */}
-            {activeTab === 'history' && (
+            {/* Filters */}
+            {(activeTab === 'pending' || activeTab === 'preapproved' || activeTab === 'history') && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 mt-6">
                     <div className="md:col-span-1">
                         <input
                             type="text"
-                            placeholder="Buscar..."
+                            placeholder="Buscar por nombre, email o referencia..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
                         />
                     </div>
-                    <div>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value as any)}
-                            className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
-                        >
-                            <option value="ALL">Todos los estados</option>
-                            <option value="COMPLETED">Completados</option>
-                            <option value="REJECTED">Rechazados</option>
-                        </select>
-                    </div>
-                    <div>
+                    {activeTab === 'history' && (
+                        <div>
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value as any)}
+                                className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
+                            >
+                                <option value="ALL">Todos los estados</option>
+                                <option value="COMPLETED">Completados</option>
+                                <option value="REJECTED">Rechazados</option>
+                            </select>
+                        </div>
+                    )}
+                    <div className={activeTab === 'history' ? '' : 'md:col-span-2'}>
                         <select
                             value={typeFilter}
                             onChange={(e) => setTypeFilter(e.target.value as any)}
