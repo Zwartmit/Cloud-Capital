@@ -21,6 +21,36 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
         }
     };
 
+    const getTypeText = (type: string) => {
+        switch (type) {
+            case 'DEPOSIT':
+                return 'Depósito';
+            case 'WITHDRAWAL':
+                return 'Retiro';
+            case 'PROFIT':
+                return 'Ganancia';
+            case 'REINVEST':
+                return 'Reinversión';
+            case 'REFERRAL_COMMISSION':
+                return 'Comisión Referido';
+            default:
+                return type;
+        }
+    };
+
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'COMPLETED':
+                return 'Completada';
+            case 'PENDING':
+                return 'Pendiente';
+            case 'REJECTED':
+                return 'Rechazada';
+            default:
+                return status;
+        }
+    };
+
     return (
         <div className="card p-4 sm:p-6 rounded-xl mt-6 sm:mt-8">
             <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-white">Registro de transacciones</h3>
@@ -60,7 +90,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                                         {new Date(tx.createdAt).toLocaleDateString('es-ES')}
                                     </td>
                                     <td className={`px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-semibold ${getTypeColor(tx.type)}`}>
-                                        {tx.type}
+                                        {getTypeText(tx.type)}
                                         {tx.reference && (
                                             <span className="block text-xs text-gray-500">{tx.reference}</span>
                                         )}
@@ -78,7 +108,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                                                 : 'bg-yellow-500/20 text-yellow-500'
                                                 }`}
                                         >
-                                            {tx.status}
+                                            {getStatusText(tx.status)}
                                         </span>
                                     </td>
                                 </tr>

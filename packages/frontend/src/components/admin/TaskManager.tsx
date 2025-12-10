@@ -14,6 +14,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     const { user } = useAuthStore();
     const [activeTab, setActiveTab] = useState<'pending' | 'preapproved' | 'history'>('pending');
     const [tasks, setTasks] = useState<TaskDTO[]>([]);
+    const [allTasks, setAllTasks] = useState<TaskDTO[]>([]); // For badge counts
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -51,18 +52,26 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
         setLoading(true);
         setError('');
         try {
+            // Always load all tasks for badge counts
+            const allTasksData = await adminService.getAllTasks();
+            setAllTasks(allTasksData);
+
             let fetchedTasks;
             if (activeTab === 'pending') {
-                fetchedTasks = await adminService.getAllTasks('PENDING');
+                fetchedTasks = allTasksData.filter(t => t.status === 'PENDING');
             } else if (activeTab === 'preapproved') {
-                // Fetch PRE_APPROVED tasks
-                fetchedTasks = await adminService.getAllTasks('PRE_APPROVED');
+                // Filter PRE_APPROVED and PRE_REJECTED tasks
+                fetchedTasks = allTasksData.filter(t =>
+                    t.status === 'PRE_APPROVED' || t.status === 'PRE_REJECTED'
+                ).sort((a, b) =>
+                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                );
             } else {
-                // History: all tasks except PENDING and PRE_APPROVED
-                fetchedTasks = await adminService.getAllTasks();
-                fetchedTasks = fetchedTasks.filter(t =>
+                // History: all tasks except PENDING, PRE_APPROVED, and PRE_REJECTED
+                fetchedTasks = allTasksData.filter(t =>
                     t.status !== 'PENDING' &&
-                    t.status !== 'PRE_APPROVED'
+                    t.status !== 'PRE_APPROVED' &&
+                    t.status !== 'PRE_REJECTED'
                 );
             }
             setTasks(fetchedTasks);
@@ -98,6 +107,10 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     };
 
     const filteredTasks = getFilteredTasks();
+
+    // Calculate counts for each tab from allTasks
+    const pendingCount = allTasks.filter(t => t.status === 'PENDING').length;
+    const preApprovedCount = allTasks.filter(t => t.status === 'PRE_APPROVED' || t.status === 'PRE_REJECTED').length;
 
     // UX State
     const [actionStatus, setActionStatus] = useState<{ [key: string]: 'APPROVED' | 'REJECTED' }>({});
@@ -206,6 +219,23 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
         return `${baseUrl}${path}`;
     };
 
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'PENDING':
+                return 'PENDIENTE';
+            case 'PRE_APPROVED':
+                return 'PRE-APROBADA';
+            case 'PRE_REJECTED':
+                return 'PRE-RECHAZADA';
+            case 'COMPLETED':
+                return 'COMPLETADA';
+            case 'REJECTED':
+                return 'RECHAZADA';
+            default:
+                return status;
+        }
+    };
+
     // Pagination logic
     const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
     const paginatedTasks = filteredTasks.slice(
@@ -225,32 +255,42 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
             </div>
 
             {/* Tabs */}
-            <div className="flex space-x-4 border-b mb-4 border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0 border-b mb-4 border-gray-700">
                 <button
                     onClick={() => setActiveTab('pending')}
-                    className={`pb-3 px-4 font-bold transition-colors ${activeTab === 'pending'
-                        ? 'text-accent border-b-2 border-accent'
-                        : 'text-gray-400 hover:text-white'
+                    className={`relative pb-2 sm:pb-3 px-3 sm:px-4 font-bold transition-colors text-left sm:text-center ${activeTab === 'pending'
+                        ? 'text-blue-400 border-l-4 sm:border-l-0 sm:border-b-2 border-blue-400 bg-blue-400/10 sm:bg-transparent'
+                        : 'text-gray-400 hover:text-white border-l-4 border-transparent'
                         }`}
                 >
                     <Clock className="w-4 h-4 inline mr-2" />
                     Pendientes
+                    {pendingCount > 0 && (
+                        <span className="ml-2 sm:absolute sm:-top-2 sm:-right-2 bg-blue-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                            {pendingCount}
+                        </span>
+                    )}
                 </button>
                 <button
                     onClick={() => setActiveTab('preapproved')}
-                    className={`pb-3 px-4 font-bold transition-colors ${activeTab === 'preapproved'
-                        ? 'text-yellow-400 border-b-2 border-yellow-400'
-                        : 'text-gray-400 hover:text-white'
+                    className={`relative pb-2 sm:pb-3 px-3 sm:px-4 font-bold transition-colors text-left sm:text-center ${activeTab === 'preapproved'
+                        ? 'text-orange-400 border-l-4 sm:border-l-0 sm:border-b-2 border-orange-400 bg-orange-400/10 sm:bg-transparent'
+                        : 'text-gray-400 hover:text-white border-l-4 border-transparent'
                         }`}
                 >
                     <AlertCircle className="w-4 h-4 inline mr-2" />
-                    Pre-aprobadas
+                    Por revisar
+                    {preApprovedCount > 0 && (
+                        <span className="ml-2 sm:absolute sm:-top-2 sm:-right-2 bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+                            {preApprovedCount}
+                        </span>
+                    )}
                 </button>
                 <button
                     onClick={() => setActiveTab('history')}
-                    className={`pb-3 px-4 font-bold transition-colors ${activeTab === 'history'
-                        ? 'text-accent border-b-2 border-accent'
-                        : 'text-gray-400 hover:text-white'
+                    className={`relative pb-2 sm:pb-3 px-3 sm:px-4 font-bold transition-colors text-left sm:text-center ${activeTab === 'history'
+                        ? 'text-green-400 border-l-4 sm:border-l-0 sm:border-b-2 border-green-400 bg-green-400/10 sm:bg-transparent'
+                        : 'text-gray-400 hover:text-white border-l-4 border-transparent'
                         }`}
                 >
                     <ListChecks className="w-4 h-4 inline mr-2" />
@@ -317,11 +357,11 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                 <div className="text-center py-12 text-red-500">{error}</div>
             ) : filteredTasks.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                    No hay tareas {activeTab === 'pending' ? 'pendientes' : activeTab === 'preapproved' ? 'pre-aprobadas o pre-rechazadas' : 'que coincidan con los filtros'}
+                    No hay tareas {activeTab === 'pending' ? 'pendientes' : activeTab === 'preapproved' ? 'por revisar' : 'que coincidan con los filtros'}
                 </div>
             ) : (
                 <>
-                    <div className="grid gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {paginatedTasks.map(task => (
                             <div key={task.id} className={`bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${disintegratingTaskId === task.id ? 'disintegrate' : ''}`}>
 
@@ -338,7 +378,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                                 task.status === 'COMPLETED' ? 'border-green-500 text-green-500 bg-green-500/10' :
                                                     'border-red-500 text-red-500 bg-red-500/10'
                                             }`}>
-                                            {task.status === 'PRE_APPROVED' ? 'PRE-APROBADA' : task.status}
+                                            {getStatusLabel(task.status)}
                                         </span>
                                     </div>
                                     <div className="text-sm text-gray-400">

@@ -37,6 +37,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
             case 'PENDING':
             case 'PRE_APPROVED':
                 return <Clock className="w-5 h-5 text-yellow-500" />;
+            case 'PRE_REJECTED':
+                return <XCircle className="w-5 h-5 text-orange-500" />;
             default:
                 return <Bell className="w-5 h-5 text-gray-500" />;
         }
@@ -51,6 +53,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
             case 'PENDING':
             case 'PRE_APPROVED':
                 return 'border-yellow-500/20 bg-yellow-500/5';
+            case 'PRE_REJECTED':
+                return 'border-orange-500/20 bg-orange-500/5';
             default:
                 return 'border-gray-700 bg-secondary';
         }
@@ -66,6 +70,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
                 return 'Pendiente';
             case 'PRE_APPROVED':
                 return 'Pre-aprobada';
+            case 'PRE_REJECTED':
+                return 'Pre-rechazada';
             default:
                 return status;
         }

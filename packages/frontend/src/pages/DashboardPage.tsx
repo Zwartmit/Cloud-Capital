@@ -162,7 +162,7 @@ export const DashboardPage: React.FC = () => {
                                         Progreso a Nivel <span className={`${getPlanColor(nextPlan.name)}`}>{nextPlan.name}</span>
                                     </h4>
                                     <p className="text-xs text-gray-500 mb-2 sm:mb-4">
-                                        Meta para un rendimiento de **{nextPlan.minDailyReturn}% - {nextPlan.maxDailyReturn}% diario**.
+                                        Meta para un rendimiento de {nextPlan.minDailyReturn}% - {nextPlan.maxDailyReturn}% diario.
                                     </p>
                                     <div className="text-xs sm:text-sm space-y-2 sm:space-y-3">
                                         <div>

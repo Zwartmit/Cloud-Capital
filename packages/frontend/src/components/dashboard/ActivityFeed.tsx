@@ -65,7 +65,7 @@ export const ActivityFeed: React.FC = () => {
     return (
         <div className="card p-3 sm:p-4 rounded-xl shadow-lg border-l-4 border-profit">
             <div className="flex justify-between items-center mb-2">
-                <h4 className="font-bold text-base sm:text-lg text-profit">Movimiento Global Live</h4>
+                <h4 className="font-bold text-base sm:text-lg text-profit">Movimiento global</h4>
                 <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-profit animate-pulse" />
             </div>
 

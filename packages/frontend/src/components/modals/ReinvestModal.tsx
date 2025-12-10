@@ -19,22 +19,10 @@ export const ReinvestModal: React.FC<ReinvestModalProps> = ({
     onSuccess,
 }) => {
     const [amount, setAmount] = useState('');
-    const [percentage, setPercentage] = useState(50);
     const [loading, setLoading] = useState(false);
 
     const amountNum = parseFloat(amount) || 0;
     const newCapital = currentCapital + amountNum;
-
-    const handlePercentageChange = (value: number) => {
-        setPercentage(value);
-        setAmount(((availableProfit * value) / 100).toFixed(2));
-    };
-
-    const handleAmountChange = (value: string) => {
-        setAmount(value);
-        const num = parseFloat(value) || 0;
-        setPercentage(Math.min(100, (num / availableProfit) * 100));
-    };
 
     const handleReinvest = async () => {
         if (!amount || amountNum <= 0) {
@@ -95,58 +83,21 @@ export const ReinvestModal: React.FC<ReinvestModalProps> = ({
                 </div>
             </div>
 
+
             <div className="space-y-4">
                 {/* Amount Input */}
                 <div>
                     <label className="block text-xs font-medium text-gray-300 mb-1">
-                        Monto a Reinvertir (USDT)
+                        Monto a reinvertir (USDT)
                     </label>
                     <input
                         type="number"
                         value={amount}
-                        onChange={(e) => handleAmountChange(e.target.value)}
+                        onChange={(e) => setAmount(e.target.value)}
                         placeholder="Ej: 500"
                         max={availableProfit}
                         className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-base font-semibold focus:border-accent transition-colors"
                     />
-                </div>
-
-                {/* Percentage Slider */}
-                <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <label className="text-xs font-medium text-gray-300">
-                            Porcentaje del Profit
-                        </label>
-                        <span className="text-base font-bold text-accent">{percentage.toFixed(0)}%</span>
-                    </div>
-                    <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={percentage}
-                        onChange={(e) => handlePercentageChange(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-accent"
-                    />
-                    <div className="flex justify-between text-[10px] text-gray-500 mt-1">
-                        <span>0%</span>
-                        <span>25%</span>
-                        <span>50%</span>
-                        <span>75%</span>
-                        <span>100%</span>
-                    </div>
-                </div>
-
-                {/* Quick Percentage Buttons */}
-                <div className="grid grid-cols-4 gap-2">
-                    {[25, 50, 75, 100].map((pct) => (
-                        <button
-                            key={pct}
-                            onClick={() => handlePercentageChange(pct)}
-                            className="py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition text-xs font-semibold hover:scale-105 active:scale-95"
-                        >
-                            {pct}%
-                        </button>
-                    ))}
                 </div>
 
                 {/* Preview */}
