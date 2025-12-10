@@ -55,19 +55,14 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
             if (activeTab === 'pending') {
                 fetchedTasks = await adminService.getAllTasks('PENDING');
             } else if (activeTab === 'preapproved') {
-                // Fetch both PRE_APPROVED and PRE_REJECTED tasks
-                const preApproved = await adminService.getAllTasks('PRE_APPROVED');
-                const preRejected = await adminService.getAllTasks('PRE_REJECTED');
-                fetchedTasks = [...preApproved, ...preRejected].sort((a, b) =>
-                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                );
+                // Fetch PRE_APPROVED tasks
+                fetchedTasks = await adminService.getAllTasks('PRE_APPROVED');
             } else {
-                // History: all tasks except PENDING, PRE_APPROVED, and PRE_REJECTED
+                // History: all tasks except PENDING and PRE_APPROVED
                 fetchedTasks = await adminService.getAllTasks();
                 fetchedTasks = fetchedTasks.filter(t =>
                     t.status !== 'PENDING' &&
-                    t.status !== 'PRE_APPROVED' &&
-                    t.status !== 'PRE_REJECTED'
+                    t.status !== 'PRE_APPROVED'
                 );
             }
             setTasks(fetchedTasks);
@@ -386,26 +381,6 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                                 <div className="text-xs text-gray-500 italic px-4 py-2 bg-gray-700/50 rounded-lg w-full sm:w-auto text-center">
                                                     Solo SUPERADMIN puede tomar decisión final
                                                 </div>
-                                            ) : task.status === 'PRE_REJECTED' && user?.role === 'SUPERADMIN' ? (
-                                                // PRE_REJECTED: SUPERADMIN can confirm rejection or override to approve
-                                                <>
-                                                    <button
-                                                        onClick={() => handleApprove(task.id)}
-                                                        disabled={processingId === task.id}
-                                                        className="px-3 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-xs sm:text-sm font-bold rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
-                                                        title="Aprobar de todas formas"
-                                                    >
-                                                        <Check className="w-4 h-4" /> Aprobar override
-                                                    </button>
-                                                    <button
-                                                        onClick={() => openRejectModal(task.id)}
-                                                        disabled={processingId === task.id}
-                                                        className="px-3 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs sm:text-sm font-bold rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
-                                                        title="Confirmar rechazo"
-                                                    >
-                                                        <X className="w-4 h-4" /> Confirmar rechazo
-                                                    </button>
-                                                </>
                                             ) : (
                                                 <>
                                                     <button
