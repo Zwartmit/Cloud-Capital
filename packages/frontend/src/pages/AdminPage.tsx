@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
-import { Search, Users, ListChecks, TrendingUp, User, DollarSign, Book } from 'lucide-react';
+import { Search, Users, ListChecks, TrendingUp, User, DollarSign, ShieldHalf } from 'lucide-react';
 import { InvestmentPlanManager } from '../components/admin/InvestmentPlanManager';
 import { ProfitManager } from '../components/admin/ProfitManager';
-import { AdminGuide } from '../components/admin/AdminGuide';
 import { TaskManager } from '../components/admin/TaskManager';
 import { ConfirmModal } from '../components/modals/ConfirmModal';
 import { ReferralsModal } from '../components/modals/ReferralsModal';
@@ -15,16 +14,14 @@ import { useAuthStore } from '../store/authStore';
 
 export const AdminPage: React.FC = () => {
     const { user, updateUser } = useAuthStore();
-    const [activeTab, setActiveTab] = useState<'users' | 'plans' | 'profile' | 'tasks' | 'profit' | 'guide'>('tasks');
+    const [activeTab, setActiveTab] = useState<'users' | 'plans' | 'profile' | 'tasks' | 'profit'>('tasks');
     const [searchEmail, setSearchEmail] = useState('');
     const [searchResults, setSearchResults] = useState<UserDTO[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserDTO | null>(null);
-    const [balanceModAmount, setBalanceModAmount] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-    const [balanceMessage, setBalanceMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [userListMessage, setUserListMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [btcAddressMessage, setBtcAddressMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [btcAddress, setBtcAddress] = useState(user?.btcDepositAddress || '');
@@ -128,48 +125,6 @@ export const AdminPage: React.FC = () => {
         }
     };
 
-    const handleUpdateBalance = async (type: 'add' | 'subtract') => {
-        if (!selectedUser || !balanceModAmount) return;
-
-        const amount = parseFloat(balanceModAmount);
-        if (isNaN(amount) || amount <= 0) {
-            setBalanceMessage({ type: 'error', text: 'Por favor ingresa un monto válido' });
-            return;
-        }
-
-        setLoading(true);
-        setBalanceMessage(null);
-
-        try {
-            const currentBalance = selectedUser.currentBalanceUSDT;
-            const newBalance = type === 'add'
-                ? currentBalance + amount
-                : currentBalance - amount;
-
-            if (newBalance < 0) {
-                setBalanceMessage({ type: 'error', text: 'El balance no puede ser negativo' });
-                setLoading(false);
-                return;
-            }
-
-            const updatedUser = await adminService.updateUserBalance(
-                selectedUser.id,
-                selectedUser.capitalUSDT, // Keep capital same, only modifying balance/profit
-                newBalance
-            );
-
-            setSelectedUser(updatedUser);
-            setBalanceModAmount('');
-            setBalanceMessage({ type: 'success', text: 'Balance actualizado exitosamente' });
-            setTimeout(() => setBalanceMessage(null), 5000);
-        } catch (err) {
-            console.error('Error updating balance:', err);
-            setBalanceMessage({ type: 'error', text: 'Error al actualizar el balance' });
-        } finally {
-            setLoading(false);
-        }
-    };
-
     // Load all users for the list
     const loadAllUsers = async () => {
         try {
@@ -229,22 +184,12 @@ export const AdminPage: React.FC = () => {
             <main className="flex-grow p-4 sm:p-8 overflow-y-auto">
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-2xl sm:text-4xl font-extrabold text-admin mb-8 flex items-center">
-                        <Users className="w-8 h-8 mr-3" />
+                        <ShieldHalf className="w-8 h-8 mr-3" />
                         Panel de administración
                     </h2>
 
                     {/* Tabs Navigation */}
                     <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-8 border-b border-gray-700 pb-2 sm:pb-0">
-                        <button
-                            onClick={() => setActiveTab('guide')}
-                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'guide'
-                                ? 'text-blue-400 border-b-2 border-blue-400'
-                                : 'text-gray-400 hover:text-blue-300'
-                                }`}
-                        >
-                            <Book className="w-5 h-5 inline mr-2" />
-                            Guía
-                        </button>
                         <button
                             onClick={() => setActiveTab('profile')}
                             className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'profile'
@@ -427,43 +372,6 @@ export const AdminPage: React.FC = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="border-t border-gray-700 pt-4">
-                                                <h4 className="text-xs sm:text-sm font-bold text-white mb-3">
-                                                    Modificar balance (Profit/Wallet)
-                                                </h4>
-                                                <div className="flex flex-col sm:flex-row gap-2">
-                                                    <input
-                                                        type="number"
-                                                        value={balanceModAmount}
-                                                        onChange={(e) => setBalanceModAmount(e.target.value)}
-                                                        placeholder="Monto"
-                                                        className="flex-grow p-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm"
-                                                    />
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => handleUpdateBalance('add')}
-                                                            disabled={loading}
-                                                            className="flex-1 sm:flex-none bg-profit hover:bg-emerald-400 text-black font-bold px-4 py-2 rounded-lg text-sm disabled:opacity-50"
-                                                        >
-                                                            Añadir
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleUpdateBalance('subtract')}
-                                                            disabled={loading}
-                                                            className="flex-1 sm:flex-none bg-red-600 hover:bg-red-500 text-white font-bold px-4 py-2 rounded-lg text-sm disabled:opacity-50"
-                                                        >
-                                                            Restar
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                {balanceMessage && (
-                                                    <div className={`mt-2 p-2 rounded text-sm ${balanceMessage.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                                                        {balanceMessage.text}
-                                                    </div>
-                                                )}
-                                            </div>
-
-
                                         </div>
                                     ) : (
                                         <div className="text-center text-gray-500 py-8">
@@ -591,8 +499,6 @@ export const AdminPage: React.FC = () => {
                     {activeTab === 'plans' && <InvestmentPlanManager />}
 
                     {activeTab === 'profit' && <ProfitManager />}
-
-                    {activeTab === 'guide' && <AdminGuide />}
 
                     {activeTab === 'profile' && (
                         // Profile Tab

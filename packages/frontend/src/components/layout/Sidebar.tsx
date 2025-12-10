@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Layers3, User, LogOut, ShieldHalf } from 'lucide-react';
+import { LayoutDashboard, Layers3, User, LogOut, ShieldHalf, Bell, Book } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { Modal } from '../common/Modal';
@@ -60,6 +60,20 @@ export const Sidebar: React.FC = () => {
                     </button>
                 )}
 
+                {/* Notifications - Only for Users */}
+                {!isAdmin && (
+                    <button
+                        onClick={() => navigate('/notifications')}
+                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/notifications')
+                            ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
+                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+                            }`}
+                        title="Notificaciones"
+                    >
+                        <Bell className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                    </button>
+                )}
+
                 {/* Profile - Only for Users */}
                 {!isAdmin && (
                     <button
@@ -85,6 +99,20 @@ export const Sidebar: React.FC = () => {
                         title="Panel Admin"
                     >
                         <ShieldHalf className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                    </button>
+                )}
+
+                {/* Admin Guide (only for admins) */}
+                {isAdmin && (
+                    <button
+                        onClick={() => navigate('/admin/guide')}
+                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/guide')
+                            ? 'bg-gradient-to-br from-blue-500 to-blue-400 text-white shadow-lg shadow-blue-500/30'
+                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-blue-400'
+                            }`}
+                        title="Guía de Admin"
+                    >
+                        <Book className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
                     </button>
                 )}
             </div>

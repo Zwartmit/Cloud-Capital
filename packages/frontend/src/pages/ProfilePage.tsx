@@ -1,23 +1,14 @@
 import { useState, useEffect } from 'react';
-
-
-
-
-
-
 import { Sidebar } from '../components/layout/Sidebar';
 import { useAuthStore } from '../store/authStore';
 import { userService } from '../services/userService';
 import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
 import { User, Mail, Calendar, TrendingUp, Wallet } from 'lucide-react';
 import { PasswordInput } from '../components/common/PasswordInput';
-import { NotificationCenter } from '../components/profile/NotificationCenter';
 
 export const ProfilePage: React.FC = () => {
     const { user, updateUser } = useAuthStore();
-    const [tasks, setTasks] = useState<any[]>([]);
     const [investmentPlan, setInvestmentPlan] = useState<InvestmentPlan | null>(null);
-    const [loading, setLoading] = useState(true);
     const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [btcAddressMessage, setBtcAddressMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [btcAddress, setBtcAddress] = useState(user?.btcDepositAddress || '');
@@ -25,10 +16,6 @@ export const ProfilePage: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch user tasks
-                const tasksData = await userService.getUserTasks();
-                setTasks(tasksData);
-
                 // Fetch investment plan if user has one assigned
                 if (user?.investmentClass) {
                     const plans = await investmentPlanService.getAllPlans();
@@ -37,8 +24,6 @@ export const ProfilePage: React.FC = () => {
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -72,7 +57,7 @@ export const ProfilePage: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Profile Card */}
                         <div className="lg:col-span-1">
                             <div className="card p-4 sm:p-6 rounded-xl border border-secondary">
@@ -254,10 +239,10 @@ export const ProfilePage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Stats and Activity */}
-                        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                        {/* Stats */}
+                        <div className="lg:col-span-1 space-y-4 sm:space-y-6">
                             {/* Account Stats */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                            <div className="grid grid-cols-1 gap-3 sm:gap-4">
                                 <div className="card p-3 sm:p-4 rounded-xl border-l-4 border-accent">
                                     <div className="flex items-center justify-between mb-2">
                                         <h4 className="text-xs text-gray-500">CAPITAL INICIAL</h4>
@@ -293,9 +278,6 @@ export const ProfilePage: React.FC = () => {
                                     </p>
                                 </div>
                             </div>
-
-                            {/* Notification Center */}
-                            <NotificationCenter tasks={tasks} loading={loading} />
                         </div>
                     </div>
                 </div>

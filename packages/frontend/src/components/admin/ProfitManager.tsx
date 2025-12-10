@@ -128,7 +128,20 @@ export const ProfitManager: React.FC = () => {
         setMessage(null);
         try {
             const res = await adminService.triggerProfitProcess(date);
-            setMessage({ type: 'success', text: `Procesamiento completado: ${res.message}` });
+
+            // If no profits were processed, show warning instead of success
+            if (res.processed === 0) {
+                setMessage({
+                    type: 'error',
+                    text: 'No se procesaron pagos. Asegúrate de haber guardado las tasas antes de procesar.'
+                });
+            } else {
+                setMessage({
+                    type: 'success',
+                    text: `✓ Procesamiento completado: ${res.message}`
+                });
+            }
+
             await loadRates(date); // Refresh status
         } catch (error: any) {
             setMessage({ type: 'error', text: error.response?.data?.error || 'Error al procesar' });

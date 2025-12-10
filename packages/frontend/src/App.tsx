@@ -7,8 +7,10 @@ import { RegisterPage } from './pages/RegisterPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { AdminPage } from './pages/AdminPage'
+import { AdminGuidePage } from './pages/AdminGuidePage'
 import { ClassesPage } from './pages/ClassesPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { NotificationsPage } from './pages/NotificationsPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 
 function App() {
@@ -38,6 +40,14 @@ function App() {
                     }
                 />
                 <Route
+                    path="/notifications"
+                    element={
+                        <ProtectedRoute requireUser>
+                            <NotificationsPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path="/profile"
                     element={
                         <ProtectedRoute requireUser>
@@ -50,6 +60,14 @@ function App() {
                     element={
                         <ProtectedRoute requireAdmin>
                             <AdminPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/guide"
+                    element={
+                        <ProtectedRoute requireAdmin>
+                            <AdminGuidePage />
                         </ProtectedRoute>
                     }
                 />

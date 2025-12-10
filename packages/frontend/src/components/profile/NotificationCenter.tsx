@@ -200,7 +200,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
                 </div>
             ) : (
                 <>
-                    <div className="space-y-2 sm:space-y-3">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3">
                         {paginatedTasks.map((task) => (
                             <div
                                 key={task.id}

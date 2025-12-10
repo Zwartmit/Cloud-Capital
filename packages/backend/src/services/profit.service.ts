@@ -27,7 +27,7 @@ export const setDailyRates = async (data: DailyRateInput) => {
       });
 
       if (existing && existing.processed) {
-        throw new Error(`Profit for ${item.investmentClass} on ${data.date} has already been processed and cannot be modified.`);
+        throw new Error(`El profit de la clase de inversión ${item.investmentClass} para la fecha seleccionada ya ha sido procesado y no puede ser modificado.`);
       }
 
       return prisma.dailyProfitRate.upsert({
@@ -83,8 +83,8 @@ export const processDailyProfits = async (dateStr?: string) => {
   });
 
   if (rates.length === 0) {
-    console.log(`No unprocessed rates found for ${targetDate.toISOString()}`);
-    return { processed: 0, message: 'No unprocessed rates found' };
+    console.log(`No se han encontrado tarifas sin procesar para la fecha seleccionada.`);
+    return { processed: 0, message: `No se han encontrado tarifas sin procesar para la fecha seleccionada.` };
   }
 
   let totalProcessed = 0;
