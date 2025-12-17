@@ -75,15 +75,15 @@ import { ScrollReveal } from '../common/ScrollReveal';
 
 export const FAQ: React.FC = () => {
     return (
-        <section id="faq-section" className="max-w-4xl mx-auto mb-12 sm:mb-20 px-4 sm:px-6">
+        <section id="faq-section" className="max-w-7xl mx-auto mb-12 sm:mb-20 px-4 sm:px-6">
             <h2 className="text-3xl sm:text-5xl font-black text-center text-white mb-6 sm:mb-10">
                 Preguntas frecuentes
             </h2>
-            <div className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-start">
                 {faqs.map((faq, i) => (
                     <ScrollReveal key={i} animation="fade-in" delay={i * 0.05}>
                         <details
-                            className="card !bg-[#0B1120] border border-gray-800 rounded-xl p-3 sm:p-4 transition-all duration-300 group hover:border-accent"
+                            className="card bg-slate-800/40 backdrop-blur-md border-t border-r border-b border-slate-700/50 border-l-4 border-l-accent rounded-2xl p-4 sm:p-5 transition-all duration-300 group hover:border-l-accent hover-lift shadow-2xl"
                         >
                             <summary className="cursor-pointer text-lg font-semibold text-white flex justify-between items-center py-1">
                                 {faq.question}
@@ -101,3 +101,4 @@ export const FAQ: React.FC = () => {
         </section>
     );
 };
+ 

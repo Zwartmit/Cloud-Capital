@@ -35,8 +35,8 @@ export const LandingPage: React.FC = () => {
             <BackgroundCanvas />
 
             {/* Header/Nav */}
-            <header className="sticky top-0 z-20 bg-[#000000] border-b border-gray-700/50">
-                <div className="relative z-30 bg-[#000000] max-w-7xl mx-auto flex justify-between items-center py-3 sm:py-4 px-4 sm:px-6">
+            <header className="sticky top-0 z-20 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50">
+                <div className="relative z-30 bg-transparent max-w-7xl mx-auto flex justify-between items-center py-3 sm:py-4 px-4 sm:px-6">
                     <a href="/" className="flex items-center space-x-2">
                         <img src="/logo.png" alt="Cloud Capital Logo" className="h-16 w-auto" />
                     </a>
@@ -83,7 +83,7 @@ export const LandingPage: React.FC = () => {
                             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-10"
                             onClick={() => setMobileMenuOpen(false)}
                         />
-                        <div className="sm:hidden absolute top-full left-0 w-full bg-[#000000] border-b border-gray-800 shadow-2xl animate-menu-slide-down z-20 rounded-b-3xl">
+                        <div className="sm:hidden absolute top-full left-0 w-full bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl animate-menu-slide-down z-20 rounded-b-3xl">
                             <div className="p-6">
                                 <nav className="grid grid-cols-2 gap-4 mb-6">
                                     <a
@@ -148,7 +148,7 @@ export const LandingPage: React.FC = () => {
                 <h2 className="text-3xl sm:text-5xl font-black text-center gradient-text-primary mb-3 sm:mb-4">
                     Estructura de inversión
                 </h2>
-                <p className="text-center text-gray-400 text-lg mb-8 sm:mb-12 max-w-2xl mx-auto">
+                <p className="text-center text-slate-300 text-lg mb-8 sm:mb-12 max-w-2xl mx-auto">
                     Descubre los planes que potencian tu capital. El rendimiento se ajusta a tu nivel de
                     inversión.
                 </p>
@@ -166,14 +166,14 @@ export const LandingPage: React.FC = () => {
                         {plans.map((plan, index) => (
                             <ScrollReveal key={plan.id} animation="scale-in" delay={index * 0.1}>
                                 <div
-                                    className="card p-5 sm:p-6 rounded-2xl border-l-4 border-accent !bg-[#0B1120] border-t border-r border-b border-gray-800 hover:border-l-[6px] hover-lift group transition-all duration-300 h-full"
+                                    className="card p-5 sm:p-6 rounded-2xl border-l-4 border-accent bg-slate-800/40 backdrop-blur-md border-t border-r border-b border-slate-700/50 hover:border-l-[6px] hover-lift group transition-all duration-300 h-full shadow-2xl"
                                 >
                                     <h3 className="text-xl sm:text-2xl font-black gradient-text-primary mb-4 sm:mb-6 text-center">
                                         {plan.name}
                                     </h3>
-                                    <div className="space-y-3 sm:space-y-4 text-gray-300">
+                                    <div className="space-y-3 sm:space-y-4 text-slate-300">
                                         <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
-                                            <span className="text-gray-400 text-xs sm:text-sm">Capital mínimo</span>
+                                            <span className="text-slate-400 text-xs sm:text-sm">Capital mínimo</span>
                                             <span className="font-bold text-white text-sm sm:text-lg">${plan.minCapital}</span>
                                         </div>
                                         <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
@@ -221,11 +221,11 @@ export const LandingPage: React.FC = () => {
 
             {/* CTA Section */}
             <ScrollReveal animation="scale-in" className="mb-12 sm:mb-20">
-                <section className="max-w-4xl mx-auto text-center !bg-[#0B1120] p-6 sm:p-12 rounded-3xl shadow-2xl border border-gray-800 mx-4">
-                    <h3 className="text-3xl sm:text-4xl font-black mb-3 sm:mb-4 gradient-text-primary">
+                <section className="card max-w-4xl mx-auto text-center bg-slate-800/40 backdrop-blur-md p-6 sm:p-12 rounded-2xl shadow-2xl border-t border-r border-b border-slate-700/50 border-l-4 border-l-accent mx-4">
+                    <h3 className="text-3xl sm:text-5xl font-black mb-3 sm:mb-4 gradient-text-primary">
                         Inicia tu inversión hoy
                     </h3>
-                    <p className="text-lg text-gray-400 mb-6 sm:mb-8 max-w-xl mx-auto">
+                    <p className="text-lg text-slate-300 mb-6 sm:mb-8 max-w-xl mx-auto">
                         Únete a la plataforma que combina la rentabilidad con la sostenibilidad.
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">

@@ -25,7 +25,7 @@ export const Sidebar: React.FC = () => {
     const isAdmin = user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN';
 
     return (
-        <aside className="bg-black w-16 sm:w-20 p-3 sm:p-4 flex flex-col items-center border-r border-gray-700/50 transition-all duration-300 sticky top-0 h-screen">
+        <aside className="bg-slate-900/80 backdrop-blur-md w-16 sm:w-20 p-3 sm:p-4 flex flex-col items-center border-r border-slate-700/50 transition-all duration-300 sticky top-0 h-screen">
             {/* Logo */}
             <div className="mb-6 sm:mb-8 mt-2">
                 <img src="/logo.png" alt="Cloud Capital" className="w-8 sm:w-12 h-auto object-contain" />

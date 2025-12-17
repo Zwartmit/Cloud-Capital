@@ -12,6 +12,7 @@ interface ManualDepositRequest {
     collaboratorName: string;
     notes?: string;
     bankName?: string;
+    collaboratorId?: string;
 }
 
 interface WithdrawalRequest {

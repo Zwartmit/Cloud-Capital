@@ -49,13 +49,18 @@ export const AdminPage: React.FC = () => {
     const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
     const [isUserReferralsModalOpen, setIsUserReferralsModalOpen] = useState(false);
 
-    const [pendingTasksCount, setPendingTasksCount] = useState(0);
+    const [stats, setStats] = useState({
+        totalUsers: 0,
+        totalCapital: 0,
+        totalBalance: 0,
+        pendingTasks: 0
+    });
 
-    // Fetch stats to get pending tasks count
+    // Fetch stats
     const fetchStats = async () => {
         try {
-            const stats = await adminService.getStats();
-            setPendingTasksCount(stats.pendingTasks);
+            const data = await adminService.getStats();
+            setStats(data);
         } catch (error) {
             console.error('Error fetching stats:', error);
         }
@@ -181,18 +186,20 @@ export const AdminPage: React.FC = () => {
         <div className="flex min-h-screen">
             <Sidebar />
 
-            <main className="flex-grow p-4 sm:p-8 overflow-y-auto">
+            <main className="flex-grow p-4 sm:p-8 overflow-y-auto w-full">
                 <div className="max-w-7xl mx-auto">
                     <h2 className="text-2xl sm:text-4xl font-extrabold text-admin mb-8 flex items-center">
                         <ShieldHalf className="w-8 h-8 mr-3" />
                         Panel de administración
                     </h2>
 
+
+
                     {/* Tabs Navigation */}
-                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-8 border-b border-gray-700 pb-2 sm:pb-0">
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-8 border-b border-gray-700 pb-2 sm:pb-0 overflow-x-auto">
                         <button
                             onClick={() => setActiveTab('profile')}
-                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'profile'
+                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center whitespace-nowrap ${activeTab === 'profile'
                                 ? 'text-accent border-b-2 border-accent'
                                 : 'text-gray-400 hover:text-white'
                                 }`}
@@ -201,14 +208,19 @@ export const AdminPage: React.FC = () => {
                             Perfil
                         </button>
                         <button
-                            onClick={() => setActiveTab('users')}
-                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'users'
+                            onClick={() => setActiveTab('tasks')}
+                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center whitespace-nowrap ${activeTab === 'tasks'
                                 ? 'text-accent border-b-2 border-accent'
                                 : 'text-gray-400 hover:text-white'
                                 }`}
                         >
-                            <Users className="w-5 h-5 inline mr-2" />
-                            Gestión de usuarios
+                            <ListChecks className="w-5 h-5 inline mr-2" />
+                            Tareas
+                            {stats.pendingTasks > 0 && (
+                                <span className="ml-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+                                    {stats.pendingTasks}
+                                </span>
+                            )}
                         </button>
                         <button
                             onClick={() => setActiveTab('plans')}
@@ -231,45 +243,44 @@ export const AdminPage: React.FC = () => {
                             Rentabilidad
                         </button>
                         <button
-                            onClick={() => setActiveTab('tasks')}
-                            className={`relative pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'tasks'
+                            onClick={() => setActiveTab('users')}
+                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'users'
                                 ? 'text-accent border-b-2 border-accent'
                                 : 'text-gray-400 hover:text-white'
                                 }`}
                         >
-                            <ListChecks className="w-5 h-5 inline mr-2" />
-                            Tareas
-                            {pendingTasksCount > 0 && (
-                                <span className="absolute top-0 right-0 sm:-top-3 sm:-right-3 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full animate-pulse">
-                                    {pendingTasksCount}
-                                </span>
-                            )}
+                            <Users className="w-5 h-5 inline mr-2" />
+                            Gestión de usuarios
                         </button>
-                        <button
-                            onClick={() => setActiveTab('banks')}
-                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'banks'
-                                ? 'text-accent border-b-2 border-accent'
-                                : 'text-gray-400 hover:text-white'
-                                }`}
-                        >
-                            <Building className="w-5 h-5 inline mr-2" />
-                            Bancos
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('collabs')}
-                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'collabs'
-                                ? 'text-accent border-b-2 border-accent'
-                                : 'text-gray-400 hover:text-white'
-                                }`}
-                        >
-                            <Shield className="w-5 h-5 inline mr-2" />
-                            Colaboradores
-                        </button>
+                        {user?.role === 'SUPERADMIN' && (
+                            <>
+                                <button
+                                    onClick={() => setActiveTab('collabs')}
+                                    className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'collabs'
+                                        ? 'text-accent border-b-2 border-accent'
+                                        : 'text-gray-400 hover:text-white'
+                                        }`}
+                                >
+                                    <Shield className="w-5 h-5 inline mr-2" />
+                                    Colaboradores
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('banks')}
+                                    className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'banks'
+                                        ? 'text-accent border-b-2 border-accent'
+                                        : 'text-gray-400 hover:text-white'
+                                        }`}
+                                >
+                                    <Building className="w-5 h-5 inline mr-2" />
+                                    Bancos
+                                </button>
+                            </>
+                        )}
                     </div>
 
-                    {activeTab === 'banks' && <BankManager />}
+                    {user?.role === 'SUPERADMIN' && activeTab === 'banks' && <BankManager />}
 
-                    {activeTab === 'collabs' && <CollaboratorsManager />}
+                    {user?.role === 'SUPERADMIN' && activeTab === 'collabs' && <CollaboratorsManager />}
 
                     {activeTab === 'tasks' && <TaskManager onTaskProcessed={fetchStats} />}
 

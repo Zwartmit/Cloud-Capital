@@ -224,152 +224,164 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             {/* Collaborator Withdrawal Tab */}
             {activeTab === 'collaborator' && (
                 <div className="space-y-3">
-                    <div className="bg-green-900/20 border border-green-700 p-3 rounded-lg">
-                        <h4 className="font-bold text-green-400 mb-1 text-xs">Intercambio BTC → FIAT:</h4>
-                        <ol className="text-[10px] text-gray-300 space-y-1 list-decimal list-inside">
-                            <li>El sistema enviará BTC al colaborador</li>
-                            <li>El colaborador te entregará FIAT (USD, etc.)</li>
-                        </ol>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-medium text-gray-300 mb-1">
-                            Monto a liquidar (USDT)
-                        </label>
-                        <input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            placeholder="Ej: 500"
-                            max={availableProfit}
-                            className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
-                        />
-                        <p className="text-[10px] text-gray-400 mt-1">
-                            Equivalente: {btcEquivalent} BTC
-                        </p>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-medium text-gray-300 mb-1">
-                            Colaborador
-                        </label>
-                        <select
-                            value={collaboratorId}
-                            onChange={(e) => setCollaboratorId(e.target.value)}
-                            className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
-                        >
-                            <option value="">Selecciona un colaborador</option>
-                            {collaborators.map((collab) => (
-                                <option key={collab.id} value={collab.id}>
-                                    {collab.name}
-                                </option>
-                            ))}
-                        </select>
-                        {collaboratorId && (
-                            <div className="mt-2 p-2 bg-gray-800 rounded border border-gray-700 flex flex-col gap-1">
-                                <p className="text-[10px] text-gray-400">Wallet del colaborador:</p>
-                                <code className="text-[10px] text-accent break-all font-mono">
-                                    {collaborators.find(c => c.id === collaboratorId)?.btcDepositAddress}
-                                </code>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Bank Details Form */}
-                    {collaboratorId && (
-                        <div className="space-y-3 pt-2 border-t border-gray-700">
-                            <h5 className="font-semibold text-white text-xs">Datos bancarios para recibir FIAT:</h5>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-300 mb-1">Banco receptor</label>
-                                    <select
-                                        value={bankName}
-                                        onChange={e => setBankName(e.target.value)}
-                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
-                                    >
-                                        <option value="">Selecciona un banco</option>
-                                        {banks.map(bank => (
-                                            <option key={bank.id} value={bank.name}>{bank.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-300 mb-1">Tipo de cuenta</label>
-                                    <select
-                                        value={accountType}
-                                        onChange={e => setAccountType(e.target.value)}
-                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
-                                    >
-                                        <option value="Corriente">Corriente</option>
-                                        <option value="Ahorros">Ahorros</option>
-                                    </select>
-                                </div>
+                    {collaborators.length === 0 ? (
+                        <div className="text-center p-6 bg-gray-800 rounded-lg border border-gray-700">
+                            <p className="text-gray-400 text-sm">
+                                Lo sentimos, en este momento no hay colaboradores disponibles para gestionar liquidaciones.
+                                <br />
+                                Por favor utiliza la liquidación directa a tu wallet personal.
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="bg-green-900/20 border border-green-700 p-3 rounded-lg">
+                                <h4 className="font-bold text-green-400 mb-1 text-xs">Intercambio BTC → FIAT:</h4>
+                                <ol className="text-[10px] text-gray-300 space-y-1 list-decimal list-inside">
+                                    <li>El sistema enviará BTC al colaborador</li>
+                                    <li>El colaborador te entregará FIAT (USD, etc.)</li>
+                                </ol>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-gray-300 mb-1">Número de cuenta</label>
+                                <label className="block text-xs font-medium text-gray-300 mb-1">
+                                    Monto a liquidar (USDT)
+                                </label>
                                 <input
-                                    type="text"
-                                    value={accountNumber}
-                                    onChange={e => setAccountNumber(e.target.value)}
-                                    placeholder="xxxxxxxxxx"
-                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+                                    type="number"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    placeholder="Ej: 500"
+                                    max={availableProfit}
+                                    className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                                 />
+                                <p className="text-[10px] text-gray-400 mt-1">
+                                    Equivalente: {btcEquivalent} BTC
+                                </p>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-300 mb-1">Nombre del titular</label>
-                                    <input
-                                        type="text"
-                                        value={ownerName}
-                                        onChange={e => setOwnerName(e.target.value)}
-                                        placeholder="Nombre completo"
-                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-300 mb-1">Cédula / ID</label>
-                                    <input
-                                        type="text"
-                                        value={ownerId}
-                                        onChange={e => setOwnerId(e.target.value)}
-                                        placeholder="Documento de identidad"
-                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
-                                    />
-                                </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-300 mb-1">
+                                    Colaborador
+                                </label>
+                                <select
+                                    value={collaboratorId}
+                                    onChange={(e) => setCollaboratorId(e.target.value)}
+                                    className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
+                                >
+                                    <option value="">Selecciona un colaborador</option>
+                                    {collaborators.map((collab) => (
+                                        <option key={collab.id} value={collab.id}>
+                                            {collab.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {collaboratorId && (
+                                    <div className="mt-2 p-2 bg-gray-800 rounded border border-gray-700 flex flex-col gap-1">
+                                        <p className="text-[10px] text-gray-400">Wallet del colaborador:</p>
+                                        <code className="text-[10px] text-accent break-all font-mono">
+                                            {collaborators.find(c => c.id === collaboratorId)?.btcDepositAddress}
+                                        </code>
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Breakdown */}
-                            <div className="bg-gray-800 p-2 rounded text-[10px] space-y-1 mt-2">
-                                <div className="flex justify-between text-gray-400">
-                                    <span>Monto a liquidar:</span>
-                                    <span>${amount || 0}</span>
+                            {/* Bank Details Form */}
+                            {collaboratorId && (
+                                <div className="space-y-3 pt-2 border-t border-gray-700">
+                                    <h5 className="font-semibold text-white text-xs">Datos bancarios para recibir FIAT:</h5>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-300 mb-1">Banco receptor</label>
+                                            <select
+                                                value={bankName}
+                                                onChange={e => setBankName(e.target.value)}
+                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+                                            >
+                                                <option value="">Selecciona un banco</option>
+                                                {banks.map(bank => (
+                                                    <option key={bank.id} value={bank.name}>{bank.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-300 mb-1">Tipo de cuenta</label>
+                                            <select
+                                                value={accountType}
+                                                onChange={e => setAccountType(e.target.value)}
+                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+                                            >
+                                                <option value="Corriente">Corriente</option>
+                                                <option value="Ahorros">Ahorros</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-300 mb-1">Número de cuenta</label>
+                                        <input
+                                            type="text"
+                                            value={accountNumber}
+                                            onChange={e => setAccountNumber(e.target.value)}
+                                            placeholder="xxxxxxxxxx"
+                                            className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-300 mb-1">Nombre del titular</label>
+                                            <input
+                                                type="text"
+                                                value={ownerName}
+                                                onChange={e => setOwnerName(e.target.value)}
+                                                placeholder="Nombre completo"
+                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-300 mb-1">Cédula / ID</label>
+                                            <input
+                                                type="text"
+                                                value={ownerId}
+                                                onChange={e => setOwnerId(e.target.value)}
+                                                placeholder="Documento de identidad"
+                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Breakdown */}
+                                    <div className="bg-gray-800 p-2 rounded text-[10px] space-y-1 mt-2">
+                                        <div className="flex justify-between text-gray-400">
+                                            <span>Monto a liquidar:</span>
+                                            <span>${amount || 0}</span>
+                                        </div>
+                                        <div className="flex justify-between text-red-400">
+                                            <span>Comisión Plataforma (4.5%):</span>
+                                            <span>-${platformFee.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-yellow-500">
+                                            <span>Comisión Colaborador ({collaboratorCommissionRate}%):</span>
+                                            <span>-${collaboratorFee.toFixed(2)}</span>
+                                        </div>
+                                        <div className="border-t border-gray-700 pt-1 flex justify-between font-bold text-accent">
+                                            <span>Neto a recibir (FIAT):</span>
+                                            <span>≈ ${netAmount.toFixed(2)}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between text-red-400">
-                                    <span>Comisión Plataforma (4.5%):</span>
-                                    <span>-${platformFee.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-yellow-500">
-                                    <span>Comisión Colaborador ({collaboratorCommissionRate}%):</span>
-                                    <span>-${collaboratorFee.toFixed(2)}</span>
-                                </div>
-                                <div className="border-t border-gray-700 pt-1 flex justify-between font-bold text-accent">
-                                    <span>Neto a recibir (FIAT):</span>
-                                    <span>≈ ${netAmount.toFixed(2)}</span>
-                                </div>
-                            </div>
-                        </div>
+                            )}
+
+                            <button
+                                onClick={handleWithdrawal}
+                                disabled={loading}
+                                className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-profit/20 hover:shadow-profit/40 text-sm mt-1"
+                            >
+                                {loading ? 'Enviando...' : 'Solicitar liquidación con colaborador'}
+                            </button>
+                        </>
                     )}
-
-                    <button
-                        onClick={handleWithdrawal}
-                        disabled={loading}
-                        className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-profit/20 hover:shadow-profit/40 text-sm mt-1"
-                    >
-                        {loading ? 'Enviando...' : 'Solicitar liquidación con colaborador'}
-                    </button>
                 </div>
             )}
 

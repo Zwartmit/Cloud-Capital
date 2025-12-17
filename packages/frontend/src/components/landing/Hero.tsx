@@ -12,7 +12,7 @@ export const Hero: React.FC = () => {
                     Donde el futuro se mina y se multiplica
                 </span>
             </h1>
-            <p className="text-lg sm:text-xl italic text-gray-400 mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl italic text-slate-300 mb-8 sm:mb-12 max-w-4xl mx-auto leading-relaxed">
                 Gana más. Crece limpio. Invierte inteligente.
             </p>
 

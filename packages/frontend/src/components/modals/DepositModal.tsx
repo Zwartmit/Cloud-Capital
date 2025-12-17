@@ -219,50 +219,62 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                             <div>
                                 <h4 className="font-semibold text-white mb-2 text-sm">Colaboradores disponibles:</h4>
                                 <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1 custom-scrollbar">
-                                    {collaborators.map((collab) => (
-                                        <div
-                                            key={collab.id}
-                                            className="flex items-center justify-between p-2.5 bg-gray-800 rounded-lg border border-gray-700 gap-2 hover:border-gray-600 transition-colors"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center text-sm font-bold text-gray-300">
-                                                    {collab.name.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-white text-sm">{collab.name}</p>
-                                                    <p className="text-[10px] text-gray-400">{collab.role}</p>
-                                                    {collab.collaboratorConfig && (
-                                                        <div className="flex gap-2 mt-1">
-                                                            <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-1 rounded border border-yellow-500/30">
-                                                                Comisión: {collab.collaboratorConfig.commission}%
-                                                            </span>
-                                                            <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1 rounded border border-blue-500/30">
-                                                                Tiempo: {collab.collaboratorConfig.processingTime}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <a
-                                                href={`https://wa.me/${collab.whatsappNumber?.replace(/[^0-9]/g, '')}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg transition shadow-md shadow-green-600/20 hover:shadow-green-600/40"
-                                            >
-                                                <MessageCircle className="w-3.5 h-3.5" />
-                                                <span className="text-xs font-medium">WhatsApp</span>
-                                            </a>
+                                    {collaborators.length === 0 ? (
+                                        <div className="text-center p-6 bg-gray-800 rounded-lg border border-gray-700">
+                                            <p className="text-gray-400 text-sm">
+                                                Lo sentimos, en este momento no hay colaboradores disponibles.
+                                                <br />
+                                                Por favor utiliza el aporte directo.
+                                            </p>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        collaborators.map((collab) => (
+                                            <div
+                                                key={collab.id}
+                                                className="flex items-center justify-between p-2.5 bg-gray-800 rounded-lg border border-gray-700 gap-2 hover:border-gray-600 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center text-sm font-bold text-gray-300">
+                                                        {collab.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-white text-sm">{collab.name}</p>
+                                                        <p className="text-[10px] text-gray-400">{collab.role}</p>
+                                                        {collab.collaboratorConfig && (
+                                                            <div className="flex gap-2 mt-1">
+                                                                <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-1 rounded border border-yellow-500/30">
+                                                                    Comisión: {collab.collaboratorConfig.commission}%
+                                                                </span>
+                                                                <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1 rounded border border-blue-500/30">
+                                                                    Tiempo: {collab.collaboratorConfig.processingTime}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <a
+                                                    href={`https://wa.me/${collab.whatsappNumber?.replace(/[^0-9]/g, '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg transition shadow-md shadow-green-600/20 hover:shadow-green-600/40"
+                                                >
+                                                    <MessageCircle className="w-3.5 h-3.5" />
+                                                    <span className="text-xs font-medium">WhatsApp</span>
+                                                </a>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
 
-                            <button
-                                onClick={() => setShowManualOrder(true)}
-                                className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-2.5 rounded-lg transition shadow-lg shadow-profit/20 hover:shadow-profit/40 mt-1 text-sm"
-                            >
-                                Ya realicé el aporte - Crear orden manual
-                            </button>
+                            {collaborators.length > 0 && (
+                                <button
+                                    onClick={() => setShowManualOrder(true)}
+                                    className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-2.5 rounded-lg transition shadow-lg shadow-profit/20 hover:shadow-profit/40 mt-1 text-sm"
+                                >
+                                    Ya realicé el aporte - Crear orden manual
+                                </button>
+                            )}
                         </div>
                     )}
                 </>
@@ -317,6 +329,7 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
                 collaboratorName: collaborator?.name || '',
                 notes,
                 bankName,
+                collaboratorId,
             });
             alert('Orden manual creada. Pendiente de conciliación.');
             onSuccess();

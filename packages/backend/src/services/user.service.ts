@@ -121,7 +121,7 @@ export const getBalanceHistory = async (userId: string, days: number = 30) => {
 
 export const updateUserProfile = async (userId: string, data: Partial<User>): Promise<Omit<User, 'password'>> => {
   // Don't allow updating sensitive fields
-  const { password, role, capitalUSDT, currentBalanceUSDT, ...allowedData } = data;
+  const { password, role, capitalUSDT, currentBalanceUSDT, referrerId, collaboratorConfig, ...allowedData } = data;
 
   const user = await prisma.user.update({
     where: { id: userId },
@@ -307,7 +307,8 @@ export const createManualDepositOrder = async (
   txid: string,
   collaboratorName: string,
   notes?: string,
-  bankName?: string
+  bankName?: string,
+  collaboratorId?: string
 ) => {
   const task = await prisma.task.create({
     data: {
@@ -316,6 +317,7 @@ export const createManualDepositOrder = async (
       amountUSD: amountUSDT,
       txid,
       collaboratorName,
+      collaboratorId,
       reference: notes,
       depositMethod: 'MANUAL',
       bankDetails: bankName ? { bankName } : undefined,
@@ -446,7 +448,13 @@ export const getCollaborators = async () => {
     }
   });
 
-  return collaborators;
+  // Filter active collaborators in memory since config is Json
+  return collaborators.filter(collab => {
+    const config = collab.collaboratorConfig as any;
+    // active if no config (default) or isActive is explicitly true or undefined (default true)
+    // Only strictly false makes it inactive
+    return config?.isActive !== false;
+  });
 };
 
 export const getUserTasks = async (userId: string) => {

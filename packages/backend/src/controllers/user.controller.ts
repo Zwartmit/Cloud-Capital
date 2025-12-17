@@ -192,7 +192,7 @@ export const requestAutoDeposit = async (req: Request, res: Response): Promise<v
 export const requestManualDepositOrder = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
-    const { amountUSDT, txid, collaboratorName, notes } = req.body;
+    const { amountUSDT, txid, collaboratorName, collaboratorId, notes } = req.body;
 
     if (!amountUSDT || amountUSDT <= 0) {
       res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
@@ -204,7 +204,7 @@ export const requestManualDepositOrder = async (req: Request, res: Response): Pr
       return;
     }
 
-    const task = await userService.createManualDepositOrder(userId, amountUSDT, txid, collaboratorName, notes);
+    const task = await userService.createManualDepositOrder(userId, amountUSDT, txid, collaboratorName, notes, undefined, collaboratorId);
     res.status(201).json(task);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

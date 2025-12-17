@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -143,6 +144,13 @@ export const getAllTasks = async (status?: string) => {
           email: true,
           name: true,
           username: true,
+        }
+      },
+      collaborator: {
+        select: {
+          id: true,
+          name: true,
+          whatsappNumber: true,
         }
       }
     },
@@ -445,17 +453,53 @@ export const resetUserPassword = async (userId: string, newPassword: string) => 
   return { message: 'Password reset successfully' };
 };
 
-export const getStats = async () => {
-  const pendingTasks = await prisma.task.count({
-    where: {
-      status: {
-        in: ['PENDING', 'PRE_APPROVED', 'PRE_REJECTED']
+export const toggleCollaboratorVerification = async (taskId: string, verified: boolean) => {
+  return await prisma.task.update({
+    where: { id: taskId },
+    data: {
+      collaboratorVerified: verified
+    },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+        }
+      },
+      collaborator: {
+        select: {
+          name: true,
+          whatsappNumber: true
+        }
       }
     }
   });
+};
+
+export const getStats = async () => {
+  const [pendingTasks, totalUsers, usersAggregate] = await Promise.all([
+    prisma.task.count({
+      where: {
+        status: {
+          in: ['PENDING', 'PRE_APPROVED', 'PRE_REJECTED']
+        }
+      }
+    }),
+    prisma.user.count({ where: { role: 'USER' } }),
+    prisma.user.aggregate({
+      where: { role: 'USER' },
+      _sum: {
+        capitalUSDT: true,
+        currentBalanceUSDT: true
+      }
+    })
+  ]);
 
   return {
-    pendingTasks
+    pendingTasks,
+    totalUsers,
+    totalCapital: usersAggregate._sum.capitalUSDT || 0,
+    totalBalance: usersAggregate._sum.currentBalanceUSDT || 0
   };
 };
 
@@ -478,15 +522,57 @@ export const getRecentTransactions = async (limit: number = 10) => {
   return transactions;
 };
 
-export const updateCollaboratorConfig = async (
-  userId: string,
-  config: { commission: number; processingTime: string; minAmount: number; maxAmount: number }
-) => {
+
+
+export const createCollaborator = async (data: any) => {
+  const { email, password, name, username, whatsappNumber } = data;
+
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email },
+        { username }
+      ]
+    }
+  });
+
+  if (existingUser) {
+    throw new Error('Este usuario ya existe');
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  return await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+      name,
+      username,
+      whatsappNumber,
+      role: 'SUBADMIN',
+      collaboratorConfig: {
+        commission: 5,
+        processingTime: '10-30 minutos',
+        minAmount: 10,
+        maxAmount: 10000,
+        isActive: true
+      }
+    }
+  });
+};
+
+export const updateCollaboratorConfig = async (userId: string, config: any) => {
+  // Validate commission
+  if (config.commission > 10) {
+    throw new Error('La comisión no puede exceder el 10%');
+  }
+
   return await prisma.user.update({
     where: { id: userId },
     data: {
       collaboratorConfig: config,
-    },
+      whatsappNumber: config.whatsappNumber // Update root whatsapp if passed
+    }
   });
 };
 

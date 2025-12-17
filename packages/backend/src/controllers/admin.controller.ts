@@ -103,6 +103,18 @@ export const rejectTask = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
+export const toggleCollaboratorVerification = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { verified } = req.body; // Expecting { verified: true/false }
+
+    const task = await adminService.toggleCollaboratorVerification(id, verified);
+    res.status(200).json(task);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -162,7 +174,7 @@ export const getRecentActivity = async (req: Request, res: Response): Promise<vo
 export const updateCollaboratorConfig = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { commission, processingTime, minAmount, maxAmount } = req.body;
+    const { commission, processingTime, minAmount, maxAmount, isActive, walletAddress, whatsappNumber } = req.body;
 
     if (commission === undefined || !processingTime) {
       res.status(400).json({ error: 'Comisión y Tiempo de procesamiento son requeridos' });
@@ -174,10 +186,36 @@ export const updateCollaboratorConfig = async (req: Request, res: Response): Pro
       processingTime,
       minAmount: parseFloat(minAmount || 0),
       maxAmount: parseFloat(maxAmount || 0),
+      isActive: isActive !== undefined ? isActive : true,
+      walletAddress,
+      whatsappNumber // Passed to service to update root user field if needed, or kept in config
     };
 
     const user = await adminService.updateCollaboratorConfig(id, config);
     res.status(200).json(user);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const createCollaborator = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, password, name, username, whatsappNumber } = req.body;
+
+    if (!email || !password || !name || !username) {
+      res.status(400).json({ error: 'Todos los campos son obligatorios' });
+      return;
+    }
+
+    const user = await adminService.createCollaborator({
+      email,
+      password,
+      name,
+      username,
+      whatsappNumber
+    });
+
+    res.status(201).json(user);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

@@ -31,6 +31,15 @@ export enum InvestmentClass {
   DIAMOND = 'DIAMOND',
 }
 
+export interface CollaboratorConfig {
+  commission: number;
+  processingTime: string;
+  minAmount: number;
+  maxAmount: number;
+  isActive?: boolean;
+  walletAddress?: string;
+}
+
 export interface UserDTO {
   id: string;
   email: string;
@@ -47,6 +56,7 @@ export interface UserDTO {
   whatsappNumber?: string;
   contactEmail?: string;
   contactTelegram?: string;
+  collaboratorConfig?: CollaboratorConfig;
   createdAt: string;
 }
 
@@ -89,11 +99,18 @@ export interface TaskDTO {
   proof?: string;
   approvedByAdmin?: string;
   liquidationDetails?: LiquidationDetails;
+  collaboratorId?: string;
+  collaboratorVerified?: boolean;
   user: {
     id: string;
     email: string;
     name: string;
     username: string;
+  };
+  collaborator?: {
+    id: string;
+    name: string;
+    whatsappNumber?: string;
   };
   createdAt: string;
   updatedAt: string;

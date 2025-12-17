@@ -196,26 +196,6 @@ async function main() {
   // Seed Investment Plans
   const plans = [
     {
-      name: 'BRONCE',
-      minCapital: 10,
-      minDailyReturn: 0.5,
-      maxDailyReturn: 0.7,
-      dailyAverage: 0.60,
-      monthlyCommission: 0.60,
-      referralCommissionRate: 0.05,
-      doublingTime: '8 meses',
-    },
-    {
-      name: 'PLATA',
-      minCapital: 25,
-      minDailyReturn: 0.8,
-      maxDailyReturn: 1.0,
-      dailyAverage: 0.90,
-      monthlyCommission: 0.55,
-      referralCommissionRate: 0.05,
-      doublingTime: '7 meses',
-    },
-    {
       name: 'BASIC',
       minCapital: 50,
       minDailyReturn: 1.3,
@@ -335,7 +315,7 @@ async function main() {
   console.log('🌱 Seeding Daily Profit Rates history...');
   const today = new Date();
   const dailyRatesData: any[] = [];
-  const investmentClasses = ['BRONCE', 'PLATA', 'BASIC', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND'];
+  const investmentClasses = ['BASIC', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND'];
 
   for (let i = 0; i < 30; i++) {
     const date = new Date(today);

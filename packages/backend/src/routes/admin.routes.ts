@@ -37,6 +37,9 @@ router.put('/tasks/:id/approve', adminController.approveTask);
 // PUT /api/admin/tasks/:id/reject
 router.put('/tasks/:id/reject', adminController.rejectTask);
 
+// PUT /api/admin/tasks/:id/verify-collaborator
+router.put('/tasks/:id/verify-collaborator', adminController.toggleCollaboratorVerification);
+
 // DELETE /api/admin/users/:id
 router.delete('/users/:id', adminController.deleteUser);
 
@@ -52,8 +55,11 @@ router.get('/recent-activity', adminController.getRecentActivity);
 // GET /api/admin/staff
 router.get('/staff', adminController.getStaff);
 
-// PUT /api/admin/users/:id/collaborator-config
-router.put('/users/:id/collaborator-config', adminController.updateCollaboratorConfig);
+// POST /api/admin/staff
+router.post('/staff', adminController.createCollaborator);
+
+// PUT /api/admin/staff/:id/config
+router.put('/staff/:id/config', adminController.updateCollaboratorConfig);
 
 // Bank Management Routes
 // GET /api/admin/banks

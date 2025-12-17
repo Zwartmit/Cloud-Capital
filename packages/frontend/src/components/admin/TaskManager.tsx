@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
-import { TaskDTO } from '@cloud-capital/shared';
-import { Check, X, Eye, Clock, ListChecks, Download, ExternalLink, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { TaskDTO, UserDTO } from '@cloud-capital/shared';
+import { Check, X, Eye, Clock, ListChecks, Download, ExternalLink, ChevronLeft, ChevronRight, AlertCircle, MessageCircle, Shield } from 'lucide-react';
 import { formatUSDT } from '../../utils/formatters';
 import { Modal } from '../common/Modal';
 import { useAuthStore } from '../../store/authStore';
@@ -17,6 +17,8 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     const [allTasks, setAllTasks] = useState<TaskDTO[]>([]); // For badge counts
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [collaborators, setCollaborators] = useState<UserDTO[]>([]);
+    const [collaboratorFilter, setCollaboratorFilter] = useState('ALL');
 
     // Action state
     const [processingId, setProcessingId] = useState<string | null>(null);
@@ -50,7 +52,17 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
 
     useEffect(() => {
         loadTasks();
+        loadCollaborators();
     }, [activeTab]);
+
+    const loadCollaborators = async () => {
+        try {
+            const data = await adminService.getAllStaff();
+            setCollaborators(data);
+        } catch (err) {
+            console.error('Error loading collaborators:', err);
+        }
+    };
 
     const loadTasks = async () => {
         setLoading(true);
@@ -111,7 +123,10 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
             const matchesDateFrom = !dateFrom || taskDate >= new Date(dateFrom);
             const matchesDateTo = !dateTo || taskDate <= new Date(dateTo + 'T23:59:59');
 
-            return matchesSearch && matchesStatus && matchesType && matchesDateFrom && matchesDateTo;
+            // Collaborator Filter
+            const matchesCollaborator = collaboratorFilter === 'ALL' || task.collaboratorId === collaboratorFilter;
+
+            return matchesSearch && matchesStatus && matchesType && matchesDateFrom && matchesDateTo && matchesCollaborator;
         }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     };
 
@@ -202,6 +217,20 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
             }
             setDisintegratingTaskId(null);
             setTaskToReject(null);
+        }
+    };
+
+    const handleToggleVerification = async (taskId: string, currentStatus: boolean) => {
+        try {
+            await adminService.verifyCollaboratorTask(taskId, !currentStatus);
+            // Update local state without reload
+            setTasks(prev => prev.map(t =>
+                t.id === taskId
+                    ? { ...t, collaboratorVerified: !currentStatus }
+                    : t
+            ));
+        } catch (err: any) {
+            alert(err.response?.data?.error || 'Error al actualizar verificación');
         }
     };
 
@@ -334,7 +363,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                 </select>
                             </div>
                         )}
-                        <div className={activeTab === 'history' ? '' : 'md:col-span-2'}>
+                        <div className={activeTab === 'history' ? '' : 'md:col-span-1'}>
                             <select
                                 value={typeFilter}
                                 onChange={(e) => setTypeFilter(e.target.value as any)}
@@ -345,6 +374,21 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                 <option value="WITHDRAWAL">Retiros</option>
                             </select>
                         </div>
+                        {/* Collaborator Filter */}
+                        {user?.role === 'SUPERADMIN' && (
+                            <div className="md:col-span-1">
+                                <select
+                                    value={collaboratorFilter}
+                                    onChange={(e) => setCollaboratorFilter(e.target.value)}
+                                    className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
+                                >
+                                    <option value="ALL">Todos los colaboradores</option>
+                                    {collaborators.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         {/* Items per page selector */}
                         <div>
                             <select
@@ -444,6 +488,41 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                     <div className="text-xs text-gray-500 mt-1">
                                         Ref: {task.reference || 'N/A'} • {new Date(task.createdAt).toLocaleString()}
                                     </div>
+
+                                    {/* Collaborator info & Verification */}
+                                    {task.collaborator && (
+                                        <div className="mt-3 bg-gray-700/30 p-2 rounded-lg border border-gray-600/50">
+                                            <div className="text-sm text-gray-300 flex items-center gap-2 mb-1">
+                                                <Shield className="w-3 h-3 text-accent" />
+                                                <span>A cargo de: <strong>{task.collaborator.name}</strong></span>
+                                            </div>
+
+                                            {task.type === 'DEPOSIT_MANUAL' && user?.role === 'SUPERADMIN' && (
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <label className="flex items-center cursor-pointer">
+                                                        <div className="relative">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="sr-only"
+                                                                checked={!!task.collaboratorVerified}
+                                                                onChange={() => handleToggleVerification(task.id, !!task.collaboratorVerified)}
+                                                            />
+                                                            <div className={`block w-10 h-6 rounded-full transition-colors ${task.collaboratorVerified ? 'bg-green-600' : 'bg-gray-600'}`}></div>
+                                                            <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${task.collaboratorVerified ? 'transform translate-x-4' : ''}`}></div>
+                                                        </div>
+                                                        <div className="ml-3 text-xs font-medium text-gray-300">
+                                                            BTC Recibido de Colaborador
+                                                        </div>
+                                                    </label>
+                                                    {task.collaboratorVerified && (
+                                                        <span className="text-green-500 text-xs font-bold flex items-center">
+                                                            <Check className="w-3 h-3 mr-1" /> Verificado
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Actions */}
@@ -459,6 +538,23 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                         >
                                             <Eye className="w-5 h-5" />
                                         </button>
+                                    )}
+
+                                    {task.collaborator?.whatsappNumber && (
+                                        <a
+                                            href={`https://wa.me/${task.collaborator.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                                                `Hola ${task.collaborator.name}, requerimos la transferencia del depósito manual:
+Usuario: ${task.user?.name}
+Monto: ${formatUSDT(task.amountUSD)}
+Referencia: ${task.reference || 'N/A'}`
+                                            )}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-2 bg-green-600 hover:bg-green-500 rounded-lg text-white self-center sm:self-auto w-full sm:w-auto flex justify-center"
+                                            title={`Contactar colaborador: ${task.collaborator.name}`}
+                                        >
+                                            <MessageCircle className="w-5 h-5" />
+                                        </a>
                                     )}
 
                                     {(activeTab === 'pending' || activeTab === 'preapproved') && (

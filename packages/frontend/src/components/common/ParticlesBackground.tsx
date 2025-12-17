@@ -37,7 +37,8 @@ export const ParticlesBackground: React.FC = () => {
         // Initialize particles
         const initParticles = () => {
             particlesRef.current = [];
-            const colors = ['#00d4ff', '#ff00ff', '#00ff88'];
+            // Blue monochrome palette (Light Blue, Sky Blue, Cyan)
+            const colors = ['#4fc3f7', '#29b6f6', '#0288d1', '#e0f7fa'];
             const particleCount = window.innerWidth < 768 ? 60 : 180;
 
             for (let i = 0; i < particleCount; i++) {
@@ -176,7 +177,10 @@ export const ParticlesBackground: React.FC = () => {
         <canvas
             ref={canvasRef}
             className="fixed top-0 left-0 w-full h-full pointer-events-none"
-            style={{ background: '#000000', zIndex: -1 }}
+            style={{
+                background: 'linear-gradient(to bottom, #020617, #0f172a, #1e293b)',
+                zIndex: -1
+            }}
         />
     );
 };

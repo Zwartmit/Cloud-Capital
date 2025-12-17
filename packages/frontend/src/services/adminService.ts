@@ -12,6 +12,9 @@ export interface CollaboratorConfig {
   processingTime: string;
   minAmount: number;
   maxAmount: number;
+  isActive?: boolean;
+  walletAddress?: string;
+  whatsappNumber?: string;
 }
 
 export const adminService = {
@@ -103,6 +106,11 @@ export const adminService = {
     return response.data;
   },
 
+  verifyCollaboratorTask: async (id: string, verified: boolean): Promise<TaskDTO> => {
+    const response = await apiClient.put(`/admin/tasks/${id}/verify-collaborator`, { verified });
+    return response.data;
+  },
+
   // Statistics
   async getStats(): Promise<{
     totalUsers: number;
@@ -131,8 +139,13 @@ export const adminService = {
   },
 
   // Collaborator Config
-  async updateCollaboratorConfig(userId: string, config: CollaboratorConfig) {
-    const response = await apiClient.put(`/admin/users/${userId}/collaborator-config`, config);
+  async updateCollaboratorConfig(userId: string, config: CollaboratorConfig): Promise<UserDTO> {
+    const response = await apiClient.put<UserDTO>(`/admin/staff/${userId}/config`, config);
+    return response.data;
+  },
+
+  async createCollaborator(data: any): Promise<UserDTO> {
+    const response = await apiClient.post<UserDTO>('/admin/staff', data);
     return response.data;
   },
 

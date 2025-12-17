@@ -77,6 +77,7 @@ model User {
   
   transactions       Transaction[]
   tasks              Task[]
+  tasksAsCollaborator Task[]     @relation("TaskCollaborator")
   commissionsEarned  ReferralCommission[] @relation("CommissionsEarned")
   commissionsGenerated ReferralCommission[] @relation("CommissionsGenerated")
   
@@ -123,6 +124,11 @@ model Task {
   btcAddress         String?    // Dirección BTC origen/destino
   txid               String?    // Transaction ID de blockchain
   collaboratorName   String?    // Nombre del colaborador (para DEPOSIT_MANUAL)
+  
+  // Relation to collaborator (User)
+  collaboratorId     String?
+  collaborator       User?      @relation("TaskCollaborator", fields: [collaboratorId], references: [id])
+  
   depositMethod      String?    // "AUTO" o "MANUAL"
   
   // Withdrawal Fields
@@ -132,11 +138,14 @@ model Task {
   
   liquidationDetails Json?      // For liquidation tasks
   
+  collaboratorVerified Boolean    @default(false) // Si el admin verificó que el colaborador envió los fondos
+  
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   
   @@map("tasks")
   @@index([status])
+  @@index([collaboratorId])
 }
 
 model InvestmentPlan {

@@ -36,11 +36,11 @@ export const Features: React.FC = () => {
                 {features.map((feature, index) => (
                     <ScrollReveal key={index} animation="fade-in" delay={index * 0.2}>
                         <div
-                            className={`card p-5 sm:p-8 shadow-2xl border-l-4 ${feature.borderColor} !bg-[#0B1120] border-t border-r border-b border-gray-800 hover-lift h-full transition-all duration-300`}
+                            className={`card p-5 sm:p-8 shadow-2xl border-l-4 ${feature.borderColor} bg-slate-800/40 backdrop-blur-md border-t border-r border-b border-slate-700/50 hover-lift h-full transition-all duration-300`}
                         >
                             <feature.icon className={`w-8 h-8 sm:w-10 sm:h-10 ${feature.color} mx-auto mb-3 sm:mb-4`} />
                             <h3 className="text-xl font-bold mb-2 text-white">{feature.title}</h3>
-                            <p className="text-gray-400 text-lg">{feature.description}</p>
+                            <p className="text-slate-300 text-lg">{feature.description}</p>
                         </div>
                     </ScrollReveal>
                 ))}

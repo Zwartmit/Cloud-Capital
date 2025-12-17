@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { adminService, CollaboratorConfig } from '../../services/adminService';
 import { UserDTO } from '@cloud-capital/shared';
-import { Settings, Shield, XCircle } from 'lucide-react';
+import { Settings, Shield, XCircle, Plus, Trash2, Wallet, Phone } from 'lucide-react';
 
 export const CollaboratorsManager: React.FC = () => {
     const [staff, setStaff] = useState<UserDTO[]>([]);
@@ -13,12 +13,27 @@ export const CollaboratorsManager: React.FC = () => {
     // Modal state for editing config
     const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
     const [selectedCollaborator, setSelectedCollaborator] = useState<UserDTO | null>(null);
+    const [modalError, setModalError] = useState('');
+    const [modalSuccess, setModalSuccess] = useState('');
 
     // Config form
     const [commission, setCommission] = useState(5);
     const [processingTime, setProcessingTime] = useState('10-30 minutos');
     const [minAmount, setMinAmount] = useState(10);
     const [maxAmount, setMaxAmount] = useState(10000);
+    const [isActive, setIsActive] = useState(true);
+    const [walletAddress, setWalletAddress] = useState('');
+    const [whatsappNumber, setWhatsappNumber] = useState('');
+
+    // Create modal state
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [createForm, setCreateForm] = useState({
+        name: '',
+        email: '',
+        username: '',
+        password: '',
+        whatsappNumber: ''
+    });
 
     useEffect(() => {
         fetchStaff();
@@ -47,15 +62,23 @@ export const CollaboratorsManager: React.FC = () => {
             setProcessingTime(config.processingTime ?? '10-30 minutos');
             setMinAmount(config.minAmount ?? 10);
             setMaxAmount(config.maxAmount ?? 10000);
+            setIsActive(config.isActive ?? true);
+            setWalletAddress(config.walletAddress || '');
+            setWhatsappNumber((user as any).whatsappNumber || '');
         } else {
             // Defaults
             setCommission(5);
             setProcessingTime('10-30 minutos');
             setMinAmount(10);
             setMaxAmount(10000);
+            setIsActive(true);
+            setWalletAddress('');
+            setWhatsappNumber((user as any).whatsappNumber || '');
         }
 
         setIsConfigModalOpen(true);
+        setModalError('');
+        setModalSuccess('');
     };
 
     const handleSaveConfig = async (e: React.FormEvent) => {
@@ -63,22 +86,68 @@ export const CollaboratorsManager: React.FC = () => {
         if (!selectedCollaborator) return;
 
         setLoading(true);
-        setError('');
+        setModalError('');
+        setModalSuccess('');
 
         try {
             await adminService.updateCollaboratorConfig(selectedCollaborator.id, {
                 commission: Number(commission),
                 processingTime,
                 minAmount: Number(minAmount),
-                maxAmount: Number(maxAmount)
+                maxAmount: Number(maxAmount),
+                isActive,
+                walletAddress,
+                whatsappNumber
             });
 
-            setSuccessMessage(`Configuración actualizada para ${selectedCollaborator.name}`);
+            setModalSuccess(`Configuración actualizada para ${selectedCollaborator.name}`);
+            setTimeout(() => {
+                setIsConfigModalOpen(false);
+                setModalSuccess('');
+                fetchStaff();
+            }, 1000);
+        } catch (err: any) {
+            setModalError(err.response?.data?.error || 'Error al guardar configuración');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setModalError('');
+        setModalSuccess('');
+
+        try {
+            await adminService.createCollaborator(createForm);
+            setModalSuccess('Colaborador creado exitosamente');
+            setCreateForm({ name: '', email: '', username: '', password: '', whatsappNumber: '' });
+            setTimeout(() => {
+                setIsCreateModalOpen(false);
+                setModalSuccess('');
+                fetchStaff();
+            }, 1000);
+        } catch (err: any) {
+            setModalError(err.response?.data?.error || 'Error al crear colaborador');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!selectedCollaborator || !window.confirm('¿Estás seguro de que quieres eliminar este colaborador? Esta acción no se puede deshacer.')) return;
+
+        setLoading(true);
+        setModalError('');
+        try {
+            await adminService.deleteUser(selectedCollaborator.id);
             setIsConfigModalOpen(false);
-            fetchStaff(); // Refresh list to see updated data if we displayed it
+            setSuccessMessage('Colaborador eliminado correctamente');
+            fetchStaff();
             setTimeout(() => setSuccessMessage(''), 3000);
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Error al guardar configuración');
+            setModalError(err.response?.data?.error || 'Error al eliminar colaborador');
         } finally {
             setLoading(false);
         }
@@ -94,6 +163,20 @@ export const CollaboratorsManager: React.FC = () => {
                 <p className="text-gray-400 text-sm mt-1 ml-8 sm:ml-0">
                     Administra las configuraciones específicas de cada colaborador, como comisiones y tiempos de procesamiento.
                 </p>
+            </div>
+
+            <div className="flex justify-end mb-6">
+                <button
+                    onClick={() => {
+                        setIsCreateModalOpen(true);
+                        setModalError('');
+                        setModalSuccess('');
+                    }}
+                    className="bg-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold transition flex items-center shadow-lg transform hover:scale-105"
+                >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Nuevo colaborador
+                </button>
             </div>
 
             {error && (
@@ -150,7 +233,13 @@ export const CollaboratorsManager: React.FC = () => {
                                                 <div className="space-y-1">
                                                     <div><span className="text-gray-500">Comisión:</span> <span className="text-accent font-bold">{config.commission}%</span></div>
                                                     <div><span className="text-gray-500">Tiempo:</span> {config.processingTime}</div>
+                                                    <div><span className="text-gray-500">Tiempo:</span> {config.processingTime}</div>
                                                     <div><span className="text-gray-500">Límites:</span> ${config.minAmount} - ${config.maxAmount}</div>
+                                                    <div className="pt-1">
+                                                        <span className={`text-xs px-2 py-0.5 rounded border ${config.isActive === false ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-green-500 text-green-500 bg-green-500/10'}`}>
+                                                            {config.isActive === false ? 'No disponible' : 'Disponible'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             ) : (
                                                 <span className="text-gray-600 italic">No configurado</span>
@@ -256,6 +345,17 @@ export const CollaboratorsManager: React.FC = () => {
                         </div>
 
                         <form onSubmit={handleSaveConfig} className="p-4 sm:p-6 space-y-4">
+                            {modalError && (
+                                <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm">
+                                    {modalError}
+                                </div>
+                            )}
+                            {modalSuccess && (
+                                <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-3 rounded-lg text-sm">
+                                    {modalSuccess}
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-1">Comisión (%)</label>
@@ -271,6 +371,7 @@ export const CollaboratorsManager: React.FC = () => {
                                         />
                                         <span className="absolute right-3 top-3 text-gray-400">%</span>
                                     </div>
+                                    <p className="text-xs text-gray-500 mt-1">Máximo 10% permitido.</p>
                                 </div>
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-1">Tiempo de procesamiento</label>
@@ -281,6 +382,34 @@ export const CollaboratorsManager: React.FC = () => {
                                         className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-accent focus:border-accent"
                                         placeholder="Ej: 10-30 minutos"
                                         required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* New Fields: Wallet & WhatsApp */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm text-gray-400 mb-1 flex items-center">
+                                        <Wallet className="w-3 h-3 mr-1" /> Wallet de cobro
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={walletAddress}
+                                        onChange={(e) => setWalletAddress(e.target.value)}
+                                        className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-accent focus:border-accent"
+                                        placeholder="Dirección USDT/BTC"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-400 mb-1 flex items-center">
+                                        <Phone className="w-3 h-3 mr-1" /> WhatsApp de órdenes
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={whatsappNumber}
+                                        onChange={(e) => setWhatsappNumber(e.target.value)}
+                                        className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-accent focus:border-accent"
+                                        placeholder="Ej: 58412..."
                                     />
                                 </div>
                             </div>
@@ -314,6 +443,21 @@ export const CollaboratorsManager: React.FC = () => {
                                         />
                                     </div>
                                 </div>
+
+                                <div className="sm:col-span-2">
+                                    <label className="flex items-center space-x-3 p-3 border border-gray-600 rounded-lg cursor-pointer hover:bg-gray-700/50 transition">
+                                        <input
+                                            type="checkbox"
+                                            checked={isActive}
+                                            onChange={(e) => setIsActive(e.target.checked)}
+                                            className="w-5 h-5 rounded border-gray-600 text-accent focus:ring-accent bg-gray-700"
+                                        />
+                                        <div>
+                                            <span className="block text-white font-medium">Disponible para recibir depósitos</span>
+                                            <span className="block text-xs text-gray-400">Si está desactivado, no aparecerá en la lista de colaboradores para los usuarios.</span>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
 
                             <div className="pt-4 flex gap-3">
@@ -332,6 +476,112 @@ export const CollaboratorsManager: React.FC = () => {
                                     {loading ? 'Guardando...' : 'Guardar configuración'}
                                 </button>
                             </div>
+
+                            <div className="pt-2 border-t border-gray-700">
+                                <button
+                                    type="button"
+                                    onClick={handleDelete}
+                                    className="w-full flex items-center justify-center px-4 py-2 border border-red-500/30 text-red-500 rounded-lg hover:bg-red-500/10 transition text-sm"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Eliminar Colaborador
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Create Modal */}
+            {isCreateModalOpen && createPortal(
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+                    onClick={() => setIsCreateModalOpen(false)}
+                >
+                    <div
+                        className="bg-gray-800 rounded-xl w-[95%] sm:w-full sm:max-w-lg border border-gray-700 shadow-2xl overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-4 sm:p-6 border-b border-gray-700 flex justify-between items-center bg-gray-800">
+                            <h3 className="text-lg sm:text-xl font-bold text-white">Nuevo colaborador</h3>
+                            <button onClick={() => setIsCreateModalOpen(false)} className="text-gray-400 hover:text-white transition">
+                                <XCircle className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreate} className="p-4 sm:p-6 space-y-4">
+                            {modalError && (
+                                <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm">
+                                    {modalError}
+                                </div>
+                            )}
+                            {modalSuccess && (
+                                <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-3 rounded-lg text-sm">
+                                    {modalSuccess}
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-1">Nombre completo</label>
+                                <input
+                                    type="text"
+                                    value={createForm.name}
+                                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                                    className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-1">Email</label>
+                                <input
+                                    type="email"
+                                    value={createForm.email}
+                                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                                    className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                                    required
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm text-gray-400 mb-1">Usuario</label>
+                                    <input
+                                        type="text"
+                                        value={createForm.username}
+                                        onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
+                                        className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-400 mb-1">Contraseña</label>
+                                    <input
+                                        type="password"
+                                        value={createForm.password}
+                                        onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                                        className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-1">WhatsApp (Número completo)</label>
+                                <input
+                                    type="text"
+                                    value={createForm.whatsappNumber}
+                                    onChange={(e) => setCreateForm({ ...createForm, whatsappNumber: e.target.value })}
+                                    className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                                    placeholder="Ej: 584121234567"
+                                    required
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full mt-4 bg-accent hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition"
+                            >
+                                {loading ? 'Creando...' : 'Crear colaborador'}
+                            </button>
                         </form>
                     </div>
                 </div>,
