@@ -115,7 +115,10 @@ Aplicación React con Vite y diseño responsive moderno.
   - Sistema de aprobación de tareas (`TaskManager`) con filtros, búsqueda y paginación
   - Tabla de transacciones mejorada con búsqueda, filtros por tipo/estado, rango de fechas y conversión BTC
   - Gestión de ganancias (`ProfitManager`)
+  - Gestión de colaboradores con configuración de comisiones y límites
   - Gestión de direcciones BTC para colaboradores y admins
+  - Gestión de Bancos (CRUD)
+  - Integración de WhatsApp para contacto directo con colaboradores
   - UI optimizada para mobile y tablet
 
 **Puerto**: 5173 (desarrollo)
@@ -123,10 +126,11 @@ Aplicación React con Vite y diseño responsive moderno.
 ### Backend (`packages/backend`)
 API REST con Express y TypeScript.
 - **Autenticación**: JWT (Access + Refresh Tokens), bcrypt, roles (USER/SUBADMIN/SUPERADMIN).
-- **Usuarios**: CRUD completo, sistema de referidos, gestión de perfiles.
+- **Usuarios**: CRUD completo, sistema de referidos, gestión de perfiles con redes sociales.
 - **Inversiones**: Lógica de planes y rendimientos, proyecciones automáticas.
 - **Transacciones**: Depósitos (auto/manual), retiros (directo BTC/colaborador), reinversiones.
-- **Colaboradores**: Sistema de colaboradores para operaciones mediadas.
+- **Colaboradores**: Sistema de colaboradores para operaciones mediadas, con config dinámica.
+- **Bancos**: Gestión de entidades bancarias para depósitos manuales.
 - **Tareas**: Cola de aprobación para operaciones administrativas.
 - **Email**: Notificaciones (Bienvenida, Reset Password, Confirmaciones).
 
@@ -137,7 +141,7 @@ Tipos TypeScript compartidos entre frontend y backend para garantizar consistenc
 
 ### Database (`packages/database`)
 Esquema Prisma y migraciones para MySQL.
-- **Modelos**: User, Transaction, Task, InvestmentPlan.
+- **Modelos**: User, Transaction, Task, InvestmentPlan, Bank.
 
 ## 🛠️ Scripts Disponibles
 

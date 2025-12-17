@@ -158,3 +158,36 @@ export const getRecentActivity = async (req: Request, res: Response): Promise<vo
     res.status(500).json({ error: error.message });
   }
 };
+
+export const updateCollaboratorConfig = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { commission, processingTime, minAmount, maxAmount } = req.body;
+
+    if (commission === undefined || !processingTime) {
+      res.status(400).json({ error: 'Comisión y Tiempo de procesamiento son requeridos' });
+      return;
+    }
+
+    const config = {
+      commission: parseFloat(commission),
+      processingTime,
+      minAmount: parseFloat(minAmount || 0),
+      maxAmount: parseFloat(maxAmount || 0),
+    };
+
+    const user = await adminService.updateCollaboratorConfig(id, config);
+    res.status(200).json(user);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const getStaff = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const staff = await adminService.getAllStaff();
+    res.status(200).json(staff);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

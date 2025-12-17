@@ -108,7 +108,7 @@ export const searchUsers = async (query: string) => {
       currentBalanceUSDT: true,
       investmentClass: true,
       referralCode: true,
-       _count: {
+      _count: {
         select: { referrals: true }
       }
     },
@@ -226,15 +226,15 @@ export const approveTask = async (taskId: string, adminEmail: string, adminRole:
 
       // Check if this is the user's first deposit and they have a referrer
       const isFirstDeposit = !task.user.hasFirstDeposit;
-      
+
       if (isFirstDeposit && task.user.referrerId) {
         // Get the referrer's investment plan to determine commission rate
         const referrer = await prisma.user.findUnique({
           where: { id: task.user.referrerId },
-          select: { 
-            id: true, 
+          select: {
+            id: true,
             investmentClass: true,
-            currentBalanceUSDT: true 
+            currentBalanceUSDT: true
           }
         });
 
@@ -296,12 +296,44 @@ export const approveTask = async (taskId: string, adminEmail: string, adminRole:
         }
       });
 
+      const details = task.liquidationDetails as any;
+
       // Create transaction
       await prisma.transaction.create({
         data: {
           userId: task.userId,
           type: 'WITHDRAWAL',
           amountUSDT: task.amountUSD,
+          fee: details?.feeAmount || 0,
+          netAmount: details?.netAmount || task.amountUSD,
+          status: 'COMPLETED',
+        }
+      });
+    } else if (task.type === 'LIQUIDATION') {
+      const details = task.liquidationDetails as any;
+      const penaltyAmount = details?.penaltyAmount || 0;
+      const netAmount = details?.netAmount || 0;
+
+      // Reduce Capital and Balance
+      // If full liquidation, capital becomes 0.
+      // amountUSD holds the capital amount being liquidated.
+
+      await prisma.user.update({
+        where: { id: task.userId },
+        data: {
+          capitalUSDT: (task.user.capitalUSDT || 0) - task.amountUSD,
+          currentBalanceUSDT: (task.user.currentBalanceUSDT || 0) - task.amountUSD, // Deducting the capital from balance as well
+        }
+      });
+
+      // Create transaction
+      await prisma.transaction.create({
+        data: {
+          userId: task.userId,
+          type: 'CAPITAL_LIQUIDATION',
+          amountUSDT: task.amountUSD,
+          fee: penaltyAmount,
+          netAmount: netAmount,
           status: 'COMPLETED',
         }
       });
@@ -442,6 +474,35 @@ export const getRecentTransactions = async (limit: number = 10) => {
     orderBy: { createdAt: 'desc' },
     take: limit
   });
-  
+
   return transactions;
+};
+
+export const updateCollaboratorConfig = async (
+  userId: string,
+  config: { commission: number; processingTime: string; minAmount: number; maxAmount: number }
+) => {
+  return await prisma.user.update({
+    where: { id: userId },
+    data: {
+      collaboratorConfig: config,
+    },
+  });
+};
+
+export const getAllStaff = async () => {
+  return await prisma.user.findMany({
+    where: {
+      role: { in: ['SUPERADMIN', 'SUBADMIN'] }
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      username: true,
+      role: true,
+      whatsappNumber: true,
+      collaboratorConfig: true,
+    }
+  });
 };

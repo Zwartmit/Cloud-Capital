@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Copy, Upload, MessageCircle } from 'lucide-react';
-import { investmentService } from '../../services/investmentService';
+import { investmentService, Bank } from '../../services/investmentService';
 
 interface DepositModalProps {
     isOpen: boolean;
@@ -22,19 +22,30 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     const [proof, setProof] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [showManualOrder, setShowManualOrder] = useState(false);
-    const [collaborators, setCollaborators] = useState<Array<{ id: string; name: string; whatsappNumber?: string; role: string }>>([]);
+    const [collaborators, setCollaborators] = useState<Array<{
+        id: string;
+        name: string;
+        whatsappNumber?: string;
+        role: string;
+        collaboratorConfig?: { commission: number; processingTime: string; minAmount: number; maxAmount: number };
+    }>>([]);
+    const [banks, setBanks] = useState<Bank[]>([]);
 
-    // Fetch collaborators on mount
+    // Fetch collaborators and banks on mount
     useEffect(() => {
-        const fetchCollaborators = async () => {
+        const fetchData = async () => {
             try {
-                const data = await investmentService.getCollaborators();
-                setCollaborators(data);
+                const [collabData, bankData] = await Promise.all([
+                    investmentService.getCollaborators(),
+                    investmentService.getBanks()
+                ]);
+                setCollaborators(collabData);
+                setBanks(bankData);
             } catch (error) {
-                console.error('Error fetching collaborators:', error);
+                console.error('Error fetching data:', error);
             }
         };
-        fetchCollaborators();
+        fetchData();
     }, []);
 
     const handleCopyAddress = () => {
@@ -75,7 +86,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     // Collaborators list is now fetched from API
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Depositar fondos" maxWidth="xl">
+        <Modal isOpen={isOpen} onClose={onClose} title="Realizar aporte" maxWidth="xl">
             {!showManualOrder ? (
                 <>
                     {/* Tabs */}
@@ -87,7 +98,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 }`}
                         >
-                            Depósito directo (BTC)
+                            Aporte directo (BTC)
                         </button>
                         <button
                             onClick={() => setActiveTab('collaborator')}
@@ -108,7 +119,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                 <ol className="text-xs text-gray-300 space-y-1.5 list-decimal list-inside">
                                     <li>Copia la dirección BTC que aparece abajo</li>
                                     <li>Envía BTC desde tu wallet personal a esa dirección</li>
-                                    <li>Ingresa el monto equivalente en USDT que depositaste</li>
+                                    <li>Ingresa el monto equivalente en USDT que aportaste</li>
                                     <li>Proporciona el TXID de la transacción (recomendado para procesamiento rápido)</li>
                                     <li>Adjunta un comprobante de la transacción (captura de pantalla)</li>
                                     <li>Envía la solicitud y espera la confirmación</li>
@@ -116,7 +127,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                             </div>
 
                             <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
-                                <p className="text-xs text-gray-400 mb-1">Tu dirección de depósito BTC:</p>
+                                <p className="text-xs text-gray-400 mb-1">Tu dirección de aporte BTC:</p>
                                 <div className="flex items-center gap-2">
                                     <code className="flex-1 bg-gray-900 p-2 rounded text-accent text-xs break-all font-mono">
                                         {userDepositAddress}
@@ -133,7 +144,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
                             <div>
                                 <label className="block text-xs font-medium text-gray-300 mb-1">
-                                    Monto depositado (USDT)
+                                    Monto aportado (USDT)
                                 </label>
                                 <input
                                     type="number"
@@ -196,9 +207,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                 <h4 className="font-bold text-blue-400 mb-2 text-sm">Instrucciones:</h4>
                                 <ol className="text-xs text-gray-300 space-y-1.5 list-decimal list-inside">
                                     <li>Selecciona un colaborador de la lista y contáctalo vía WhatsApp</li>
-                                    <li>Acuerda el monto a depositar y el método de pago (transferencia, efectivo, etc.)</li>
+                                    <li>Acuerda el monto a aportar y el método de pago (transferencia, efectivo, etc.)</li>
                                     <li>Realiza la transferencia de dinero FIAT al colaborador según sus instrucciones</li>
-                                    <li>El colaborador comprará BTC y lo enviará a tu dirección de depósito</li>
+                                    <li>El colaborador comprará BTC y lo enviará a tu dirección de aporte</li>
                                     <li>El colaborador te proporcionará el TXID de la transacción BTC</li>
                                     <li>Haz clic en "Crear orden manual" y completa los datos de la transacción</li>
                                     <li>Espera la confirmación para que se acredite tu saldo</li>
@@ -206,7 +217,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                             </div>
 
                             <div>
-                                <h4 className="font-semibold text-white mb-2 text-sm">Colaboradores Disponibles:</h4>
+                                <h4 className="font-semibold text-white mb-2 text-sm">Colaboradores disponibles:</h4>
                                 <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1 custom-scrollbar">
                                     {collaborators.map((collab) => (
                                         <div
@@ -220,6 +231,16 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                                 <div>
                                                     <p className="font-semibold text-white text-sm">{collab.name}</p>
                                                     <p className="text-[10px] text-gray-400">{collab.role}</p>
+                                                    {collab.collaboratorConfig && (
+                                                        <div className="flex gap-2 mt-1">
+                                                            <span className="text-[10px] bg-yellow-500/20 text-yellow-500 px-1 rounded border border-yellow-500/30">
+                                                                Comisión: {collab.collaboratorConfig.commission}%
+                                                            </span>
+                                                            <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1 rounded border border-blue-500/30">
+                                                                Tiempo: {collab.collaboratorConfig.processingTime}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                             <a
@@ -240,7 +261,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                 onClick={() => setShowManualOrder(true)}
                                 className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-2.5 rounded-lg transition shadow-lg shadow-profit/20 hover:shadow-profit/40 mt-1 text-sm"
                             >
-                                Ya realicé el depósito - Crear orden manual
+                                Ya realicé el aporte - Crear orden manual
                             </button>
                         </div>
                     )}
@@ -254,6 +275,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                         onClose();
                     }}
                     collaborators={collaborators}
+                    banks={banks}
                 />
             )}
         </Modal>
@@ -264,18 +286,24 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 interface ManualOrderFormProps {
     onBack: () => void;
     onSuccess: () => void;
-    collaborators: Array<{ id: string; name: string }>;
+    collaborators: Array<{
+        id: string;
+        name: string;
+        collaboratorConfig?: { commission: number; processingTime: string; minAmount: number; maxAmount: number };
+    }>;
+    banks: Bank[];
 }
 
-const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, collaborators }) => {
+const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, collaborators, banks }) => {
     const [amount, setAmount] = useState('');
     const [txid, setTxid] = useState('');
     const [collaboratorId, setCollaboratorId] = useState('');
+    const [bankName, setBankName] = useState('');
     const [notes, setNotes] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
-        if (!amount || !txid || !collaboratorId) {
+        if (!amount || !txid || !collaboratorId || !bankName) {
             alert('Por favor completa todos los campos obligatorios');
             return;
         }
@@ -288,6 +316,7 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
                 txid,
                 collaboratorName: collaborator?.name || '',
                 notes,
+                bankName,
             });
             alert('Orden manual creada. Pendiente de conciliación.');
             onSuccess();
@@ -304,7 +333,7 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
 
             <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Monto depositado (USDT) *
+                    Monto aportado (USDT) *
                 </label>
                 <input
                     type="number"
@@ -330,7 +359,7 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
 
             <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Colaborador que realizó el depósito *
+                    Colaborador que gestionó el aporte *
                 </label>
                 <select
                     value={collaboratorId}
@@ -341,6 +370,24 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
                     {collaborators.map((collab) => (
                         <option key={collab.id} value={collab.id}>
                             {collab.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Banco de preferencia *
+                </label>
+                <select
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
+                >
+                    <option value="">Selecciona un banco</option>
+                    {banks.map((bank) => (
+                        <option key={bank.id} value={bank.name}>
+                            {bank.name}
                         </option>
                     ))}
                 </select>
@@ -371,7 +418,7 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
                     disabled={loading}
                     className="flex-1 bg-profit hover:bg-emerald-500 text-black font-bold py-3 rounded-lg transition disabled:opacity-50"
                 >
-                    {loading ? 'Creando...' : 'Crear orden de depósito'}
+                    {loading ? 'Creando...' : 'Crear orden de aporte'}
                 </button>
             </div>
         </div>

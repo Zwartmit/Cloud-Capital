@@ -14,17 +14,25 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
 export const updateProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
-    
+
     // Validate BTC address format if provided
     if (req.body.btcDepositAddress) {
       // Bitcoin address validation regex (supports Legacy, SegWit, and Bech32 formats)
       const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
       if (!btcAddressRegex.test(req.body.btcDepositAddress)) {
-        res.status(400).json({ error: 'Formato de dirección BTC inválido' });
+        res.status(400).json({ error: 'Formato de dirección BTC de depósito inválido' });
         return;
       }
     }
-    
+
+    if (req.body.btcWithdrawAddress) {
+      const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
+      if (!btcAddressRegex.test(req.body.btcWithdrawAddress)) {
+        res.status(400).json({ error: 'Formato de dirección BTC de retiro inválido' });
+        return;
+      }
+    }
+
     const user = await userService.updateUserProfile(userId, req.body);
     res.status(200).json(user);
   } catch (error: any) {
@@ -231,6 +239,23 @@ export const requestWithdrawalEnhanced = async (req: Request, res: Response): Pr
       destinationType,
       destinationUserId
     );
+    res.status(201).json(task);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const requestEarlyLiquidation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { btcAddress } = req.body;
+
+    if (!btcAddress) {
+      res.status(400).json({ error: 'Dirección BTC es requerida' });
+      return;
+    }
+
+    const task = await userService.createEarlyLiquidationRequest(userId, btcAddress);
     res.status(201).json(task);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

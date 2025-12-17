@@ -32,7 +32,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
                     onClick={onDeposit}
                     className="bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 text-xs w-full shadow-lg hover:shadow-xl hover:scale-[1.02]"
                 >
-                    AÑADIR (+)
+                    APORTAR (+)
                 </button>
             </div>
 

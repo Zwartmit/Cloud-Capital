@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 import { PasswordInput } from '../components/common/PasswordInput';
+import { TermsModal } from '../components/modals/TermsModal';
 
 export const RegisterPage: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -16,6 +17,11 @@ export const RegisterPage: React.FC = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+    // Terms state
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [showTermsModal, setShowTermsModal] = useState(false);
+
     const navigate = useNavigate();
     const { login: setAuthState } = useAuthStore();
 
@@ -33,6 +39,11 @@ export const RegisterPage: React.FC = () => {
         // Validations
         if (!formData.name || !formData.username || !formData.email || !formData.password || !formData.referralCode) {
             setError('Todos los campos son obligatorios');
+            return;
+        }
+
+        if (!termsAccepted) {
+            setError('Debes aceptar los Términos y Condiciones para continuar');
             return;
         }
 
@@ -185,6 +196,31 @@ export const RegisterPage: React.FC = () => {
                     </div>
 
                     <div className="md:col-span-2">
+                        <div className="flex items-start space-x-3 mt-2">
+                            <div className="flex items-center h-5">
+                                <input
+                                    id="terms"
+                                    name="terms"
+                                    type="checkbox"
+                                    checked={termsAccepted}
+                                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                                    className="w-4 h-4 border border-gray-600 rounded bg-gray-700 focus:ring-3 focus:ring-profit/50"
+                                />
+                            </div>
+                            <label htmlFor="terms" className="text-gray-300 text-sm">
+                                He leído y acepto los{" "}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowTermsModal(true)}
+                                    className="text-profit hover:text-emerald-400 font-medium underline"
+                                >
+                                    Términos y Condiciones
+                                </button>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="md:col-span-2">
                         <button
                             type="submit"
                             disabled={loading}
@@ -237,6 +273,11 @@ export const RegisterPage: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                <TermsModal
+                    isOpen={showTermsModal}
+                    onClose={() => setShowTermsModal(false)}
+                />
             </div>
         </div>
     );

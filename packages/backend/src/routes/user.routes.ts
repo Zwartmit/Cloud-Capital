@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as userController from '../controllers/user.controller.js';
+import * as bankController from '../controllers/bank.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { upload } from '../config/multer.js';
 
@@ -49,7 +50,11 @@ router.post('/deposit/auto', upload.single('proof'), userController.requestAutoD
 router.post('/deposit/manual', userController.requestManualDepositOrder);
 
 // POST /api/user/withdraw/enhanced
+// POST /api/user/withdraw/enhanced
 router.post('/withdraw/enhanced', userController.requestWithdrawalEnhanced);
+
+// POST /api/user/withdraw/capital (Early Liquidation)
+router.post('/withdraw/capital', userController.requestEarlyLiquidation);
 
 // GET /api/user/collaborators
 router.get('/collaborators', userController.getCollaborators);
@@ -62,5 +67,8 @@ router.put('/investment-plan', userController.changeInvestmentPlan);
 
 // GET /api/user/recent-activity
 router.get('/recent-activity', userController.getRecentActivity);
+
+// GET /api/user/banks
+router.get('/banks', bankController.getActiveBanks);
 
 export default router;

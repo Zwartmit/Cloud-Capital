@@ -66,6 +66,7 @@ model User {
   btcDepositAddress  String?          @unique  // Dirección BTC para depósitos
   btcWithdrawAddress String?                   // Dirección BTC personal del usuario
   whatsappNumber     String?                   // Número de WhatsApp (para colaboradores)
+  collaboratorConfig Json?                     // Configuración específica de colaborador (comisión, tiempo, límites)
   
   // Contact Information (for landing page)
   contactEmail       String?                   // Email de contacto público
@@ -91,6 +92,8 @@ model Transaction {
   amountUSDT Float
   amountBTC  Float?
   btcPrice   Float?
+  fee        Float?
+  netAmount  Float?
   
   reference  String?  // TXID, wallet address, etc.
   status     String   @default("COMPLETED")
@@ -125,6 +128,7 @@ model Task {
   // Withdrawal Fields
   destinationType    String?    // "PERSONAL", "COLLABORATOR"
   destinationUserId  String?    // ID del colaborador (si aplica)
+  bankDetails        Json?      // Detalles bancarios para transacciones manuales
   
   liquidationDetails Json?      // For liquidation tasks
   
@@ -191,4 +195,14 @@ model DailyProfitRate {
 
   @@unique([date, investmentClass])
   @@map("daily_profit_rates")
+}
+
+model Bank {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("banks")
 }

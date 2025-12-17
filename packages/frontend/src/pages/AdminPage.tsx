@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
-import { Search, Users, ListChecks, TrendingUp, User, DollarSign, ShieldHalf } from 'lucide-react';
+import { Search, Users, ListChecks, TrendingUp, User, DollarSign, ShieldHalf, Building, Shield } from 'lucide-react';
 import { InvestmentPlanManager } from '../components/admin/InvestmentPlanManager';
 import { ProfitManager } from '../components/admin/ProfitManager';
 import { TaskManager } from '../components/admin/TaskManager';
+import { BankManager } from '../components/admin/BankManager';
+import { CollaboratorsManager } from '../components/admin/CollaboratorsManager';
 import { ConfirmModal } from '../components/modals/ConfirmModal';
 import { ReferralsModal } from '../components/modals/ReferralsModal';
 import { PasswordInput } from '../components/common/PasswordInput';
@@ -14,7 +16,7 @@ import { useAuthStore } from '../store/authStore';
 
 export const AdminPage: React.FC = () => {
     const { user, updateUser } = useAuthStore();
-    const [activeTab, setActiveTab] = useState<'users' | 'plans' | 'profile' | 'tasks' | 'profit'>('tasks');
+    const [activeTab, setActiveTab] = useState<'users' | 'plans' | 'profile' | 'tasks' | 'profit' | 'banks' | 'collabs'>('tasks');
     const [searchEmail, setSearchEmail] = useState('');
     const [searchResults, setSearchResults] = useState<UserDTO[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -24,7 +26,9 @@ export const AdminPage: React.FC = () => {
     const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [userListMessage, setUserListMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [btcAddressMessage, setBtcAddressMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-    const [btcAddress, setBtcAddress] = useState(user?.btcDepositAddress || '');
+    const [btcDepositAddr, setBtcDepositAddr] = useState(user?.btcDepositAddress || '');
+    const [btcWithdrawAddr, setBtcWithdrawAddr] = useState(user?.btcWithdrawAddress || '');
+    const [whatsappNum, setWhatsappNum] = useState(user?.whatsappNumber || '');
     const [contactMessage, setContactMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [contactEmail, setContactEmail] = useState(user?.contactEmail || '');
     const [contactTelegram, setContactTelegram] = useState(user?.contactTelegram || '');
@@ -241,7 +245,31 @@ export const AdminPage: React.FC = () => {
                                 </span>
                             )}
                         </button>
+                        <button
+                            onClick={() => setActiveTab('banks')}
+                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'banks'
+                                ? 'text-accent border-b-2 border-accent'
+                                : 'text-gray-400 hover:text-white'
+                                }`}
+                        >
+                            <Building className="w-5 h-5 inline mr-2" />
+                            Bancos
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('collabs')}
+                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'collabs'
+                                ? 'text-accent border-b-2 border-accent'
+                                : 'text-gray-400 hover:text-white'
+                                }`}
+                        >
+                            <Shield className="w-5 h-5 inline mr-2" />
+                            Colaboradores
+                        </button>
                     </div>
+
+                    {activeTab === 'banks' && <BankManager />}
+
+                    {activeTab === 'collabs' && <CollaboratorsManager />}
 
                     {activeTab === 'tasks' && <TaskManager onTaskProcessed={fetchStats} />}
 
@@ -569,7 +597,8 @@ export const AdminPage: React.FC = () => {
                                                 try {
                                                     const updatedUser = await userService.updateProfile({
                                                         contactEmail: contactEmail || undefined,
-                                                        contactTelegram: contactTelegram || undefined
+                                                        contactTelegram: contactTelegram || undefined,
+                                                        whatsappNumber: whatsappNum || undefined
                                                     });
                                                     updateUser(updatedUser);
                                                     setContactMessage({ type: 'success', text: 'Información de contacto actualizada exitosamente' });
@@ -599,6 +628,19 @@ export const AdminPage: React.FC = () => {
                                                             className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
                                                         />
                                                     </div>
+                                                    <div className="sm:col-span-2">
+                                                        <label className="block text-sm text-gray-400 mb-2">Número de WhatsApp</label>
+                                                        <input
+                                                            type="text"
+                                                            value={whatsappNum}
+                                                            onChange={(e) => setWhatsappNum(e.target.value)}
+                                                            placeholder="+593 99 999 9999"
+                                                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
+                                                        />
+                                                        <p className="text-xs text-gray-500 mt-2 italic">
+                                                            Este número permitirá que los usuarios te contacten directamente vía WhatsApp
+                                                        </p>
+                                                    </div>
                                                 </div>
                                                 <div className="pt-2">
                                                     <button
@@ -626,51 +668,103 @@ export const AdminPage: React.FC = () => {
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                         {/* BTC Address Section - Left Column (Only for Collaborators/Admins) */}
                                         {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
-                                            <div>
-                                                <h3 className="text-xl font-bold text-white mb-6">Dirección BTC para retiros</h3>
-                                                <form onSubmit={async (e) => {
-                                                    e.preventDefault();
+                                            <div className="space-y-8">
+                                                {/* Withdrawal Address Section */}
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-white mb-6">Dirección BTC para retiros</h3>
+                                                    <form onSubmit={async (e) => {
+                                                        e.preventDefault();
+                                                        // Validate BTC address format
+                                                        const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
+                                                        if (btcWithdrawAddr && !btcAddressRegex.test(btcWithdrawAddr)) {
+                                                            setBtcAddressMessage({ type: 'error', text: 'Formato de dirección BTC inválido' });
+                                                            return;
+                                                        }
 
-                                                    // Validate BTC address format
-                                                    const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
-                                                    if (btcAddress && !btcAddressRegex.test(btcAddress)) {
-                                                        setBtcAddressMessage({ type: 'error', text: 'Formato de dirección BTC inválido' });
-                                                        return;
-                                                    }
+                                                        try {
+                                                            const updatedUser = await userService.updateProfile({
+                                                                btcWithdrawAddress: btcWithdrawAddr || undefined
+                                                            });
+                                                            updateUser(updatedUser);
+                                                            setBtcAddressMessage({ type: 'success', text: 'Dirección de retiro actualizada exitosamente' });
+                                                            setTimeout(() => setBtcAddressMessage(null), 5000);
+                                                        } catch (error: any) {
+                                                            setBtcAddressMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar dirección' });
+                                                        }
+                                                    }} className="space-y-4">
+                                                        <div>
+                                                            <label className="block text-sm text-gray-400 mb-2">Dirección de retiro (Tu Billetera)</label>
+                                                            <input
+                                                                type="text"
+                                                                value={btcWithdrawAddr}
+                                                                onChange={(e) => setBtcWithdrawAddr(e.target.value)}
+                                                                placeholder="bc1q... o 1... o 3..."
+                                                                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono focus:ring-accent focus:border-accent focus:outline-none"
+                                                            />
+                                                            <p className="text-xs text-gray-500 mt-2 italic">
+                                                                Esta dirección es tu billetera personal para recibir tus retiros
+                                                            </p>
+                                                        </div>
+                                                        <div className="pt-2">
+                                                            <button
+                                                                type="submit"
+                                                                className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                                                            >
+                                                                Guardar dirección de retiro
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
 
-                                                    try {
-                                                        const updatedUser = await userService.updateProfile({
-                                                            btcDepositAddress: btcAddress || undefined
-                                                        });
-                                                        updateUser(updatedUser);
-                                                        setBtcAddressMessage({ type: 'success', text: 'Dirección BTC actualizada exitosamente' });
-                                                        setTimeout(() => setBtcAddressMessage(null), 5000);
-                                                    } catch (error: any) {
-                                                        setBtcAddressMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar dirección BTC' });
-                                                    }
-                                                }} className="space-y-4">
-                                                    <div>
-                                                        <label className="block text-sm text-gray-400 mb-2">Dirección BTC</label>
-                                                        <input
-                                                            type="text"
-                                                            value={btcAddress}
-                                                            onChange={(e) => setBtcAddress(e.target.value)}
-                                                            placeholder="bc1q... o 1... o 3..."
-                                                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono focus:ring-accent focus:border-accent focus:outline-none"
-                                                        />
-                                                        <p className="text-xs text-gray-500 mt-2 italic">
-                                                            Esta dirección se usará para recibir BTC cuando usuarios soliciten retiros con colaborador
-                                                        </p>
-                                                    </div>
-                                                    <div className="pt-2">
-                                                        <button
-                                                            type="submit"
-                                                            className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
-                                                        >
-                                                            Guardar dirección BTC
-                                                        </button>
-                                                    </div>
-                                                </form>
+                                                <hr className="border-gray-700" />
+
+                                                {/* Deposit Address Section */}
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-white mb-6">Dirección BTC para depósitos</h3>
+                                                    <form onSubmit={async (e) => {
+                                                        e.preventDefault();
+                                                        // Validate BTC address format
+                                                        const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
+                                                        if (btcDepositAddr && !btcAddressRegex.test(btcDepositAddr)) {
+                                                            setBtcAddressMessage({ type: 'error', text: 'Formato de dirección BTC inválido' });
+                                                            return;
+                                                        }
+
+                                                        try {
+                                                            const updatedUser = await userService.updateProfile({
+                                                                btcDepositAddress: btcDepositAddr || undefined
+                                                            });
+                                                            updateUser(updatedUser);
+                                                            setBtcAddressMessage({ type: 'success', text: 'Dirección de depósito actualizada exitosamente' });
+                                                            setTimeout(() => setBtcAddressMessage(null), 5000);
+                                                        } catch (error: any) {
+                                                            setBtcAddressMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar dirección' });
+                                                        }
+                                                    }} className="space-y-4">
+                                                        <div>
+                                                            <label className="block text-sm text-gray-400 mb-2">Dirección de depósito (Para recibir fondos)</label>
+                                                            <input
+                                                                type="text"
+                                                                value={btcDepositAddr}
+                                                                onChange={(e) => setBtcDepositAddr(e.target.value)}
+                                                                placeholder="bc1q... o 1... o 3..."
+                                                                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono focus:ring-accent focus:border-accent focus:outline-none"
+                                                            />
+                                                            <p className="text-xs text-gray-500 mt-2 italic">
+                                                                Esta dirección se mostrará a los usuarios para que te envíen BTC
+                                                            </p>
+                                                        </div>
+                                                        <div className="pt-2">
+                                                            <button
+                                                                type="submit"
+                                                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                                                            >
+                                                                Guardar dirección de depósito
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+
                                                 {btcAddressMessage && (
                                                     <div className={`mt-4 p-3 rounded-lg text-sm ${btcAddressMessage.type === 'success'
                                                         ? 'bg-green-500/10 border border-green-500/20 text-green-500'

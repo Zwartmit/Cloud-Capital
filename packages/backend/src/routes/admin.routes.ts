@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller.js';
+import * as bankController from '../controllers/bank.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requireAdmin } from '../middleware/role.middleware.js';
 
@@ -47,5 +48,24 @@ router.get('/stats', adminController.getStats);
 
 // GET /api/admin/recent-activity
 router.get('/recent-activity', adminController.getRecentActivity);
+
+// GET /api/admin/staff
+router.get('/staff', adminController.getStaff);
+
+// PUT /api/admin/users/:id/collaborator-config
+router.put('/users/:id/collaborator-config', adminController.updateCollaboratorConfig);
+
+// Bank Management Routes
+// GET /api/admin/banks
+router.get('/banks', bankController.getBanks);
+
+// POST /api/admin/banks
+router.post('/banks', bankController.createBank);
+
+// PUT /api/admin/banks/:id
+router.put('/banks/:id', bankController.updateBank);
+
+// DELETE /api/admin/banks/:id
+router.delete('/banks/:id', bankController.deleteBank);
 
 export default router;

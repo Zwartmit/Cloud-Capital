@@ -11,6 +11,7 @@ interface ManualDepositRequest {
     txid: string;
     collaboratorName: string;
     notes?: string;
+    bankName?: string;
 }
 
 interface WithdrawalRequest {
@@ -18,6 +19,7 @@ interface WithdrawalRequest {
     btcAddress: string;
     destinationType: 'PERSONAL' | 'COLLABORATOR';
     destinationUserId?: string;
+    bankDetails?: any;
 }
 
 interface ReinvestRequest {
@@ -31,6 +33,17 @@ interface Collaborator {
     whatsappNumber?: string;
     role: string;
     btcDepositAddress?: string;
+    collaboratorConfig?: {
+        commission: number;
+        processingTime: string;
+        minAmount: number;
+        maxAmount: number;
+    };
+}
+
+export interface Bank {
+    id: string;
+    name: string;
 }
 
 // Auto deposit (direct BTC)
@@ -66,9 +79,21 @@ export const reinvestProfit = async (data: ReinvestRequest) => {
     return response.data;
 };
 
+// Early Capital Liquidation
+export const liquidateCapital = async (btcAddress: string) => {
+    const response = await apiClient.post('/user/withdraw/capital', { btcAddress });
+    return response.data;
+};
+
 // Get collaborators list
 export const getCollaborators = async (): Promise<Collaborator[]> => {
     const response = await apiClient.get('/user/collaborators');
+    return response.data;
+};
+
+// Get banks list
+export const getBanks = async (): Promise<Bank[]> => {
+    const response = await apiClient.get('/user/banks');
     return response.data;
 };
 
@@ -76,6 +101,10 @@ export const investmentService = {
     createAutoDeposit,
     createManualDepositOrder,
     createWithdrawal,
+    liquidateCapital,
     reinvestProfit,
     getCollaborators,
+    getBanks,
 };
+
+

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Wallet, Users } from 'lucide-react';
-import { investmentService } from '../../services/investmentService';
+import { investmentService, Bank } from '../../services/investmentService';
 
 interface WithdrawalModalProps {
     isOpen: boolean;
@@ -22,23 +22,50 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
     const [amount, setAmount] = useState('');
     const [btcAddress, setBtcAddress] = useState('');
     const [collaboratorId, setCollaboratorId] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [collaborators, setCollaborators] = useState<Array<{ id: string; name: string; btcDepositAddress?: string }>>([]);
 
-    // Fetch collaborators on mount
+    // Bank Details State
+    const [bankName, setBankName] = useState('');
+    const [accountType, setAccountType] = useState('Corriente');
+    const [accountNumber, setAccountNumber] = useState('');
+    const [ownerName, setOwnerName] = useState('');
+    const [ownerId, setOwnerId] = useState('');
+
+    const [loading, setLoading] = useState(false);
+    const [collaborators, setCollaborators] = useState<Array<{
+        id: string;
+        name: string;
+        btcDepositAddress?: string;
+        collaboratorConfig?: { commission: number; processingTime: string; minAmount: number; maxAmount: number };
+    }>>([]);
+    const [banks, setBanks] = useState<Bank[]>([]);
+
+    // Fetch collaborators and banks on mount
     useEffect(() => {
-        const fetchCollaborators = async () => {
+        const fetchData = async () => {
             try {
-                const data = await investmentService.getCollaborators();
-                setCollaborators(data);
+                const [collabData, bankData] = await Promise.all([
+                    investmentService.getCollaborators(),
+                    investmentService.getBanks()
+                ]);
+                setCollaborators(collabData);
+                setBanks(bankData);
             } catch (error) {
-                console.error('Error fetching collaborators:', error);
+                console.error('Error fetching data:', error);
             }
         };
-        fetchCollaborators();
+        fetchData();
     }, []);
 
-    const btcEquivalent = amount ? (parseFloat(amount) / btcPrice).toFixed(8) : '0.00000000';
+    const selectedCollaborator = collaborators.find(c => c.id === collaboratorId);
+
+    const platformFee = amount ? parseFloat(amount) * 0.045 : 0;
+    const collaboratorCommissionRate = selectedCollaborator?.collaboratorConfig?.commission || 0;
+    const collaboratorFee = (activeTab === 'collaborator' && amount) ? parseFloat(amount) * (collaboratorCommissionRate / 100) : 0;
+
+    const totalFee = platformFee + collaboratorFee;
+    const netAmount = amount ? parseFloat(amount) - totalFee : 0;
+
+    const btcEquivalent = netAmount ? (netAmount / btcPrice).toFixed(8) : '0.00000000';
 
     const handleWithdrawal = async () => {
         if (!amount) {
@@ -53,7 +80,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         }
 
         if (amountNum < 50) {
-            alert('El monto mínimo de retiro es $50 USDT');
+            alert('El monto mínimo de liquidación es $50 USDT');
             return;
         }
 
@@ -72,13 +99,30 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             const destinationType = activeTab === 'direct' ? 'PERSONAL' : 'COLLABORATOR';
             const finalBtcAddress = activeTab === 'direct'
                 ? btcAddress
-                : collaborators.find(c => c.id === collaboratorId)?.btcDepositAddress || '';
+                : selectedCollaborator?.btcDepositAddress || '';
+
+            const bankDetails = activeTab === 'collaborator' ? {
+                bankName,
+                accountType,
+                accountNumber,
+                ownerName,
+                ownerId
+            } : undefined;
+
+            if (activeTab === 'collaborator') {
+                if (!bankName || !accountNumber || !ownerName || !ownerId) {
+                    alert('Por favor completa todos los datos bancarios');
+                    setLoading(false);
+                    return;
+                }
+            }
 
             await investmentService.createWithdrawal({
                 amountUSDT: amountNum,
                 btcAddress: finalBtcAddress,
                 destinationType,
                 destinationUserId: activeTab === 'collaborator' ? collaboratorId : undefined,
+                bankDetails
             });
 
             alert('Solicitud de retiro enviada. Pendiente de aprobación.');
@@ -86,17 +130,17 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             onClose();
         } catch (error: any) {
             console.error('Error:', error);
-            alert(error.response?.data?.error || 'Error al enviar solicitud');
+            alert(error.response?.data?.error || 'Error al enviar solicitud de liquidación');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Retirar ganancias" maxWidth="xl">
+        <Modal isOpen={isOpen} onClose={onClose} title="Liquidación de Ganancias" maxWidth="xl">
             {/* Balance Info */}
             <div className="bg-profit/10 border border-profit p-3 rounded-lg mb-4 text-center">
-                <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Profit Disponible para Retiro</p>
+                <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Profit Disponible para Liquidación</p>
                 <p className="text-2xl font-black text-profit">${availableProfit.toFixed(2)} USDT</p>
             </div>
 
@@ -129,13 +173,13 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                 <div className="space-y-3">
                     <div className="bg-blue-900/20 border border-blue-700 p-3 rounded-lg">
                         <p className="text-xs text-blue-400 text-center">
-                            Retira tus ganancias directamente a tu wallet personal de BTC
+                            Liquida tus ganancias directamente a tu wallet personal de BTC
                         </p>
                     </div>
 
                     <div>
                         <label className="block text-xs font-medium text-gray-300 mb-1">
-                            Monto a retirar (USDT)
+                            Monto a liquidar (USDT)
                         </label>
                         <input
                             type="number"
@@ -145,8 +189,9 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                             max={availableProfit}
                             className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                         />
-                        <p className="text-[10px] text-gray-400 mt-1">
-                            Equivalente estimado: <span className="text-accent">{btcEquivalent} BTC</span>
+                        <p className="text-[10px] text-gray-400 mt-1 flex justify-between flex-wrap gap-2">
+                            <span>Comisión Operativa (4.5%): <span className="text-red-400">-${platformFee.toFixed(2)}</span></span>
+                            <span>Neto a recibir: <span className="text-accent font-bold">${netAmount.toFixed(2)} ({btcEquivalent} BTC)</span></span>
                         </p>
                     </div>
 
@@ -171,7 +216,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                         disabled={loading}
                         className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-accent/20 hover:shadow-accent/40 text-sm mt-1"
                     >
-                        {loading ? 'Enviando...' : 'Solicitar retiro'}
+                        {loading ? 'Enviando...' : 'Solicitar Liquidación'}
                     </button>
                 </div>
             )}
@@ -189,7 +234,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
 
                     <div>
                         <label className="block text-xs font-medium text-gray-300 mb-1">
-                            Monto a retirar (USDT)
+                            Monto a liquidar (USDT)
                         </label>
                         <input
                             type="number"
@@ -230,12 +275,100 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                         )}
                     </div>
 
+                    {/* Bank Details Form */}
+                    {collaboratorId && (
+                        <div className="space-y-3 pt-2 border-t border-gray-700">
+                            <h5 className="font-semibold text-white text-xs">Datos bancarios para recibir FIAT:</h5>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-300 mb-1">Banco receptor</label>
+                                    <select
+                                        value={bankName}
+                                        onChange={e => setBankName(e.target.value)}
+                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+                                    >
+                                        <option value="">Selecciona un banco</option>
+                                        {banks.map(bank => (
+                                            <option key={bank.id} value={bank.name}>{bank.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-300 mb-1">Tipo de cuenta</label>
+                                    <select
+                                        value={accountType}
+                                        onChange={e => setAccountType(e.target.value)}
+                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+                                    >
+                                        <option value="Corriente">Corriente</option>
+                                        <option value="Ahorros">Ahorros</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-gray-300 mb-1">Número de cuenta</label>
+                                <input
+                                    type="text"
+                                    value={accountNumber}
+                                    onChange={e => setAccountNumber(e.target.value)}
+                                    placeholder="xxxxxxxxxx"
+                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-300 mb-1">Nombre del titular</label>
+                                    <input
+                                        type="text"
+                                        value={ownerName}
+                                        onChange={e => setOwnerName(e.target.value)}
+                                        placeholder="Nombre completo"
+                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-300 mb-1">Cédula / ID</label>
+                                    <input
+                                        type="text"
+                                        value={ownerId}
+                                        onChange={e => setOwnerId(e.target.value)}
+                                        placeholder="Documento de identidad"
+                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Breakdown */}
+                            <div className="bg-gray-800 p-2 rounded text-[10px] space-y-1 mt-2">
+                                <div className="flex justify-between text-gray-400">
+                                    <span>Monto a liquidar:</span>
+                                    <span>${amount || 0}</span>
+                                </div>
+                                <div className="flex justify-between text-red-400">
+                                    <span>Comisión Plataforma (4.5%):</span>
+                                    <span>-${platformFee.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-yellow-500">
+                                    <span>Comisión Colaborador ({collaboratorCommissionRate}%):</span>
+                                    <span>-${collaboratorFee.toFixed(2)}</span>
+                                </div>
+                                <div className="border-t border-gray-700 pt-1 flex justify-between font-bold text-accent">
+                                    <span>Neto a recibir (FIAT):</span>
+                                    <span>≈ ${netAmount.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <button
                         onClick={handleWithdrawal}
                         disabled={loading}
                         className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-profit/20 hover:shadow-profit/40 text-sm mt-1"
                     >
-                        {loading ? 'Enviando...' : 'Solicitar retiro con colaborador'}
+                        {loading ? 'Enviando...' : 'Solicitar liquidación con colaborador'}
                     </button>
                 </div>
             )}
@@ -244,7 +377,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             <div className="mt-4 bg-yellow-900/20 border border-yellow-700 p-2.5 rounded-lg flex gap-2 items-center">
                 <span className="text-yellow-400 text-xs">⚠️</span>
                 <p className="text-[10px] text-yellow-400 leading-tight">
-                    Monto mínimo: $50 USDT. Las solicitudes requieren aprobación.
+                    <strong>NOTA IMPORTANTE:</strong> Todos los retiros/liquidaciones están sujetos a un costo operativo fijo del 4.5%, independientemente de si la orden es aceptada o rechazada. Este fee corresponde a los costos de procesamiento de red, verificación interna y gestión operativa.
                 </p>
             </div>
         </Modal>

@@ -88,9 +88,9 @@ export const getBalanceHistory = async (userId: string, days: number = 30) => {
   for (let i = 0; i < days; i++) {
     const currentDate = new Date(startDate);
     currentDate.setDate(currentDate.getDate() + i);
-    
+
     // Get all transactions up to this date
-    const transactionsUpToDate = transactions.filter(t => 
+    const transactionsUpToDate = transactions.filter(t =>
       new Date(t.createdAt) <= currentDate
     );
 
@@ -160,7 +160,7 @@ export const createWithdrawalRequest = async (userId: string, amountUSD: number)
   const currentBalance = user.currentBalanceUSDT || 0;
   const capital = user.capitalUSDT || 0;
   const availableProfit = currentBalance - capital;
-  
+
   if (availableProfit < amountUSD) {
     throw new Error('Saldo insuficiente');
   }
@@ -190,7 +190,7 @@ export const reinvestProfit = async (userId: string, amountUSD: number) => {
   const currentBalance = user.currentBalanceUSDT || 0;
   const capital = user.capitalUSDT || 0;
   const availableProfit = currentBalance - capital;
-  
+
   if (availableProfit < amountUSD) {
     throw new Error('Saldo insuficiente para reinvertir');
   }
@@ -217,7 +217,7 @@ export const reinvestProfit = async (userId: string, amountUSD: number) => {
 
 export const changePassword = async (userId: string, currentPassword: string, newPassword: string): Promise<void> => {
   const bcrypt = await import('bcrypt');
-  
+
   // Get user with password
   const user = await prisma.user.findUnique({
     where: { id: userId }
@@ -306,7 +306,8 @@ export const createManualDepositOrder = async (
   amountUSDT: number,
   txid: string,
   collaboratorName: string,
-  notes?: string
+  notes?: string,
+  bankName?: string
 ) => {
   const task = await prisma.task.create({
     data: {
@@ -317,6 +318,7 @@ export const createManualDepositOrder = async (
       collaboratorName,
       reference: notes,
       depositMethod: 'MANUAL',
+      bankDetails: bankName ? { bankName } : undefined,
       status: 'PENDING',
     }
   });
@@ -329,7 +331,8 @@ export const createWithdrawalRequestEnhanced = async (
   amountUSDT: number,
   btcAddress: string,
   destinationType: 'PERSONAL' | 'COLLABORATOR',
-  destinationUserId?: string
+  destinationUserId?: string,
+  bankDetails?: any
 ) => {
   const user = await prisma.user.findUnique({
     where: { id: userId }
@@ -343,7 +346,7 @@ export const createWithdrawalRequestEnhanced = async (
   const currentBalance = user.currentBalanceUSDT || 0;
   const capital = user.capitalUSDT || 0;
   const availableProfit = currentBalance - capital;
-  
+
   if (availableProfit < amountUSDT) {
     throw new Error('Saldo insuficiente');
   }
@@ -351,6 +354,10 @@ export const createWithdrawalRequestEnhanced = async (
   if (amountUSDT < 50) {
     throw new Error('El monto mínimo de retiro es $50 USDT');
   }
+
+  const feeRate = 0.045; // 4.5%
+  const feeAmount = amountUSDT * feeRate;
+  const netAmount = amountUSDT - feeAmount;
 
   const task = await prisma.task.create({
     data: {
@@ -360,6 +367,59 @@ export const createWithdrawalRequestEnhanced = async (
       btcAddress,
       destinationType,
       destinationUserId,
+      liquidationDetails: {
+        feeRate,
+        feeAmount,
+        netAmount,
+        type: 'PROFIT_LIQUIDATION'
+      },
+      bankDetails,
+      status: 'PENDING',
+    }
+  });
+
+  return task;
+};
+
+export const createEarlyLiquidationRequest = async (
+  userId: string,
+  btcAddress: string,
+  reason?: string
+) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!user) {
+    throw new Error('Usuario no encontrado');
+  }
+
+  const capital = user.capitalUSDT || 0;
+
+  if (capital <= 0) {
+    throw new Error('No tienes capital activo para liquidar');
+  }
+
+  // 38% Penalty Calculation
+  const penaltyRate = 0.38;
+  const penaltyAmount = capital * penaltyRate;
+  const netAmount = capital - penaltyAmount;
+
+  const task = await prisma.task.create({
+    data: {
+      userId,
+      type: 'LIQUIDATION',
+      amountUSD: capital, // The full capital amount is what is being liquidated
+      btcAddress,
+      destinationType: 'PERSONAL', // Always personal for capital liquidation? Or debatable. For now assume personal.
+      reference: reason || 'Liquidación Anticipada de Capital',
+      liquidationDetails: {
+        penaltyRate,
+        penaltyAmount,
+        netAmount,
+        originalCapital: capital,
+        type: 'CAPITAL_LIQUIDATION'
+      },
       status: 'PENDING',
     }
   });
@@ -382,6 +442,7 @@ export const getCollaborators = async () => {
       whatsappNumber: true,
       role: true,
       btcDepositAddress: true,
+      collaboratorConfig: true,
     }
   });
 

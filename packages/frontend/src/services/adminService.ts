@@ -1,6 +1,19 @@
 import { apiClient } from './api';
 import { TaskDTO, UserDTO } from '@cloud-capital/shared';
 
+export interface Bank {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+export interface CollaboratorConfig {
+  commission: number;
+  processingTime: string;
+  minAmount: number;
+  maxAmount: number;
+}
+
 export const adminService = {
   // User Management
   async getAllUsers(limit: number = 25, page: number = 1): Promise<{
@@ -10,6 +23,11 @@ export const adminService = {
     totalPages: number;
   }> {
     const response = await apiClient.get(`/admin/users?limit=${limit}&page=${page}`);
+    return response.data;
+  },
+
+  async getAllStaff(): Promise<UserDTO[]> {
+    const response = await apiClient.get<UserDTO[]>('/admin/staff');
     return response.data;
   },
 
@@ -40,7 +58,7 @@ export const adminService = {
     // Note: Currently backend only supports balance update via specific endpoint
     // This method might need backend support for other fields
     if (data.capitalUSDT !== undefined && data.currentBalanceUSDT !== undefined) {
-        return this.updateUserBalance(userId, data.capitalUSDT, data.currentBalanceUSDT);
+      return this.updateUserBalance(userId, data.capitalUSDT, data.currentBalanceUSDT);
     }
     const response = await apiClient.put<UserDTO>(`/admin/users/${userId}`, data);
     return response.data;
@@ -109,6 +127,33 @@ export const adminService = {
 
   async triggerProfitProcess(date?: string) {
     const response = await apiClient.post('/profit/process', { date });
+    return response.data;
+  },
+
+  // Collaborator Config
+  async updateCollaboratorConfig(userId: string, config: CollaboratorConfig) {
+    const response = await apiClient.put(`/admin/users/${userId}/collaborator-config`, config);
+    return response.data;
+  },
+
+  // Bank Management
+  async getAllBanks(): Promise<Bank[]> {
+    const response = await apiClient.get<Bank[]>('/admin/banks');
+    return response.data;
+  },
+
+  async createBank(name: string): Promise<Bank> {
+    const response = await apiClient.post<Bank>('/admin/banks', { name });
+    return response.data;
+  },
+
+  async updateBank(id: string, name: string, isActive: boolean): Promise<Bank> {
+    const response = await apiClient.put<Bank>(`/admin/banks/${id}`, { name, isActive });
+    return response.data;
+  },
+
+  async deleteBank(id: string): Promise<{ message: string }> {
+    const response = await apiClient.delete(`/admin/banks/${id}`);
     return response.data;
   }
 };

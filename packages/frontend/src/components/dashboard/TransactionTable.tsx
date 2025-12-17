@@ -34,9 +34,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
     const getTypeText = (type: string) => {
         switch (type) {
             case 'DEPOSIT':
-                return 'Depósito';
+                return 'Aporte';
             case 'WITHDRAWAL':
-                return 'Retiro';
+                return 'Liquidación';
+            case 'LIQUIDATION':
+                return 'Liquidación Capital';
             case 'PROFIT':
                 return 'Ganancia';
             case 'REINVEST':
@@ -127,8 +129,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                         className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                     >
                         <option value="ALL">Todos los tipos</option>
-                        <option value="DEPOSIT">Depósito</option>
-                        <option value="WITHDRAWAL">Retiro</option>
+                        <option value="DEPOSIT">Aporte</option>
+                        <option value="WITHDRAWAL">Liquidación</option>
                         <option value="PROFIT">Ganancia</option>
                         <option value="REINVEST">Reinversión</option>
                         <option value="REFERRAL_COMMISSION">Comisión Referido</option>
