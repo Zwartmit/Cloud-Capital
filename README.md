@@ -200,11 +200,6 @@ El archivo `docker-compose.yml` está listo para ser usado en plataformas como R
 
 Asegúrate de configurar las variables de entorno en tu plataforma de despliegue o en un archivo `.env` seguro.
 
-## 📚 Documentación Adicional
-
-- [Wallet Management Strategy](./wallet_management.md) - Estrategia completa de gestión de wallets (custodial/no-custodial/híbrido) con detalles de arquitectura, flujos de transacciones y esquema de base de datos.
-
-
 ## 🔐 Autenticación y Roles
 
 El sistema implementa autenticación basada en JWT con tres roles:
