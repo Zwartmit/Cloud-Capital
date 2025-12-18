@@ -101,6 +101,8 @@ export interface TaskDTO {
   liquidationDetails?: LiquidationDetails;
   collaboratorId?: string;
   collaboratorVerified?: boolean;
+  rejectionReason?: string;
+  destinationUserId?: string;
   user: {
     id: string;
     email: string;

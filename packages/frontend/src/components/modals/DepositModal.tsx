@@ -314,19 +314,33 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
     const [notes, setNotes] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const selectedCollaborator = collaborators.find(c => c.id === collaboratorId);
+
     const handleSubmit = async () => {
         if (!amount || !txid || !collaboratorId || !bankName) {
             alert('Por favor completa todos los campos obligatorios');
             return;
         }
 
+        const amountVal = parseFloat(amount);
+        if (selectedCollaborator?.collaboratorConfig) {
+            const { minAmount, maxAmount } = selectedCollaborator.collaboratorConfig;
+            if (minAmount > 0 && amountVal < minAmount) {
+                alert(`El monto mínimo con este colaborador es $${minAmount}`);
+                return;
+            }
+            if (maxAmount > 0 && amountVal > maxAmount) {
+                alert(`El monto máximo con este colaborador es $${maxAmount}`);
+                return;
+            }
+        }
+
         setLoading(true);
         try {
-            const collaborator = collaborators.find(c => c.id === collaboratorId);
             await investmentService.createManualDepositOrder({
-                amountUSDT: parseFloat(amount),
+                amountUSDT: amountVal,
                 txid,
-                collaboratorName: collaborator?.name || '',
+                collaboratorName: selectedCollaborator?.name || '',
                 notes,
                 bankName,
                 collaboratorId,
@@ -386,6 +400,19 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
                         </option>
                     ))}
                 </select>
+                {selectedCollaborator?.collaboratorConfig && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        <span className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">
+                            Min: ${selectedCollaborator.collaboratorConfig.minAmount}
+                        </span>
+                        <span className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300">
+                            Max: ${selectedCollaborator.collaboratorConfig.maxAmount}
+                        </span>
+                        <span className="text-xs bg-yellow-500/10 text-yellow-500 px-2 py-1 rounded border border-yellow-500/20">
+                            Comisión: {selectedCollaborator.collaboratorConfig.commission}%
+                        </span>
+                    </div>
+                )}
             </div>
 
             <div>

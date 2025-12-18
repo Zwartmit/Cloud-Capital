@@ -488,6 +488,11 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                     <div className="text-xs text-gray-500 mt-1">
                                         Ref: {task.reference || 'N/A'} • {new Date(task.createdAt).toLocaleString()}
                                     </div>
+                                    {task.status === 'REJECTED' && task.rejectionReason && (
+                                        <div className="mt-2 text-xs text-red-400 bg-red-500/10 p-2 rounded border border-red-500/20">
+                                            <strong>Motivo de rechazo:</strong> {task.rejectionReason}
+                                        </div>
+                                    )}
 
                                     {/* Collaborator info & Verification */}
                                     {task.collaborator && (

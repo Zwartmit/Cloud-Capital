@@ -9,6 +9,7 @@ interface Task {
     createdAt: string;
     approvedByAdmin?: string;
     rejectionReason?: string;
+    destinationUserId?: string;
 }
 
 interface NotificationCenterProps {
@@ -65,20 +66,33 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
         }
     };
 
-    const getStatusText = (status: string) => {
-        switch (status) {
+    const getStatusText = (task: Task) => {
+        const isDeposit = task.type.includes('DEPOSIT');
+
+        switch (task.status) {
             case 'COMPLETED':
-                return 'Aprobada';
+                if (task.type === 'WITHDRAWAL' && task.destinationUserId) {
+                    return 'Transacción aprobada. Pendiente de envío del comprobante vía WhatsApp.';
+                }
+                return isDeposit ? 'Orden aprobada - Saldo acreditado' : 'Liquidación completada';
             case 'REJECTED':
                 return 'Rechazada';
             case 'PENDING':
-                return 'Pendiente';
+                return 'Orden creada';
             case 'PRE_APPROVED':
+                if (!isDeposit) {
+                    return (
+                        <span className="flex flex-col gap-0.5">
+                            <span>Orden aceptada</span>
+                            <span className="text-xs text-yellow-500/80">Comisión aplicada • Pendiente de comprobante</span>
+                        </span>
+                    );
+                }
                 return 'Pre-aprobada';
             case 'PRE_REJECTED':
                 return 'Pre-rechazada';
             default:
-                return status;
+                return task.status;
         }
     };
 
@@ -271,13 +285,14 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
                                                     {getTypeText(task.type)}
                                                 </p>
                                             </div>
-                                            <p className="text-xs sm:text-sm text-gray-400">
-                                                {getStatusText(task.status)} • {new Date(task.createdAt).toLocaleDateString('es-ES', {
+                                            <div className="text-xs sm:text-sm text-gray-400">
+                                                {getStatusText(task)}
+                                                <span className="ml-1">• {new Date(task.createdAt).toLocaleDateString('es-ES', {
                                                     day: 'numeric',
                                                     month: 'short',
                                                     year: 'numeric'
-                                                })}
-                                            </p>
+                                                })}</span>
+                                            </div>
                                             {task.approvedByAdmin && (
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     Por: {task.approvedByAdmin}
