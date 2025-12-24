@@ -123,6 +123,7 @@ export async function reserveAddressTemporarily(
         data: {
             status: BtcAddressStatus.RESERVED,
             reservedAt: new Date(),
+            requestedAmount: amountUSDT,
             // NO asignar reservedForTaskId - se asignará cuando se cree la tarea
         },
     });
@@ -240,7 +241,15 @@ export async function getAddresses(params: {
             skip,
             take: limit,
             orderBy: { createdAt: 'desc' },
-            include: {
+            select: {
+                id: true,
+                address: true,
+                status: true,
+                reservedAt: true,
+                usedAt: true,
+                uploadedAt: true,
+                requestedAmount: true,
+                adminNotes: true,
                 uploadedByUser: {
                     select: {
                         id: true,
@@ -375,6 +384,7 @@ export async function releaseAddressById(addressId: string): Promise<{ releasedA
             status: BtcAddressStatus.AVAILABLE,
             reservedAt: null,
             reservedForTaskId: null,
+            requestedAmount: null, // Clear amount when releasing
         },
     });
 
@@ -399,5 +409,18 @@ export async function releaseReservedAddress(taskId: string): Promise<void> {
             reservedAt: null,
             reservedForTaskId: null,
         },
+    });
+}
+
+/**
+ * Actualizar notas de admin para una dirección
+ */
+export async function updateAddressNotes(
+    addressId: string,
+    notes: string
+): Promise<void> {
+    await prisma.btcAddressPool.update({
+        where: { id: addressId },
+        data: { adminNotes: notes },
     });
 }

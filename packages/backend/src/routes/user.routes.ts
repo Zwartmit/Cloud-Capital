@@ -50,6 +50,7 @@ router.post('/deposit/auto', upload.single('proof'), userController.requestAutoD
 
 // Release reserved address (when user closes modal)
 router.post('/deposit/release-address', userController.releaseReservedAddress);
+router.put('/deposit/update-address-amount/:addressId', userController.updateReservedAddressAmount);
 
 // POST /api/user/deposit/manual
 router.post('/deposit/manual', userController.requestManualDepositOrder);

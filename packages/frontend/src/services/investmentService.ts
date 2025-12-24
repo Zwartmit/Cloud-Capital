@@ -111,6 +111,12 @@ export const releaseReservedAddress = async (addressId: string) => {
     return response.data;
 };
 
+// Update reserved address amount (when user changes amount after requesting)
+export const updateReservedAddressAmount = async (addressId: string, amountUSDT: number) => {
+    const response = await apiClient.put(`/user/deposit/update-address-amount/${addressId}`, { amountUSDT });
+    return response.data;
+};
+
 export const investmentService = {
     reserveBtcAddress,
     createAutoDeposit,
@@ -121,6 +127,7 @@ export const investmentService = {
     getCollaborators,
     getBanks,
     releaseReservedAddress,
+    updateReservedAddressAmount,
 };
 
-
+export default investmentService;

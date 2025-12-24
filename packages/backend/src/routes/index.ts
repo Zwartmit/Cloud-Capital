@@ -8,6 +8,7 @@ import contactRoutes from './contact.routes.js';
 import btcPoolRoutes from './btc-address-pool.routes.js';
 import blockchainRoutes from './blockchain.routes.js';
 import auditRoutes from './audit.routes.js';
+import collaboratorBankRoutes from './collaborator-bank.routes.js';
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.use('/contact', contactRoutes);
 router.use('/admin/btc-pool', btcPoolRoutes);
 router.use('/blockchain', blockchainRoutes);
 router.use('/admin/audit', auditRoutes);
+router.use('/admin/collaborator-banks', collaboratorBankRoutes);
 
 export default router;
 

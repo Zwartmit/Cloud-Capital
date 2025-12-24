@@ -74,6 +74,18 @@ export const releaseAddress = async (addressId: string) => {
 };
 
 /**
+ * Update admin notes for an address
+ */
+export const updateAddressNotes = async (addressId: string, notes: string) => {
+    const response = await axios.put(
+        `${API_URL}/admin/btc-pool/${addressId}/notes`,
+        { notes },
+        { headers: getAuthHeader() }
+    );
+    return response.data;
+};
+
+/**
  * Get blockchain info for an address
  */
 export const getAddressInfo = async (address: string) => {

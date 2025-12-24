@@ -63,6 +63,28 @@ export const DashboardPage: React.FC = () => {
         fetchTransactions();
     }, []);
 
+    // Poll user data every 10 seconds to catch balance updates from admin approvals
+    useEffect(() => {
+        const { updateUser } = useAuthStore.getState();
+
+        const refreshUserData = async () => {
+            try {
+                const userData = await userService.getProfile();
+                updateUser(userData);
+            } catch (error) {
+                console.error('Error refreshing user data:', error);
+            }
+        };
+
+        // Refresh immediately on mount
+        refreshUserData();
+
+        // Then refresh every 10 seconds
+        const interval = setInterval(refreshUserData, 10000);
+
+        return () => clearInterval(interval);
+    }, []);
+
     // Use real user data from backend
     const capitalUSDT = user?.capitalUSDT || 0;
     const currentBalanceUSDT = user?.currentBalanceUSDT || 0;

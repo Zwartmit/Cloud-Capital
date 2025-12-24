@@ -19,6 +19,8 @@ interface Address {
     reservedAt?: string;
     usedAt?: string;
     uploadedAt: string;
+    requestedAmount?: number;
+    adminNotes?: string;
     uploadedByUser: {
         name: string;
         email: string;
@@ -38,6 +40,9 @@ export default function AddressPoolPage() {
     const [filter, setFilter] = useState<'ALL' | 'AVAILABLE' | 'RESERVED' | 'USED'>('ALL');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [showNotesModal, setShowNotesModal] = useState(false);
+    const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+    const [notesText, setNotesText] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -164,6 +169,26 @@ export default function AddressPoolPage() {
         }
     };
 
+    const handleEditNotes = (addr: Address) => {
+        setSelectedAddress(addr);
+        setNotesText(addr.adminNotes || '');
+        setShowNotesModal(true);
+    };
+
+    const handleUpdateNotes = async () => {
+        if (!selectedAddress) return;
+
+        try {
+            await btcPoolService.updateAddressNotes(selectedAddress.id, notesText);
+            alert('Notas actualizadas exitosamente');
+            setShowNotesModal(false);
+            setSelectedAddress(null);
+            loadData();
+        } catch (error: any) {
+            alert(`Error: ${error.response?.data?.error || error.message}`);
+        }
+    };
+
     return (
         <div className="flex min-h-screen">
             <Sidebar />
@@ -174,7 +199,7 @@ export default function AddressPoolPage() {
                         <h2 className="text-2xl sm:text-4xl font-extrabold text-admin">
                             Pool de direcciones BTC
                         </h2>
-                    </div>  
+                    </div>
 
                     {/* Stats Cards */}
                     {stats && (
@@ -268,8 +293,10 @@ export default function AddressPoolPage() {
                                         <tr>
                                             <th>Dirección</th>
                                             <th>Estado</th>
+                                            <th>Monto Solicitado</th>
                                             <th>Fecha de carga</th>
                                             <th>Usado por</th>
+                                            <th>Notas</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
@@ -284,6 +311,13 @@ export default function AddressPoolPage() {
                                                         {getStatusText(addr.status)}
                                                     </span>
                                                 </td>
+                                                <td>
+                                                    {addr.requestedAmount ? (
+                                                        <span className="text-accent font-semibold">${Number(addr.requestedAmount).toFixed(2)}</span>
+                                                    ) : (
+                                                        <span className="text-gray-500">-</span>
+                                                    )}
+                                                </td>
                                                 <td>{new Date(addr.uploadedAt).toLocaleDateString()}</td>
                                                 <td>
                                                     {addr.usedByUser ? (
@@ -293,6 +327,31 @@ export default function AddressPoolPage() {
                                                     ) : (
                                                         '-'
                                                     )}
+                                                </td>
+                                                <td style={{ width: '200px', maxWidth: '200px' }}>
+                                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', width: '100%' }}>
+                                                        <span
+                                                            className="text-xs text-gray-300"
+                                                            style={{
+                                                                flex: 1,
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap',
+                                                                minWidth: 0
+                                                            }}
+                                                            title={addr.adminNotes || ''}
+                                                        >
+                                                            {addr.adminNotes || '-'}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => handleEditNotes(addr)}
+                                                            className="btn-delete"
+                                                            title="Editar notas"
+                                                            style={{ flexShrink: 0 }}
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     {addr.status === 'RESERVED' ? (
@@ -352,6 +411,50 @@ export default function AddressPoolPage() {
                     )}
                 </div>
             </main>
+
+            {/* Notes Modal */}
+            {showNotesModal && selectedAddress && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                    onClick={() => setShowNotesModal(false)}
+                >
+                    <div
+                        className="bg-gray-900 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3 className="text-xl font-bold text-white mb-4">
+                            Editar nota
+                        </h3>
+                        <p className="text-sm text-gray-400 mb-2">
+                            Dirección: <code className="text-accent">{selectedAddress.address.substring(0, 20)}...</code>
+                        </p>
+                        <textarea
+                            value={notesText}
+                            onChange={(e) => setNotesText(e.target.value)}
+                            placeholder="Agregar notas o comentarios..."
+                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm resize-none"
+                            rows={5}
+                        />
+                        <div className="flex gap-3 mt-4">
+                            <button
+                                onClick={handleUpdateNotes}
+                                className="flex-1 bg-accent hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition"
+                            >
+                                Guardar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowNotesModal(false);
+                                    setSelectedAddress(null);
+                                }}
+                                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded-lg transition"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

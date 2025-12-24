@@ -157,8 +157,38 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         }
     };
 
+    // Calculate next Friday for withdrawal processing
+    const getNextFriday = () => {
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const daysUntilFriday = (5 - dayOfWeek + 7) % 7 || 7; // 5 = Friday
+        const nextFriday = new Date(today);
+        nextFriday.setDate(today.getDate() + daysUntilFriday);
+        return nextFriday.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Retiro de ganancias" maxWidth="xl">
+            {/* Friday Processing Notice */}
+            <div className="bg-blue-900/20 border border-blue-600 p-3 rounded-lg mb-4">
+                <div className="flex items-start gap-2">
+                    <span className="text-blue-400 text-lg">📅</span>
+                    <div className="flex-1">
+                        <p className="text-xs text-gray-300 leading-relaxed">
+                            Puedes solicitar tu retiro cualquier día de la semana, pero <strong className="text-blue-400">todos los retiros se procesan únicamente los viernes</strong>.
+                        </p>
+                        <p className="text-xs text-blue-300 mt-2">
+                            📌 Próximo procesamiento: <strong>{getNextFriday()}</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* Balance Info */}
             <div className="bg-profit/10 border border-profit p-3 rounded-lg mb-4 text-center">
                 <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Profit Disponible para retiro</p>
@@ -185,7 +215,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                         }`}
                 >
                     <Users className="w-4 h-4" />
-                    Intercambio con colaborador
+                    Retiro con colaborador
                 </button>
             </div>
 

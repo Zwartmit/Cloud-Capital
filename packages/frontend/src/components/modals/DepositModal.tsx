@@ -159,8 +159,18 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             return;
         }
 
+        if (!assignedAddress) {
+            alert('Por favor solicita una dirección BTC primero');
+            return;
+        }
+
         setLoading(true);
         try {
+            // Update address amount if it changed after requesting
+            if (reservedAddressId) {
+                await investmentService.updateReservedAddressAmount(reservedAddressId, amountNum);
+            }
+
             // Create task with reserved address ID
             await investmentService.createAutoDeposit({
                 amountUSDT: amountNum,
@@ -216,12 +226,13 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                             <div className="bg-blue-900/20 border border-blue-700 p-3 rounded-lg">
                                 <h4 className="font-bold text-blue-400 mb-2 text-sm">Instrucciones:</h4>
                                 <ol className="text-xs text-gray-300 space-y-1.5 list-decimal list-inside">
-                                    <li>Copia la dirección BTC que aparece abajo</li>
+                                    <li>Ingresa el monto en USDT que deseas aportar</li>
+                                    <li>Haz clic en "Solicitar dirección BTC" para obtener una dirección única</li>
+                                    <li>Copia la dirección BTC que aparecerá abajo</li>
                                     <li>Envía BTC desde tu wallet personal a esa dirección</li>
-                                    <li>Ingresa el monto equivalente en USDT que aportaste</li>
                                     <li>Proporciona el TXID de la transacción (recomendado para procesamiento rápido)</li>
                                     <li>Adjunta un comprobante de la transacción (captura de pantalla)</li>
-                                    <li>Envía la solicitud y espera la confirmación</li>
+                                    <li>Haz clic en "Enviar solicitud" y espera la confirmación</li>
                                 </ol>
                             </div>
 
@@ -337,7 +348,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
                             <button
                                 onClick={handleDirectDeposit}
-                                disabled={loading}
+                                disabled={loading || !assignedAddress}
                                 className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-accent/20 hover:shadow-accent/40 text-sm"
                             >
                                 {loading ? 'Enviando...' : 'Enviar solicitud'}

@@ -16,5 +16,6 @@ router.delete('/:id', requireSuperAdmin, btcPoolController.deleteAddress);
 // Admin routes (SUBADMIN and SUPERADMIN)
 router.get('/stats', requireAdmin, btcPoolController.getStats);
 router.get('/addresses', requireAdmin, btcPoolController.getAddresses);
+router.put('/:id/notes', requireAdmin, btcPoolController.updateNotes);
 
 export default router;

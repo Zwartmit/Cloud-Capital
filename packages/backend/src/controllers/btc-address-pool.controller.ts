@@ -167,3 +167,34 @@ export const releaseAddress = async (req: Request, res: Response): Promise<void>
         res.status(400).json({ error: error.message });
     }
 };
+
+/**
+ * PUT /api/admin/btc-pool/:id/notes
+ * Actualizar notas de admin para una dirección
+ */
+export const updateNotes = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { notes } = req.body;
+
+        await btcPoolService.updateAddressNotes(id, notes || '');
+
+        // Log to audit
+        await auditService.logAction({
+            adminId: req.user!.userId,
+            adminEmail: req.user!.email,
+            adminRole: req.user!.role as any,
+            action: AuditAction.UPLOADED_ADDRESSES,
+            entityType: 'ADDRESS',
+            entityId: id,
+            notes: `Admin notes updated`,
+            ipAddress: req.ip,
+            userAgent: req.get('user-agent'),
+        });
+
+        res.status(200).json({ message: 'Notas actualizadas exitosamente' });
+    } catch (error: any) {
+        console.error('[BTC Pool Controller Error]', error);
+        res.status(400).json({ error: error.message });
+    }
+};

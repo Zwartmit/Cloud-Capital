@@ -52,7 +52,40 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
 
   // Generate unique referral code for new user
   const { nanoid } = await import('nanoid');
-  const newReferralCode = nanoid(8); // 8 characters long
+  // Generate custom referral code: initials + 6 digits (e.g., "ju511893" for Javier Urbano)
+  const generateCustomReferralCode = (name: string): string => {
+    const nameParts = name.trim().split(' ').filter(part => part.length > 0);
+
+    let initials: string;
+    if (nameParts.length >= 2) {
+      // Use first letter of first name and first letter of last name
+      initials = (nameParts[0][0] + nameParts[1][0]).toLowerCase();
+    } else if (nameParts.length === 1 && nameParts[0].length >= 2) {
+      // Single name: use first 2 letters
+      initials = nameParts[0].substring(0, 2).toLowerCase();
+    } else {
+      // Fallback
+      initials = 'xx';
+    }
+
+    // Generate 6 random digits
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+
+    return `${initials}${randomDigits}`;
+  };
+
+  // Generate referral code and ensure uniqueness
+  let newReferralCode = generateCustomReferralCode(data.name);
+  let attempts = 0;
+  while (attempts < 10) {
+    const existing = await prisma.user.findUnique({
+      where: { referralCode: newReferralCode }
+    });
+    if (!existing) break;
+    // Regenerate if duplicate
+    newReferralCode = generateCustomReferralCode(data.name);
+    attempts++;
+  }
 
   // Hash password
   const hashedPassword = await hashPassword(data.password);

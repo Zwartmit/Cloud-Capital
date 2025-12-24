@@ -373,9 +373,22 @@ export const releaseAddressReservation = async (addressId: string) => {
       data: {
         status: 'AVAILABLE',
         reservedAt: null,
+        requestedAmount: null, // Clear amount when releasing
       },
     });
   }
+};
+
+/**
+ * Update reserved address amount (when user changes amount after requesting)
+ */
+export const updateReservedAddressAmount = async (addressId: string, amountUSDT: number) => {
+  await prisma.btcAddressPool.update({
+    where: { id: addressId },
+    data: {
+      requestedAmount: amountUSDT,
+    },
+  });
 };
 
 export const createManualDepositOrder = async (

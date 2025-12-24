@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { adminService, CollaboratorConfig } from '../../services/adminService';
+import collaboratorBankService, { CollaboratorBankAccount } from '../../services/collaboratorBankService';
 import { UserDTO } from '@cloud-capital/shared';
-import { Settings, XCircle, Plus, Trash2, Wallet, Phone } from 'lucide-react';
+import { Settings, XCircle, Plus, Trash2, Wallet, Phone, CreditCard } from 'lucide-react';
 
+// Collaborators Manager Component
 export const CollaboratorsManager: React.FC = () => {
     const [staff, setStaff] = useState<UserDTO[]>([]);
     const [loading, setLoading] = useState(false);
@@ -34,6 +36,11 @@ export const CollaboratorsManager: React.FC = () => {
         password: '',
         whatsappNumber: ''
     });
+
+    // Bank info modal state
+    const [isBankInfoModalOpen, setIsBankInfoModalOpen] = useState(false);
+    const [selectedCollabForBanks, setSelectedCollabForBanks] = useState<UserDTO | null>(null);
+    const [collabBankAccounts, setCollabBankAccounts] = useState<CollaboratorBankAccount[]>([]);
 
     useEffect(() => {
         fetchStaff();
@@ -79,6 +86,18 @@ export const CollaboratorsManager: React.FC = () => {
         setIsConfigModalOpen(true);
         setModalError('');
         setModalSuccess('');
+    };
+
+    const handleOpenBankInfo = async (user: UserDTO) => {
+        setSelectedCollabForBanks(user);
+        setIsBankInfoModalOpen(true);
+        try {
+            const accounts = await collaboratorBankService.getBankAccounts({ collaboratorId: user.id });
+            setCollabBankAccounts(accounts);
+        } catch (err) {
+            console.error('Error fetching bank accounts:', err);
+            setCollabBankAccounts([]);
+        }
     };
 
     const handleSaveConfig = async (e: React.FormEvent) => {
@@ -243,13 +262,23 @@ export const CollaboratorsManager: React.FC = () => {
                                             )}
                                         </td>
                                         <td className="p-4 text-center">
-                                            <button
-                                                onClick={() => handleOpenConfig(user)}
-                                                className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center justify-center mx-auto"
-                                            >
-                                                <Settings className="w-4 h-4 mr-1.5" />
-                                                Configurar
-                                            </button>
+                                            <div className="flex gap-2 justify-center">
+                                                <button
+                                                    onClick={() => handleOpenConfig(user)}
+                                                    className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center justify-center"
+                                                >
+                                                    <Settings className="w-4 h-4 mr-1.5" />
+                                                    Configurar
+                                                </button>
+                                                <button
+                                                    onClick={() => handleOpenBankInfo(user)}
+                                                    className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center justify-center"
+                                                    title="Ver cuentas bancarias"
+                                                >
+                                                    <CreditCard className="w-4 h-4 mr-1.5" />
+                                                    Bancos
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 );
@@ -306,13 +335,23 @@ export const CollaboratorsManager: React.FC = () => {
                                     )}
                                 </div>
 
-                                <button
-                                    onClick={() => handleOpenConfig(user)}
-                                    className="w-full flex items-center justify-center px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-medium transition"
-                                >
-                                    <Settings className="w-4 h-4 mr-2" />
-                                    Configurar
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleOpenConfig(user)}
+                                        className="flex-1 flex items-center justify-center px-2 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white text-sm font-medium transition"
+                                    >
+                                        <Settings className="w-3.5 h-3.5 mr-1.5" />
+                                        Configurar
+                                    </button>
+                                    <button
+                                        onClick={() => handleOpenBankInfo(user)}
+                                        className="flex-1 flex items-center justify-center px-2 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm font-medium transition"
+                                        title="Ver cuentas bancarias"
+                                    >
+                                        <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                                        Bancos
+                                    </button>
+                                </div>
                             </div>
                         );
                     })
@@ -576,6 +615,84 @@ export const CollaboratorsManager: React.FC = () => {
                                 {loading ? 'Creando...' : 'Crear colaborador'}
                             </button>
                         </form>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Bank Info Modal */}
+            {isBankInfoModalOpen && selectedCollabForBanks && createPortal(
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    <div
+                        className="bg-gray-800 rounded-xl w-[95%] sm:w-full sm:max-w-2xl border border-gray-700 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-4 sm:p-6 border-b border-gray-700 flex justify-between items-center bg-gray-800 sticky top-0 z-10">
+                            <h3 className="text-lg sm:text-xl font-bold text-white pr-4">
+                                Cuentas Bancarias: {selectedCollabForBanks.name}
+                            </h3>
+                            <button
+                                onClick={() => setIsBankInfoModalOpen(false)}
+                                className="text-gray-400 hover:text-white transition"
+                            >
+                                <XCircle className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        <div className="p-4 sm:p-6">
+                            {collabBankAccounts.length === 0 ? (
+                                <div className="text-center py-8 text-gray-400">
+                                    <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                    <p>Este colaborador no tiene cuentas bancarias registradas</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {collabBankAccounts.map((account) => (
+                                        <div key={account.id} className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div className="flex items-center">
+                                                    <CreditCard className="w-5 h-5 text-blue-400 mr-2" />
+                                                    <h4 className="font-bold text-white">{account.bankName}</h4>
+                                                </div>
+                                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${account.isActive
+                                                    ? 'bg-green-500/10 text-green-500'
+                                                    : 'bg-red-500/10 text-red-500'
+                                                    }`}>
+                                                    {account.isActive ? 'Activa' : 'Inactiva'}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                                                <div>
+                                                    <span className="text-gray-500">Tipo de cuenta:</span>
+                                                    <p className="text-white font-medium">{account.accountType}</p>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500">Número de cuenta:</span>
+                                                    <p className="text-white font-medium">{account.accountNumber}</p>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500">Titular:</span>
+                                                    <p className="text-white font-medium">{account.accountHolder}</p>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500">Documento:</span>
+                                                    <p className="text-white font-medium">{account.documentType}: {account.documentNumber}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-4 sm:p-6 border-t border-gray-700 bg-gray-800 sticky bottom-0">
+                            <button
+                                onClick={() => setIsBankInfoModalOpen(false)}
+                                className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
                     </div>
                 </div>,
                 document.body

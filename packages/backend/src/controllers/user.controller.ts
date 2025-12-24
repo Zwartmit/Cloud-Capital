@@ -230,6 +230,25 @@ export const releaseReservedAddress = async (req: Request, res: Response): Promi
   }
 };
 
+// Update reserved address amount (when user changes amount after requesting)
+export const updateReservedAddressAmount = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { addressId } = req.params;
+    const { amountUSDT } = req.body;
+
+    if (!amountUSDT || amountUSDT <= 0) {
+      res.status(400).json({ error: 'Monto inválido' });
+      return;
+    }
+
+    await userService.updateReservedAddressAmount(addressId, amountUSDT);
+    res.status(200).json({ message: 'Monto actualizado exitosamente' });
+  } catch (error: any) {
+    console.error('[Update Address Amount Error]:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const requestManualDepositOrder = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;

@@ -1,15 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Zap } from 'lucide-react';
-import { apiClient } from '../../services/api';
 
-interface Transaction {
-    id: string;
-    type: string;
-    amountUSDT: number;
-    createdAt: string;
-    user: {
-        username: string;
-    };
+interface Activity {
+    user: string;
+    message: string;
+    icon: string;
+    color: string;
 }
 
 interface Activity {
@@ -30,54 +26,116 @@ const getActivityConfig = (type: string) => {
     return configs[type] || { icon: 'circle', color: 'text-gray-500', label: type };
 };
 
-const maskUsername = (username: string): string => {
-    if (username.length <= 4) {
-        return username.substring(0, 1) + '***' + username.slice(-1);
-    }
-    return username.substring(0, 3) + '***' + username.slice(-1);
-};
+// Generate a single random activity for ticker effect
+const generateSingleActivity = (): Activity => {
+    const simulatedUsers = [
+        'mar***a', 'car***s', 'ana***m', 'lui***p', 'sof***t',
+        'die***l', 'lau***f', 'ped***s', 'car***v', 'jor***h',
+        'isa***c', 'mig***a', 'ele***d', 'rob***n', 'jul***k',
+        'fer***o', 'val***a', 'and***s', 'cam***n', 'ric***o',
+        'pat***a', 'dav***d', 'mon***a', 'ser***o', 'cla***a',
+        'ale***o', 'bea***z', 'gab***l', 'nat***a', 'est***n',
+        'ros***o', 'vic***r', 'dan***a', 'pau***o', 'ire***e',
+        'raf***l', 'sil***a', 'emi***o', 'ade***a', 'mat***s'
+    ];
 
-const formatTransaction = (transaction: Transaction): Activity => {
-    const config = getActivityConfig(transaction.type);
-    const maskedUser = maskUsername(transaction.user.username);
-    const amount = transaction.amountUSDT.toFixed(2);
+    const types = ['DEPOSIT', 'PROFIT', 'REINVEST', 'WITHDRAWAL'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const config = getActivityConfig(type);
+    const user = simulatedUsers[Math.floor(Math.random() * simulatedUsers.length)];
+
+    // 20% chance of high-value transaction for realism
+    const isHighValue = Math.random() < 0.2;
+
+    let amount: number;
+    if (type === 'PROFIT') {
+        amount = isHighValue
+            ? Math.floor(Math.random() * 300) + 200  // $200-$499 (high)
+            : Math.floor(Math.random() * 150) + 20;   // $20-$169 (normal)
+    } else if (type === 'WITHDRAWAL') {
+        amount = isHighValue
+            ? Math.floor(Math.random() * 700) + 400  // $400-$1099 (high)
+            : Math.floor(Math.random() * 300) + 50;   // $50-$349 (normal)
+    } else {
+        amount = isHighValue
+            ? Math.floor(Math.random() * 1500) + 600  // $600-$2099 (high)
+            : Math.floor(Math.random() * 500) + 100;   // $100-$599 (normal)
+    }
+
 
     return {
-        user: maskedUser,
-        message: `${config.label} $${amount} USD`,
+        user,
+        message: `${config.label} $${amount.toFixed(2)} USD`,
         icon: config.icon,
         color: config.color,
     };
 };
 
+// Generate initial batch of simulated activities
+const generateSimulatedBatch = (): Activity[] => {
+    // Generate 12-15 random activities and shuffle them
+    const count = Math.floor(Math.random() * 4) + 12; // 12-15 items
+    const activities = Array.from({ length: count }, () => generateSingleActivity());
+
+    // Fisher-Yates shuffle for complete randomization
+    for (let i = activities.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [activities[i], activities[j]] = [activities[j], activities[i]];
+    }
+
+    // Return random 8 items
+    return activities.slice(0, 8);
+};
+
 export const ActivityFeed: React.FC = () => {
     const [activityList, setActivityList] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
-    const fetchRecentActivity = async () => {
+    // Initial fetch - use only simulated data for consistency
+    const fetchInitialActivity = async () => {
         try {
-            const response = await apiClient.get('/user/recent-activity?limit=10');
-            const transactions: Transaction[] = response.data;
-            const activities = transactions.map(formatTransaction);
-            setActivityList(activities);
-            setError(null);
+            // Only use simulated data to avoid repetitive real transactions
+            setActivityList(generateSimulatedBatch());
         } catch (err: any) {
-            console.error('Error fetching recent activity:', err);
-            setError('No se pudo cargar la actividad reciente');
+            console.error('Error generating activity:', err);
+            setActivityList(generateSimulatedBatch());
         } finally {
             setLoading(false);
         }
     };
 
+    // Add a new activity to the top and remove the last one
+    const addNewActivity = () => {
+        setActivityList(prev => {
+            const newActivity = generateSingleActivity();
+            const updated = [newActivity, ...prev];
+            return updated.slice(0, 8); // Keep only 8 items
+        });
+    };
+
     useEffect(() => {
         // Initial fetch
-        fetchRecentActivity();
+        fetchInitialActivity();
 
-        // Poll every 5 seconds for updates
-        const interval = setInterval(fetchRecentActivity, 5000);
+        // Variable interval ticker for more realistic activity
+        const scheduleNextUpdate = () => {
+            // Random interval between 2-5 seconds
+            const randomInterval = Math.floor(Math.random() * 3000) + 2000;
+            return setTimeout(() => {
+                addNewActivity();
+                scheduleNextUpdate();
+            }, randomInterval);
+        };
 
-        return () => clearInterval(interval);
+        const timeoutId = scheduleNextUpdate();
+
+        // Refresh all data every 60 seconds
+        const refreshInterval = setInterval(fetchInitialActivity, 60000);
+
+        return () => {
+            clearTimeout(timeoutId);
+            clearInterval(refreshInterval);
+        };
     }, []);
 
     return (
@@ -90,15 +148,13 @@ export const ActivityFeed: React.FC = () => {
             <div className="text-xs text-white">
                 {loading && activityList.length === 0 ? (
                     <p className="text-center text-gray-400 py-4">Cargando actividad...</p>
-                ) : error && activityList.length === 0 ? (
-                    <p className="text-center text-red-400 py-4">{error}</p>
                 ) : activityList.length === 0 ? (
                     <p className="text-center text-gray-400 py-4">No hay actividad reciente</p>
                 ) : (
-                    <ul className="space-y-1.5 sm:space-y-2">
+                    <ul className="space-y-1.5 sm:space-y-2 overflow-hidden">
                         {activityList.map((activity, index) => (
                             <li
-                                key={index}
+                                key={`${index}-${activity.user}-${activity.message.substring(0, 20)}`}
                                 className="flex items-center space-x-2 p-1 border-b border-gray-700 last:border-b-0"
                             >
                                 <span className={`font-semibold ${activity.color}`}>●</span>
@@ -110,6 +166,7 @@ export const ActivityFeed: React.FC = () => {
                     </ul>
                 )}
             </div>
+
         </div>
     );
 };

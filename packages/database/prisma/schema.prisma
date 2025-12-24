@@ -98,8 +98,9 @@ model User {
   transactions       Transaction[]
   tasks              Task[]
   tasksAsCollaborator Task[]     @relation("TaskCollaborator")
-  commissionsEarned  ReferralCommission[] @relation("CommissionsEarned")
-  commissionsGenerated ReferralCommission[] @relation("CommissionsGenerated")
+  commissions        ReferralCommission[] @relation("ReferrerCommissions")
+  referredCommissions ReferralCommission[] @relation("ReferredUserCommissions")
+  collaboratorBankAccounts CollaboratorBankAccount[]
   
   // BTC Address Pool Relations
   btcAddressesUploaded BtcAddressPool[] @relation("AddressUploader")
@@ -202,11 +203,11 @@ model ReferralCommission {
   
   // Usuario que recibe la comisión (el referidor)
   referrerId       String
-  referrer         User     @relation("CommissionsEarned", fields: [referrerId], references: [id], onDelete: Cascade)
+  referrer         User     @relation("ReferrerCommissions", fields: [referrerId], references: [id], onDelete: Cascade)
   
   // Usuario que generó la comisión (el referido)
   referredUserId   String
-  referredUser     User     @relation("CommissionsGenerated", fields: [referredUserId], references: [id], onDelete: Cascade)
+  referredUser     User     @relation("ReferredUserCommissions", fields: [referredUserId], references: [id], onDelete: Cascade)
   
   // Detalles de la comisión
   depositAmount    Float    // Monto del depósito que generó la comisión
@@ -262,6 +263,10 @@ model BtcAddressPool {
   usedByUserId      String?
   usedByUser        User?            @relation(fields: [usedByUserId], references: [id])
   
+  // Monto solicitado y notas
+  requestedAmount   Decimal?         @db.Decimal(18, 2)
+  adminNotes        String?          @db.Text
+  
   // Auditoría de carga
   uploadedBy        String
   uploadedByUser    User             @relation("AddressUploader", fields: [uploadedBy], references: [id])
@@ -308,4 +313,23 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+model CollaboratorBankAccount {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bankName        String
+  accountType     String   // "AHORROS" | "CORRIENTE"
+  accountNumber   String
+  accountHolder   String
+  documentType    String   // "DNI" | "PASAPORTE" | "RUC" | "CEDULA"
+  documentNumber  String
+  
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("collaborator_bank_accounts")
 }

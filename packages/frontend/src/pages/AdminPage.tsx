@@ -275,32 +275,32 @@ export const AdminPage: React.FC = () => {
                             Gestión de usuarios
                         </button>
                         {user?.role === 'SUPERADMIN' && (
-                            <>
-                                <button
-                                    onClick={() => setActiveTab('collabs')}
-                                    className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'collabs'
-                                        ? 'text-accent border-b-2 border-accent'
-                                        : 'text-gray-400 hover:text-white'
-                                        }`}
-                                >
-                                    <Shield className="w-5 h-5 inline mr-2" />
-                                    Colaboradores
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('banks')}
-                                    className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'banks'
-                                        ? 'text-accent border-b-2 border-accent'
-                                        : 'text-gray-400 hover:text-white'
-                                        }`}
-                                >
-                                    <Building className="w-5 h-5 inline mr-2" />
-                                    Bancos
-                                </button>
-                            </>
+                            <button
+                                onClick={() => setActiveTab('collabs')}
+                                className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'collabs'
+                                    ? 'text-accent border-b-2 border-accent'
+                                    : 'text-gray-400 hover:text-white'
+                                    }`}
+                            >
+                                <Shield className="w-5 h-5 inline mr-2" />
+                                Colaboradores
+                            </button>
+                        )}
+                        {(user?.role === 'ADMIN' || user?.role === 'SUBADMIN') && (
+                            <button
+                                onClick={() => setActiveTab('banks')}
+                                className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'banks'
+                                    ? 'text-accent border-b-2 border-accent'
+                                    : 'text-gray-400 hover:text-white'
+                                    }`}
+                            >
+                                <Building className="w-5 h-5 inline mr-2" />
+                                Bancos
+                            </button>
                         )}
                     </div>
 
-                    {user?.role === 'SUPERADMIN' && activeTab === 'banks' && <BankManager />}
+                    {(user?.role === 'ADMIN' || user?.role === 'SUBADMIN') && activeTab === 'banks' && <BankManager />}
 
                     {user?.role === 'SUPERADMIN' && activeTab === 'collabs' && <CollaboratorsManager />}
 

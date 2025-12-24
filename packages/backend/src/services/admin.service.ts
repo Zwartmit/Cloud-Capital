@@ -353,6 +353,18 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: Use
         }
       });
 
+      // Mark BTC address as USED if it was assigned from pool
+      if (task.assignedAddress) {
+        await tx.btcAddressPool.update({
+          where: { address: task.assignedAddress },
+          data: {
+            status: 'USED',
+            usedAt: new Date(),
+            usedByUserId: task.userId,
+          },
+        });
+      }
+
       // Handle referral commission if this is first deposit
       if (!task.user.hasFirstDeposit && task.user.referrerId) {
         const referralCommissionRate = 0.10; // 10%
@@ -487,6 +499,7 @@ export const rejectTask = async (id: string, adminEmail: string, adminRole: User
         status: 'AVAILABLE',
         reservedAt: null,
         reservedForTaskId: null,
+        requestedAmount: null, // Clear amount when rejecting
       },
     });
   }
