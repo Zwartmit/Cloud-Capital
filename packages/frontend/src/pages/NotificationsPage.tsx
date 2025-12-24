@@ -30,9 +30,9 @@ export const NotificationsPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="mb-6 border-b border-secondary pb-4">
-                        <h1 className="text-2xl sm:text-4xl font-black text-white mb-2">
+                        <h2 className="text-2xl sm:text-4xl font-extrabold text-accent mb-2">
                             Notificaciones
-                        </h1>
+                        </h2>
                         <p className="text-gray-400 text-sm sm:text-base">
                             Historial completo de tus transacciones y solicitudes.
                         </p>

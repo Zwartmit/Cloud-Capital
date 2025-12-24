@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import { investmentPlanService, InvestmentPlan } from '../../services/investmentPlanService';
-import { Calendar, Save, Play, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Calendar, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export const ProfitManager: React.FC = () => {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [processingTime, setProcessingTime] = useState('00:00'); // Default to midnight
     const [plans, setPlans] = useState<InvestmentPlan[]>([]);
     const [rates, setRates] = useState<{ [key: string]: number }>({});
     const [loading, setLoading] = useState(false);
-    const [processing, setProcessing] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [processedStatus, setProcessedStatus] = useState(false);
 
@@ -122,33 +122,7 @@ export const ProfitManager: React.FC = () => {
         }
     };
 
-    const handleProcess = async () => {
-        if (!confirm('¿Deseas procesar los pagos para esta fecha? Esto acreditará los saldos a los usuarios.')) return;
-        setProcessing(true);
-        setMessage(null);
-        try {
-            const res = await adminService.triggerProfitProcess(date);
-
-            // If no profits were processed, show warning instead of success
-            if (res.processed === 0) {
-                setMessage({
-                    type: 'error',
-                    text: 'No se procesaron pagos. Asegúrate de haber guardado las tasas antes de procesar.'
-                });
-            } else {
-                setMessage({
-                    type: 'success',
-                    text: `✓ Procesamiento completado: ${res.message}`
-                });
-            }
-
-            await loadRates(date); // Refresh status
-        } catch (error: any) {
-            setMessage({ type: 'error', text: error.response?.data?.error || 'Error al procesar' });
-        } finally {
-            setProcessing(false);
-        }
-    };
+    // Manual processing removed - profits are processed automatically at midnight
 
     return (
         <div className="card p-6 rounded-xl border-t-4 border-profit">
@@ -156,26 +130,43 @@ export const ProfitManager: React.FC = () => {
             <div className="mb-6 p-6 bg-gray-800 rounded-xl border border-gray-700">
                 <h3 className="text-xl font-bold text-white mb-2">Control de rentabilidad diaria</h3>
                 <p className="text-gray-400">
-                    Configura y procesa los rendimientos diarios que se pagarán a los usuarios.
-                    Define la tasa para cada plan (dentro de los rangos permitidos) y procesa los pagos al final del día.
+                    Configura los rendimientos diarios que se pagarán a los usuarios.
+                    Define la tasa para cada plan (dentro de los rangos permitidos). Los pagos se procesarán automáticamente a la media noche.
                     <span className="block mt-2 text-yellow-500 text-sm">⚠️ Las tasas aquí configuradas son las que realmente suman dinero al balance de los usuarios.</span>
                 </p>
             </div>
 
 
 
-            {/* Date Selection */}
+            {/* Date and Time Selection */}
             <div className="mb-8">
-                <label className="block text-gray-400 text-sm mb-2">Seleccionar fecha</label>
-                <div className="flex bg-gray-800 rounded-lg border border-gray-700 p-2 w-full max-w-xs items-center">
-                    <Calendar className="w-5 h-5 text-gray-400 mr-2" />
-                    <input
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className="bg-transparent text-white w-full focus:outline-none"
-                    />
+                <label className="block text-gray-400 text-sm mb-2">Fecha y hora de procesamiento</label>
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex bg-gray-800 rounded-lg border border-gray-700 p-2 items-center">
+                        <Calendar className="w-5 h-5 text-gray-400 mr-2" />
+                        <input
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                            className="bg-transparent text-white w-full focus:outline-none"
+                        />
+                    </div>
+                    <div className="flex bg-gray-800 rounded-lg border border-gray-700 p-2 items-center">
+                        <span className="text-gray-400 mr-2">🕐</span>
+                        <input
+                            type="time"
+                            value={processingTime}
+                            onChange={(e) => setProcessingTime(e.target.value)}
+                            className="bg-transparent text-white w-full focus:outline-none"
+                        />
+                    </div>
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                    {processingTime === '00:00'
+                        ? 'Los pagos se procesarán a medianoche (por defecto)'
+                        : `Los pagos se procesarán a las ${processingTime}`
+                    }
+                </p>
             </div>
 
             {/* Rates Form */}
@@ -220,7 +211,7 @@ export const ProfitManager: React.FC = () => {
                     <AlertTriangle className="w-5 h-5 mr-3" />
                     <div>
                         <p className="font-bold">Pendiente de proceso</p>
-                        <p className="text-sm">Configura las tasas y guarda. El pago automático ocurrirá a la media noche, o puedes forzarlo manualmente.</p>
+                        <p className="text-sm">Configura las tasas y guarda. El pago automático ocurrirá a la media noche.</p>
                     </div>
                 </div>
             )}
@@ -236,16 +227,7 @@ export const ProfitManager: React.FC = () => {
                     {loading ? 'Guardando...' : 'Guardar tasas'}
                 </button>
 
-                {!processedStatus && (
-                    <button
-                        onClick={handleProcess}
-                        disabled={processing}
-                        className="flex items-center justify-center px-6 py-3 bg-profit hover:bg-emerald-400 text-black font-bold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed sm:ml-auto"
-                    >
-                        <Play className="w-5 h-5 mr-2" />
-                        {processing ? 'Procesando...' : 'Procesar pagos ahora'}
-                    </button>
-                )}
+
             </div>
 
             {message && (

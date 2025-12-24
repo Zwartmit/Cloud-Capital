@@ -53,10 +53,8 @@ export const Modal: React.FC<ModalProps> = ({
 
     return createPortal(
         <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
-            <div
-                className="absolute inset-0 bg-black/30 backdrop-blur-md"
-                onClick={handleClose}
-            />
+            {/* Overlay - click disabled to prevent accidental modal close */}
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-md" />
             <div className={`glass-strong w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] overflow-y-auto p-5 sm:p-8 rounded-2xl shadow-2xl relative z-10 border border-gray-700/50 transition-all duration-300 transform ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
                 <div className="flex justify-between items-center border-b border-gray-700/50 pb-4 mb-6">
                     <h3 className="text-xl sm:text-2xl font-black gradient-text-primary">{title}</h3>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 import { PasswordInput } from '../components/common/PasswordInput';
@@ -24,6 +24,15 @@ export const RegisterPage: React.FC = () => {
 
     const navigate = useNavigate();
     const { login: setAuthState } = useAuthStore();
+    const [searchParams] = useSearchParams();
+
+    // Auto-fill referral code from URL parameter
+    useEffect(() => {
+        const refCode = searchParams.get('ref');
+        if (refCode) {
+            setFormData(prev => ({ ...prev, referralCode: refCode }));
+        }
+    }, [searchParams]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -241,6 +250,16 @@ export const RegisterPage: React.FC = () => {
                             Inicia sesión
                         </button>
                     </p>
+                </div>
+
+                <div className="flex justify-center">
+                    <button
+                        type="button"
+                        onClick={() => navigate('/')}
+                        className="w-auto px-4 sm:px-6 bg-gray-600 hover:bg-gray-500 text-white font-bold py-1.5 sm:py-2 rounded-lg mt-3 sm:mt-4 transition duration-200 text-sm"
+                    >
+                        Volver a la página principal
+                    </button>
                 </div>
 
                 {/* Success Modal */}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { TrendingUp } from 'lucide-react';
 import { investmentService } from '../../services/investmentService';
@@ -24,6 +24,18 @@ export const ReinvestModal: React.FC<ReinvestModalProps> = ({
     const amountNum = parseFloat(amount) || 0;
     const newCapital = currentCapital + amountNum;
 
+    // Reset form function
+    const resetForm = () => {
+        setAmount('');
+    };
+
+    // Reset form when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            resetForm();
+        }
+    }, [isOpen]);
+
     const handleReinvest = async () => {
         if (!amount || amountNum <= 0) {
             alert('Por favor ingresa un monto válido');
@@ -35,8 +47,8 @@ export const ReinvestModal: React.FC<ReinvestModalProps> = ({
             return;
         }
 
-        if (amountNum < 10) {
-            alert('El monto mínimo de reinversión es $10 USDT');
+        if (amountNum < 50) {
+            alert('El monto mínimo de reinversión es $50 USDT');
             return;
         }
 
@@ -46,6 +58,7 @@ export const ReinvestModal: React.FC<ReinvestModalProps> = ({
                 amountUSD: amountNum,
             });
             alert(`Reinversión exitosa! Nuevo capital: $${newCapital.toFixed(2)}`);
+            resetForm(); // Clear form after successful submission
             onSuccess();
             onClose();
         } catch (error: any) {
@@ -139,7 +152,7 @@ export const ReinvestModal: React.FC<ReinvestModalProps> = ({
                 <div className="bg-yellow-900/20 border border-yellow-700 p-2.5 rounded-lg flex gap-2 items-start">
                     <span className="text-yellow-400 text-xs mt-0.5">⚠️</span>
                     <p className="text-[10px] text-yellow-400 leading-tight">
-                        Monto mínimo: $10 USDT. La reinversión es inmediata y aumentará tu capital de inversión.
+                        Monto mínimo: $50 USDT. La reinversión es inmediata y aumentará tu capital de inversión.
                     </p>
                 </div>
             </div>

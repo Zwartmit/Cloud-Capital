@@ -51,12 +51,16 @@ export interface UserDTO {
   investmentClass: InvestmentClass;
   referralsCount?: number;
   referralCode?: string;
+  referredBy?: { name: string; username: string } | null;
   btcDepositAddress?: string;
   btcWithdrawAddress?: string;
   whatsappNumber?: string;
   contactEmail?: string;
   contactTelegram?: string;
   collaboratorConfig?: CollaboratorConfig;
+  isBlocked?: boolean;
+  blockedAt?: string;
+  blockedReason?: string;
   createdAt: string;
 }
 
@@ -95,8 +99,21 @@ export interface TaskDTO {
   type: TaskType;
   status: TaskStatus;
   amountUSD: number;
+  amountBTC?: number;
+  btcPrice?: number;
   reference?: string;
   proof?: string;
+  assignedAddress?: string;
+  btcAddress?: string;
+  txid?: string;
+  depositMethod?: 'BANK' | 'COLLABORATOR';
+  bankDetails?: {
+    bankName: string;
+    accountType: string;
+    accountNumber: string;
+    ownerName: string;
+    ownerId: string;
+  };
   approvedByAdmin?: string;
   liquidationDetails?: LiquidationDetails;
   collaboratorId?: string;

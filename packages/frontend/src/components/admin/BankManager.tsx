@@ -104,14 +104,17 @@ export const BankManager: React.FC = () => {
 
     return (
         <div className="card p-6 rounded-xl border-t-4 border-blue-500">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 sm:gap-0">
-                <div>
-                    <h3 className="text-xl font-bold text-white">Gestión de bancos</h3>
-                    <p className="text-gray-400 text-sm">Administra la lista de bancos disponibles para depósitos y retiros.</p>
-                </div>
+            <div className="mb-6 p-6 bg-gray-800 rounded-xl border border-gray-700">
+                <h3 className="text-xl font-bold text-white mb-2">Gestión de bancos</h3>
+                <p className="text-gray-400">
+                    Administra la lista de bancos disponibles para depósitos y retiros.
+                </p>
+            </div>
+
+            <div className="mb-6 flex justify-end">
                 <button
                     onClick={handleOpenCreate}
-                    className="w-full sm:w-auto bg-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center transition"
+                    className="bg-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center transition"
                 >
                     <Plus className="w-5 h-5 mr-2" />
                     Agregar banco
@@ -226,10 +229,8 @@ export const BankManager: React.FC = () => {
             </div>
 
             {isModalOpen && createPortal(
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-                    onClick={() => setIsModalOpen(false)}
-                >
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    {/* Overlay - click disabled to prevent accidental close */}
                     <div
                         className="bg-gray-800 rounded-xl w-[95%] sm:w-full sm:max-w-md border border-gray-700 shadow-2xl overflow-hidden"
                         onClick={(e) => e.stopPropagation()}

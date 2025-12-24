@@ -100,7 +100,7 @@ export const ProjectionsModal: React.FC<ProjectionsModalProps> = ({ isOpen, onCl
                         <p className="text-xs text-gray-300 leading-relaxed">
                             {selectedPlanData
                                 ? `Calculando estimación basada en el rendimiento promedio del ${selectedPlanData.dailyAverage}% diario.`
-                                : 'Calcula tus ganancias potenciales según el plan de inversión y capital inicial.'}
+                                : 'Calcula tus ganancias potenciales según el plan de inversión y capital base/inicial.'}
                         </p>
                     </div>
                 </div>
@@ -129,7 +129,7 @@ export const ProjectionsModal: React.FC<ProjectionsModalProps> = ({ isOpen, onCl
 
                 <div>
                     <label className="block text-xs font-medium text-gray-300 mb-1">
-                        Capital Inicial (USDT)
+                        Capital base/inicial (USDT)
                     </label>
                     <input
                         type="number"
@@ -199,7 +199,7 @@ export const ProjectionsModal: React.FC<ProjectionsModalProps> = ({ isOpen, onCl
                 <div className="text-center py-8">
                     <TrendingUp className="w-12 h-12 text-gray-700 mx-auto mb-3" />
                     <p className="text-xs text-gray-400">
-                        Selecciona un plan e ingresa un capital inicial para ver las proyecciones
+                        Selecciona un plan e ingresa un capital base y/o inicial para ver las proyecciones
                     </p>
                 </div>
             )}

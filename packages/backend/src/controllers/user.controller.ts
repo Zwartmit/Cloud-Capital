@@ -168,7 +168,7 @@ export const getReferralCommissions = async (req: Request, res: Response): Promi
 export const requestAutoDeposit = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
-    const { amountUSDT, txid } = req.body;
+    const { amountUSDT, txid, reservedAddressId } = req.body; // Changed from existingTaskId
     let proof = req.body.proof;
 
     if (req.file) {
@@ -182,8 +182,49 @@ export const requestAutoDeposit = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    const task = await userService.createAutoDepositRequest(userId, parseFloat(amountUSDT), txid, proof);
+    const task = await userService.createAutoDepositRequest(
+      userId,
+      parseFloat(amountUSDT),
+      txid,
+      proof,
+      reservedAddressId // Pass reserved address ID if provided
+    );
     res.status(201).json(task);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// NEW: Reserve BTC address without creating task
+export const reserveBtcAddress = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { amountUSDT } = req.body;
+
+    if (!amountUSDT || parseFloat(amountUSDT) <= 0) {
+      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
+      return;
+    }
+
+    const result = await userService.reserveBtcAddress(userId, parseFloat(amountUSDT));
+    res.status(201).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// Release reserved address (when user closes modal)
+export const releaseReservedAddress = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { addressId } = req.body;
+
+    if (!addressId) {
+      res.status(400).json({ error: 'addressId es requerido' });
+      return;
+    }
+
+    await userService.releaseAddressReservation(addressId);
+    res.status(200).json({ success: true });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

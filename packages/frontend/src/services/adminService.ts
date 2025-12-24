@@ -79,6 +79,16 @@ export const adminService = {
     return response.data;
   },
 
+  async unblockUser(userId: string): Promise<{ message: string }> {
+    const response = await apiClient.put(`/admin/users/${userId}/unblock`);
+    return response.data;
+  },
+
+  async blockUser(userId: string, reason?: string): Promise<{ message: string }> {
+    const response = await apiClient.put(`/admin/users/${userId}/block`, { reason });
+    return response.data;
+  },
+
   async getUserReferrals(userId: string): Promise<UserDTO[]> {
     const response = await apiClient.get<UserDTO[]>(`/admin/users/${userId}/referrals`);
     return response.data;

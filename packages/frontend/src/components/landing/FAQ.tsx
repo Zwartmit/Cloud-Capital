@@ -62,7 +62,7 @@ const faqs: FAQ[] = [
     {
         question: '¿Cómo funciona el Programa Cloud Partnership (Afiliados)?',
         answer:
-            'Puede obtener una comisión directa del 10% sobre el capital inicial que invierta cada persona que se registre utilizando su enlace de afiliado personal. Es una forma de generar ingresos adicionales y pasivos por la construcción de su red.',
+            'Puede obtener una comisión directa hasta del 10% sobre el capital base y/o inicial que invierta cada persona que se registre utilizando su enlace de afiliado personal. Es una forma de generar ingresos adicionales y pasivos por la construcción de su red.',
     },
     {
         question: '¿Dónde puedo recibir soporte o asistencia?',
@@ -101,4 +101,3 @@ export const FAQ: React.FC = () => {
         </section>
     );
 };
- 

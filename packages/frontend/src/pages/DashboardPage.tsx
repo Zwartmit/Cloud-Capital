@@ -8,7 +8,7 @@ import { DepositModal } from '../components/modals/DepositModal';
 import { WithdrawalModal } from '../components/modals/WithdrawalModal';
 import { ReinvestModal } from '../components/modals/ReinvestModal';
 import { ProjectionsModal } from '../components/modals/ProjectionsModal';
-import { EarlyLiquidationModal } from '../components/modals/EarlyLiquidationModal';
+
 import { useAuthStore } from '../store/authStore';
 import { getPlanColor } from '../utils/planStyles';
 import { userService } from '../services/userService';
@@ -22,7 +22,6 @@ export const DashboardPage: React.FC = () => {
     const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
     const [isReinvestModalOpen, setIsReinvestModalOpen] = useState(false);
     const [isProjectionsModalOpen, setIsProjectionsModalOpen] = useState(false);
-    const [isLiquidationModalOpen, setIsLiquidationModalOpen] = useState(false);
     const [transactions, setTransactions] = useState<TransactionDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [btcPrice, setBtcPrice] = useState<number>(96500); // Default fallback price
@@ -126,7 +125,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 border-b border-secondary pb-3 sm:pb-4">
-                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white flex flex-col sm:flex-row sm:items-center mb-2 sm:mb-0">
+                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-accent flex flex-col sm:flex-row sm:items-center mb-2 sm:mb-0">
                             Resumen general
                         </h2>
                     </div>
@@ -142,7 +141,6 @@ export const DashboardPage: React.FC = () => {
                                 currentPlan={currentPlan}
                                 onReinvest={() => setIsReinvestModalOpen(true)}
                                 onWithdraw={() => setIsWithdrawModalOpen(true)}
-                                onLiquidateCapital={() => setIsLiquidationModalOpen(true)}
                             />
 
                             {/* Stats Cards */}
@@ -246,15 +244,6 @@ export const DashboardPage: React.FC = () => {
                 onClose={() => setIsProjectionsModalOpen(false)}
             />
 
-            <EarlyLiquidationModal
-                isOpen={isLiquidationModalOpen}
-                onClose={() => setIsLiquidationModalOpen(false)}
-                capitalAmount={capitalUSDT}
-                onSuccess={async () => {
-                    const data = await userService.getTransactions();
-                    setTransactions(data);
-                }}
-            />
         </div>
     );
 };

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
-import { Search, Users, ListChecks, TrendingUp, User, DollarSign, ShieldHalf, Building, Shield } from 'lucide-react';
+import { Search, Users, TrendingUp, User, DollarSign, Building, Shield } from 'lucide-react';
 import { InvestmentPlanManager } from '../components/admin/InvestmentPlanManager';
 import { ProfitManager } from '../components/admin/ProfitManager';
-import { TaskManager } from '../components/admin/TaskManager';
 import { BankManager } from '../components/admin/BankManager';
 import { CollaboratorsManager } from '../components/admin/CollaboratorsManager';
 import { ConfirmModal } from '../components/modals/ConfirmModal';
@@ -16,7 +15,7 @@ import { useAuthStore } from '../store/authStore';
 
 export const AdminPage: React.FC = () => {
     const { user, updateUser } = useAuthStore();
-    const [activeTab, setActiveTab] = useState<'users' | 'plans' | 'profile' | 'tasks' | 'profit' | 'banks' | 'collabs'>('tasks');
+    const [activeTab, setActiveTab] = useState<'users' | 'plans' | 'profile' | 'profit' | 'banks' | 'collabs'>('profile');
     const [searchEmail, setSearchEmail] = useState('');
     const [searchResults, setSearchResults] = useState<UserDTO[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -48,6 +47,10 @@ export const AdminPage: React.FC = () => {
 
     const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
     const [isUserReferralsModalOpen, setIsUserReferralsModalOpen] = useState(false);
+
+    // Capital modification state
+    const [newCapital, setNewCapital] = useState('');
+    const [capitalMessage, setCapitalMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     const [stats, setStats] = useState({
         totalUsers: 0,
@@ -100,11 +103,20 @@ export const AdminPage: React.FC = () => {
         return () => clearTimeout(delayDebounceFn);
     }, [searchEmail]);
 
-    const handleSelectUser = (user: UserDTO) => {
-        setSelectedUser(user);
-        setSearchEmail(user.name);
-        setShowSuggestions(false);
-        setError('');
+    const handleSelectUser = async (user: UserDTO) => {
+        try {
+            // Fetch full user details including referredBy
+            const fullUserDetails = await adminService.getUserById(user.id);
+            setSelectedUser(fullUserDetails);
+            setSearchEmail(fullUserDetails.name); // Update search input with selected user's name
+        } catch (err) {
+            console.error('Error fetching user details:', err);
+            setSelectedUser(user); // Fallback to table user data if full details fail
+            setSearchEmail(user.name); // Update search input with selected user's name
+        } finally {
+            setShowSuggestions(false);
+            setError('');
+        }
     };
 
     // Keep manual search as fallback or for specific exact match
@@ -173,7 +185,32 @@ export const AdminPage: React.FC = () => {
         }
     };
 
+    const handleUnblockUser = async (userId: string, userName: string) => {
+        if (confirm(`¿Deseas desbloquear la cuenta de ${userName}? El usuario podrá volver a acceder al sistema.`)) {
+            try {
+                await adminService.unblockUser(userId);
+                loadAllUsers();
+                setUserListMessage({ type: 'success', text: 'Usuario desbloqueado exitosamente' });
+                setTimeout(() => setUserListMessage(null), 5000);
+            } catch (err: any) {
+                setUserListMessage({ type: 'error', text: err.response?.data?.error || 'Error al desbloquear usuario' });
+            }
+        }
+    };
 
+    const handleBlockUser = async (userId: string, userName: string) => {
+        const reason = prompt(`Motivo de bloqueo para ${userName}:`, 'Bloqueado manualmente por administrador');
+        if (reason !== null) {
+            try {
+                await adminService.blockUser(userId, reason);
+                loadAllUsers();
+                setUserListMessage({ type: 'success', text: 'Usuario bloqueado exitosamente' });
+                setTimeout(() => setUserListMessage(null), 5000);
+            } catch (err: any) {
+                setUserListMessage({ type: 'error', text: err.response?.data?.error || 'Error al bloquear usuario' });
+            }
+        }
+    };
 
     // Load users when tab changes to users or pagination changes
     useEffect(() => {
@@ -188,12 +225,9 @@ export const AdminPage: React.FC = () => {
 
             <main className="flex-grow p-4 sm:p-8 overflow-y-auto w-full">
                 <div className="max-w-7xl mx-auto">
-                    <h2 className="text-2xl sm:text-4xl font-extrabold text-admin mb-8 flex items-center">
-                        <ShieldHalf className="w-8 h-8 mr-3" />
+                    <h2 className="text-2xl sm:text-4xl font-extrabold text-admin mb-6">
                         Panel de administración
                     </h2>
-
-
 
                     {/* Tabs Navigation */}
                     <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-8 border-b border-gray-700 pb-2 sm:pb-0 overflow-x-auto">
@@ -207,21 +241,7 @@ export const AdminPage: React.FC = () => {
                             <User className="w-5 h-5 inline mr-2" />
                             Perfil
                         </button>
-                        <button
-                            onClick={() => setActiveTab('tasks')}
-                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center whitespace-nowrap ${activeTab === 'tasks'
-                                ? 'text-accent border-b-2 border-accent'
-                                : 'text-gray-400 hover:text-white'
-                                }`}
-                        >
-                            <ListChecks className="w-5 h-5 inline mr-2" />
-                            Tareas
-                            {stats.pendingTasks > 0 && (
-                                <span className="ml-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full animate-pulse">
-                                    {stats.pendingTasks}
-                                </span>
-                            )}
-                        </button>
+
                         <button
                             onClick={() => setActiveTab('plans')}
                             className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'plans'
@@ -232,16 +252,18 @@ export const AdminPage: React.FC = () => {
                             <TrendingUp className="w-5 h-5 inline mr-2" />
                             Planes de inversión
                         </button>
-                        <button
-                            onClick={() => setActiveTab('profit')}
-                            className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'profit'
-                                ? 'text-accent border-b-2 border-accent'
-                                : 'text-gray-400 hover:text-white'
-                                }`}
-                        >
-                            <DollarSign className="w-5 h-5 inline mr-2" />
-                            Rentabilidad
-                        </button>
+                        {user?.role === 'SUPERADMIN' && (
+                            <button
+                                onClick={() => setActiveTab('profit')}
+                                className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'profit'
+                                    ? 'text-accent border-b-2 border-accent'
+                                    : 'text-gray-400 hover:text-white'
+                                    }`}
+                            >
+                                <DollarSign className="w-5 h-5 inline mr-2" />
+                                Rentabilidad
+                            </button>
+                        )}
                         <button
                             onClick={() => setActiveTab('users')}
                             className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'users'
@@ -281,8 +303,6 @@ export const AdminPage: React.FC = () => {
                     {user?.role === 'SUPERADMIN' && activeTab === 'banks' && <BankManager />}
 
                     {user?.role === 'SUPERADMIN' && activeTab === 'collabs' && <CollaboratorsManager />}
-
-                    {activeTab === 'tasks' && <TaskManager onTaskProcessed={fetchStats} />}
 
                     {activeTab === 'users' && (
                         <div className="card p-6 rounded-xl border-t-4 border-blue-500">
@@ -385,13 +405,13 @@ export const AdminPage: React.FC = () => {
                                             <div className="border-t border-gray-700 pt-4">
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                                     <div>
-                                                        <p className="text-xs sm:text-sm text-gray-400">Código de Referido</p>
+                                                        <p className="text-xs sm:text-sm text-gray-400">Código de referido</p>
                                                         <p className="font-semibold text-white text-sm sm:text-base">
                                                             {(selectedUser as any).referralCode || 'N/A'}
                                                         </p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs sm:text-sm text-gray-400">Total Referidos</p>
+                                                        <p className="text-xs sm:text-sm text-gray-400">Total referidos</p>
                                                         <div className="flex items-center gap-2">
                                                             <p className="font-semibold text-white text-sm sm:text-base">
                                                                 {(selectedUser as any).referralsCount || 0}
@@ -405,7 +425,118 @@ export const AdminPage: React.FC = () => {
                                                         </div>
                                                     </div>
                                                 </div>
+                                                {(selectedUser as any).referredBy && (
+                                                    <div className="mt-3 pt-3 border-t border-gray-700">
+                                                        <p className="text-xs sm:text-sm text-gray-400 mb-1">Referido por:</p>
+                                                        <p className="font-semibold text-white text-sm sm:text-base">
+                                                            {(selectedUser as any).referredBy.name} <span className="text-gray-500">(@{(selectedUser as any).referredBy.username})</span>
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
+
+                                            {/* Blocked Status Section */}
+                                            {selectedUser.isBlocked && (
+                                                <div className="border-t border-gray-700 pt-4">
+                                                    <div className="p-3 bg-red-900/20 border border-red-700/30 rounded-lg">
+                                                        <div className="flex items-start gap-2">
+                                                            <span className="text-red-400 text-lg">🔒</span>
+                                                            <div className="flex-1">
+                                                                <h4 className="text-sm font-bold text-red-400 mb-1">Cuenta bloqueada</h4>
+                                                                <p className="text-xs text-gray-300">
+                                                                    <span className="font-semibold">Motivo:</span> {selectedUser.blockedReason || 'No especificado'}
+                                                                </p>
+                                                                {selectedUser.blockedAt && (
+                                                                    <p className="text-xs text-gray-400 mt-1">
+                                                                        Bloqueada el: {new Date(selectedUser.blockedAt).toLocaleDateString('es-ES', {
+                                                                            day: '2-digit',
+                                                                            month: '2-digit',
+                                                                            year: 'numeric',
+                                                                            hour: '2-digit',
+                                                                            minute: '2-digit'
+                                                                        })}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Capital Modification Section - Only for SUPERADMIN */}
+                                            {user?.role === 'SUPERADMIN' && (
+                                                <div className="border-t border-gray-700 pt-4">
+                                                    <h4 className="text-sm font-bold text-accent mb-3">Modificar capital del usuario:</h4>
+                                                    {selectedUser.isBlocked && (
+                                                        <div className="mb-3 p-2 bg-yellow-900/20 border border-yellow-700/30 rounded text-xs text-yellow-400">
+                                                            ⚠️ Actualmente no se puede modificar el capital de esta cuenta ya que está bloqueada.
+                                                        </div>
+                                                    )}
+                                                    <form onSubmit={async (e) => {
+                                                        e.preventDefault();
+                                                        if (!selectedUser) return;
+
+                                                        const capitalVal = parseFloat(newCapital);
+
+                                                        if (!capitalVal || isNaN(capitalVal)) {
+                                                            setCapitalMessage({ type: 'error', text: 'Ingresa un valor válido' });
+                                                            return;
+                                                        }
+
+                                                        if (capitalVal < 0) {
+                                                            setCapitalMessage({ type: 'error', text: 'El valor no puede ser negativo' });
+                                                            return;
+                                                        }
+
+                                                        try {
+                                                            const updated = await adminService.updateUserBalance(
+                                                                selectedUser.id,
+                                                                capitalVal,
+                                                                selectedUser.currentBalanceUSDT // Keep current balance
+                                                            );
+                                                            setSelectedUser(updated);
+                                                            setCapitalMessage({ type: 'success', text: 'Capital actualizado exitosamente' });
+                                                            setNewCapital('');
+                                                            setTimeout(() => setCapitalMessage(null), 5000);
+                                                            // Refresh stats
+                                                            fetchStats();
+                                                        } catch (err: any) {
+                                                            setCapitalMessage({
+                                                                type: 'error',
+                                                                text: err.response?.data?.error || 'Error al actualizar capital'
+                                                            });
+                                                        }
+                                                    }} className="space-y-3">
+                                                        <div>
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                value={newCapital}
+                                                                onChange={(e) => setNewCapital(e.target.value)}
+                                                                placeholder={selectedUser.capitalUSDT.toFixed(2)}
+                                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                disabled={selectedUser.isBlocked}
+                                                                required
+                                                            />
+                                                            <p className="text-xs text-gray-500 mt-1 italic">
+                                                                El balance total se mantendrá igual
+                                                            </p>
+                                                        </div>
+                                                        <button
+                                                            type="submit"
+                                                            className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2 text-sm rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            disabled={selectedUser.isBlocked}
+                                                        >
+                                                            Actualizar capital
+                                                        </button>
+                                                        {capitalMessage && (
+                                                            <div className={`p-2 rounded-lg text-xs ${capitalMessage.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                                                {capitalMessage.text}
+                                                            </div>
+                                                        )}
+                                                    </form>
+                                                </div>
+                                            )}
 
                                         </div>
                                     ) : (
@@ -463,38 +594,70 @@ export const AdminPage: React.FC = () => {
                                                         <th className="text-left p-2 sm:p-3 text-gray-400 font-semibold whitespace-nowrap">Clase</th>
                                                         <th className="text-right p-2 sm:p-3 text-gray-400 font-semibold whitespace-nowrap">Capital</th>
                                                         <th className="text-right p-2 sm:p-3 text-gray-400 font-semibold whitespace-nowrap">Balance</th>
+                                                        <th className="text-center p-2 sm:p-3 text-gray-400 font-semibold whitespace-nowrap">Estado</th>
                                                         <th className="text-center p-2 sm:p-3 text-gray-400 font-semibold whitespace-nowrap">Acciones</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {allUsers.map((user) => (
-                                                        <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors">
-                                                            <td className="p-2 sm:p-3 text-white whitespace-nowrap">{user.name}</td>
-                                                            <td className="p-2 sm:p-3 text-gray-300 whitespace-nowrap">{user.email}</td>
-                                                            <td className="p-2 sm:p-3 text-gray-300 whitespace-nowrap">{user.username}</td>
-                                                            <td className="p-2 sm:p-3 text-profit whitespace-nowrap">{user.investmentClass || 'N/A'}</td>
+                                                    {allUsers.map((tableUser) => (
+                                                        <tr key={tableUser.id} className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors">
+                                                            <td className="p-2 sm:p-3 text-white whitespace-nowrap">{tableUser.name}</td>
+                                                            <td className="p-2 sm:p-3 text-gray-300 whitespace-nowrap">{tableUser.email}</td>
+                                                            <td className="p-2 sm:p-3 text-gray-300 whitespace-nowrap">{tableUser.username}</td>
+                                                            <td className="p-2 sm:p-3 text-profit whitespace-nowrap">{tableUser.investmentClass || 'N/A'}</td>
                                                             <td className="p-2 sm:p-3 text-right text-accent font-semibold whitespace-nowrap">
-                                                                ${user.capitalUSDT?.toFixed(2) || '0.00'}
+                                                                ${tableUser.capitalUSDT?.toFixed(2) || '0.00'}
                                                             </td>
                                                             <td className="p-2 sm:p-3 text-right text-profit font-semibold whitespace-nowrap">
-                                                                ${user.currentBalanceUSDT?.toFixed(2) || '0.00'}
+                                                                ${tableUser.currentBalanceUSDT?.toFixed(2) || '0.00'}
+                                                            </td>
+                                                            <td className="p-2 sm:p-3 text-center">
+                                                                {tableUser.isBlocked ? (
+                                                                    <span className="inline-flex items-center gap-1 text-xs bg-red-900/20 text-red-400 px-2 py-1 rounded border border-red-700/30" title={tableUser.blockedReason || 'Bloqueada'}>
+                                                                        🔒 Bloqueada
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-xs text-green-500">✓ Activa</span>
+                                                                )}
                                                             </td>
                                                             <td className="p-2 sm:p-3">
                                                                 <div className="flex gap-2 justify-center">
                                                                     <button
-                                                                        onClick={() => handleSelectUser(user)}
+                                                                        onClick={() => handleSelectUser(tableUser)}
                                                                         className="bg-blue-600 hover:bg-blue-500 text-white px-2 sm:px-3 py-1 rounded text-xs font-semibold transition-colors"
                                                                         title="Ver detalles"
                                                                     >
                                                                         Ver
                                                                     </button>
-                                                                    <button
-                                                                        onClick={() => handleDeleteUser(user.id, user.name)}
-                                                                        className="bg-red-600 hover:bg-red-500 text-white px-2 sm:px-3 py-1 rounded text-xs font-semibold transition-colors"
-                                                                        title="Eliminar usuario"
-                                                                    >
-                                                                        Eliminar
-                                                                    </button>
+                                                                    {user?.role === 'SUPERADMIN' && !tableUser.isBlocked && (
+                                                                        <button
+                                                                            onClick={() => handleBlockUser(tableUser.id, tableUser.name)}
+                                                                            className="bg-orange-600 hover:bg-orange-500 text-white px-2 sm:px-3 py-1 rounded text-xs font-semibold transition-colors"
+                                                                            title="Bloquear cuenta"
+                                                                        >
+                                                                            Bloquear
+                                                                        </button>
+                                                                    )}
+                                                                    {user?.role === 'SUPERADMIN' && tableUser.isBlocked && (
+                                                                        <button
+                                                                            onClick={() => handleUnblockUser(tableUser.id, tableUser.name)}
+                                                                            className="bg-yellow-600 hover:bg-yellow-500 text-white px-2 sm:px-3 py-1 rounded text-xs font-semibold transition-colors"
+                                                                            title="Desbloquear cuenta"
+                                                                        >
+                                                                            Desbloquear
+                                                                        </button>
+                                                                    )}
+                                                                    {user?.role === 'SUPERADMIN' &&
+                                                                        tableUser.capitalUSDT === 0 &&
+                                                                        tableUser.currentBalanceUSDT === 0 && (
+                                                                            <button
+                                                                                onClick={() => handleDeleteUser(tableUser.id, tableUser.name)}
+                                                                                className="bg-red-600 hover:bg-red-500 text-white px-2 sm:px-3 py-1 rounded text-xs font-semibold transition-colors"
+                                                                                title="Eliminar usuario (solo disponible con balance en $0)"
+                                                                            >
+                                                                                Eliminar
+                                                                            </button>
+                                                                        )}
                                                                 </div>
                                                             </td>
                                                         </tr>

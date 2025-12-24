@@ -1,14 +1,19 @@
 import { useState } from 'react';
-import { LayoutDashboard, Layers3, User, LogOut, ShieldHalf, Bell, Book } from 'lucide-react';
+import { LayoutDashboard, Layers3, User, LogOut, ShieldHalf, Bell, BookOpen, CheckCircle, Key } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { Modal } from '../common/Modal';
+import { useNotificationCount, useTaskCount } from '../../hooks/useNotificationCount';
 
 export const Sidebar: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, logout } = useAuthStore();
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+    // Get pending counts
+    const notificationCount = useNotificationCount();
+    const taskCount = useTaskCount();
 
     const isActive = (path: string) => location.pathname === path;
 
@@ -71,6 +76,11 @@ export const Sidebar: React.FC = () => {
                         title="Notificaciones"
                     >
                         <Bell className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                        {notificationCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse shadow-lg shadow-red-500/50">
+                                {notificationCount > 9 ? '9+' : notificationCount}
+                            </span>
+                        )}
                     </button>
                 )}
 
@@ -102,17 +112,50 @@ export const Sidebar: React.FC = () => {
                     </button>
                 )}
 
-                {/* Admin Guide (only for admins) */}
-                {isAdmin && (
+                {/* NEW: Deposit Validation (all admins) */}
+                {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
+                    <button
+                        onClick={() => navigate('/admin/deposit-validation')}
+                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/deposit-validation')
+                            ? 'bg-gradient-to-br from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-600/30'
+                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-emerald-400'
+                            }`}
+                        title="Validar Depósitos"
+                    >
+                        <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                        {taskCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse shadow-lg shadow-emerald-500/50">
+                                {taskCount > 9 ? '9+' : taskCount}
+                            </span>
+                        )}
+                    </button>
+                )}
+
+                {/* NEW: Address Pool (super admin only) */}
+                {user?.role === 'SUPERADMIN' && (
+                    <button
+                        onClick={() => navigate('/admin/address-pool')}
+                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/address-pool')
+                            ? 'bg-gradient-to-br from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-600/30'
+                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-purple-400'
+                            }`}
+                        title="Pool de Direcciones BTC"
+                    >
+                        <Key className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                    </button>
+                )}
+
+                {/* Admin Guide (only for admins) - MOVED TO BOTTOM */}
+                {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
                     <button
                         onClick={() => navigate('/admin/guide')}
                         className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/guide')
-                            ? 'bg-gradient-to-br from-blue-500 to-blue-400 text-white shadow-lg shadow-blue-500/30'
+                            ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/30'
                             : 'text-gray-400 hover:bg-gray-700/50 hover:text-blue-400'
                             }`}
                         title="Guía de Admin"
                     >
-                        <Book className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                        <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
                     </button>
                 )}
             </div>

@@ -6,12 +6,14 @@ interface ProtectedRouteProps {
     children: ReactNode;
     requireAdmin?: boolean;
     requireUser?: boolean;
+    requireSuperAdmin?: boolean;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     children,
     requireAdmin = false,
     requireUser = false,
+    requireSuperAdmin = false,
 }) => {
     const { isAuthenticated, user } = useAuthStore();
 
@@ -24,6 +26,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
 
     if (requireUser && (user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN')) {
+        return <Navigate to="/admin" replace />;
+    }
+
+    if (requireSuperAdmin && user?.role !== 'SUPERADMIN') {
         return <Navigate to="/admin" replace />;
     }
 

@@ -229,3 +229,23 @@ export const getStaff = async (_req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: error.message });
   }
 };
+export const unblockUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const result = await adminService.unblockUser(id);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const blockUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const result = await adminService.blockUser(id, reason || 'BLOCKED_BY_ADMIN');
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

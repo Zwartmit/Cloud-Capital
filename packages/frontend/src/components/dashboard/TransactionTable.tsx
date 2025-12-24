@@ -39,6 +39,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 return 'Liquidación';
             case 'LIQUIDATION':
                 return 'Liquidación Capital';
+            case 'CAPITAL_LIQUIDATION':
+                return 'Liquidación de Capital';
             case 'PROFIT':
                 return 'Ganancia';
             case 'REINVEST':

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { AlertTriangle, ShieldAlert } from 'lucide-react';
 import { investmentService } from '../../services/investmentService';
@@ -28,6 +28,19 @@ export const EarlyLiquidationModal: React.FC<EarlyLiquidationModalProps> = ({
     const penaltyAmount = capitalAmount * PENALTY_RATE;
     const netAmount = capitalAmount - penaltyAmount;
 
+    // Reset form function
+    const resetForm = () => {
+        setBtcAddress('');
+        setConfirmationText('');
+    };
+
+    // Reset form when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            resetForm();
+        }
+    }, [isOpen]);
+
     const handleSubmit = async () => {
         if (loading) return;
 
@@ -41,10 +54,16 @@ export const EarlyLiquidationModal: React.FC<EarlyLiquidationModalProps> = ({
             return;
         }
 
+        if (capitalAmount < 50) {
+            alert('El monto mínimo de liquidación es $50 USDT');
+            return;
+        }
+
         setLoading(true);
         try {
             await investmentService.liquidateCapital(btcAddress);
             alert('Solicitud de liquidación enviada correctamente.');
+            resetForm(); // Clear form after successful submission
             onSuccess();
             onClose();
         } catch (error: any) {

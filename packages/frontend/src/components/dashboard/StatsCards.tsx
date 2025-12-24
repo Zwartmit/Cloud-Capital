@@ -16,10 +16,10 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
 }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-            {/* CAPITAL INICIAL */}
+            {/* CAPITAL BASE */}
             <div className="card p-4 sm:p-5 rounded-2xl border-l-4 border-accent hover:border-l-[6px] transition-all duration-300 group">
                 <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-xs sm:text-sm font-bold text-gray-300 uppercase tracking-wider">Capital Inicial</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-gray-300 uppercase tracking-wider">Capital base</h3>
                     <div className="p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
                         <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
                     </div>
@@ -39,7 +39,7 @@ export const StatsCards: React.FC<StatsCardsProps> = ({
             {/* TASA SEMANAL */}
             <div className="card p-4 sm:p-5 rounded-2xl border-l-4 border-accent hover:border-l-[6px] transition-all duration-300 group">
                 <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-xs sm:text-sm font-bold text-gray-300 uppercase tracking-wider">Tasa Semanal</h3>
+                    <h3 className="text-xs sm:text-sm font-bold text-gray-300 uppercase tracking-wider">Tasa semanal</h3>
                     <div className="p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
                         <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
                     </div>

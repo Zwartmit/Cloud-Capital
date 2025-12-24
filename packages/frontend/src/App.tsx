@@ -17,6 +17,8 @@ import { ProfilePage } from './pages/ProfilePage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import AddressPoolPage from './pages/AddressPoolPage'
+import { TaskManagerPage } from './pages/TaskManagerPage'
 
 function AppContent() {
     const [showWarning, setShowWarning] = useState(false);
@@ -124,6 +126,22 @@ function AppContent() {
                     element={
                         <ProtectedRoute requireAdmin>
                             <AdminGuidePage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/address-pool"
+                    element={
+                        <ProtectedRoute requireAdmin requireSuperAdmin>
+                            <AddressPoolPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/deposit-validation"
+                    element={
+                        <ProtectedRoute requireAdmin>
+                            <TaskManagerPage />
                         </ProtectedRoute>
                     }
                 />

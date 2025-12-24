@@ -1,34 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, X, Home, Layers, HelpCircle, Mail } from 'lucide-react';
+import { Menu, X, Home, Layers, HelpCircle, Mail, TrendingUp } from 'lucide-react';
 import { BackgroundCanvas } from '../components/common/BackgroundCanvas';
 import { Hero } from '../components/landing/Hero';
 import { Features } from '../components/landing/Features';
 import { FAQ } from '../components/landing/FAQ';
 import { Contact } from '../components/landing/Contact';
-import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
 import { ScrollReveal } from '../components/common/ScrollReveal';
 
 export const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-    const [plans, setPlans] = useState<InvestmentPlan[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const loadPlans = async () => {
-            try {
-                const data = await investmentPlanService.getAllPlans();
-                setPlans(data);
-            } catch (error) {
-                console.error('Error loading plans:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadPlans();
-    }, []);
 
     return (
         <div className="min-h-screen bg-transparent text-white font-sans">
@@ -62,7 +44,7 @@ export const LandingPage: React.FC = () => {
                             onClick={() => navigate('/login')}
                             className="btn btn-primary py-2 px-6 text-sm font-bold"
                         >
-                            Acceder / Registro
+                            Accede / Regístrate
                         </button>
                     </div>
 
@@ -128,7 +110,7 @@ export const LandingPage: React.FC = () => {
                                         }}
                                         className="btn btn-primary w-max px-10 py-3 text-sm font-black uppercase tracking-widest shadow-lg shadow-accent/20"
                                     >
-                                        Acceder / Registro
+                                        Accede / Regístrate
                                     </button>
                                 </div>
                             </div>
@@ -143,77 +125,48 @@ export const LandingPage: React.FC = () => {
             {/* Features Section */}
             <Features />
 
-            {/* Plans Section */}
-            <section id="plans-section" className="max-w-6xl mx-auto mb-16 sm:mb-28 px-4 sm:px-6">
-                <h2 className="text-3xl sm:text-5xl font-black text-center gradient-text-primary mb-3 sm:mb-4">
+            {/* Exclusive Access / Plans CTA Section */}
+            <section id="plans-section" className="max-w-6xl mx-auto mb-16 sm:mb-28 px-4 sm:px-6 ">
+                <h2 className="text-3xl sm:text-5xl font-black text-center gradient-text-primary mb-3 sm:mb-8">
                     Estructura de inversión
                 </h2>
-                <p className="text-center text-slate-300 text-lg mb-8 sm:mb-12 max-w-2xl mx-auto">
-                    Descubre los planes que potencian tu capital. El rendimiento se ajusta a tu nivel de
-                    inversión.
-                </p>
 
-                {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="skeleton h-96 rounded-2xl" />
-                        ))}
-                    </div>
-                ) : plans.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+                <ScrollReveal animation="scale-in">
+                    <div className="card text-center p-8 sm:p-12 shadow-2xl border-l-4 border-accent bg-slate-800/40 backdrop-blur-md border-t border-r border-b border-slate-700/50 hover-lift h-full transition-all duration-300 rounded-3xl relative overflow-hidden group">
+                        <div className="relative z-10 flex flex-col items-center">
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-900/80 flex items-center justify-center mb-6 shadow-xl border border-gray-700 group-hover:border-accent transition-colors duration-300">
+                                <TrendingUp className="w-10 h-10 sm:w-12 sm:h-12 text-accent" />
+                            </div>
 
+                            <h3 className="text-2xl sm:text-4xl font-black text-white mb-4">
+                                Potencia tu capital
+                            </h3>
 
-                        {plans.map((plan, index) => (
-                            <ScrollReveal key={plan.id} animation="scale-in" delay={index * 0.1}>
-                                <div
-                                    className="card p-5 sm:p-6 rounded-2xl border-l-4 border-accent bg-slate-800/40 backdrop-blur-md border-t border-r border-b border-slate-700/50 hover:border-l-[6px] hover-lift group transition-all duration-300 h-full shadow-2xl"
+                            <p className="text-gray-400 text-base sm:text-lg max-w-4xl mb-4 leading-relaxed">
+                                Accede a una estructura de inversión transparente y rentable. Nuestros planes están diseñados para adaptarse a tus objetivos,
+                                ofreciéndote rendimientos competitivos desde el primer día. Con Cloud Capital, tu dinero trabaja para ti las 24 horas del día,
+                                respaldado por estrategias financieras sólidas y una plataforma tecnológica de vanguardia que garantiza seguridad y facilidad de uso en cada transacción.
+                            </p>
+
+                            <button
+                                onClick={() => navigate('/register')}
+                                className="btn btn-primary py-4 px-10 text-base sm:text-lg font-bold shadow-xl shadow-accent/20 hover:shadow-accent/40 transform hover:scale-[1.02] transition-all duration-300"
+                            >
+                                Regístrate ahora para descubrir la estrategia perfecta para ti
+                            </button>
+
+                            <p className="mt-4 text-sm text-gray-500">
+                                ¿Ya tienes cuenta?{' '}
+                                <button
+                                    onClick={() => navigate('/login')}
+                                    className="text-accent hover:text-white font-medium hover:underline transition-colors"
                                 >
-                                    <h3 className="text-xl sm:text-2xl font-black gradient-text-primary mb-4 sm:mb-6 text-center">
-                                        {plan.name}
-                                    </h3>
-                                    <div className="space-y-3 sm:space-y-4 text-slate-300">
-                                        <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
-                                            <span className="text-slate-400 text-xs sm:text-sm">Capital mínimo</span>
-                                            <span className="font-bold text-white text-sm sm:text-lg">${plan.minCapital}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
-                                            <span className="text-gray-400 text-xs sm:text-sm">Rentabilidad diaria</span>
-                                            <span className="font-bold gradient-text-profit text-sm sm:text-lg">
-                                                {plan.minDailyReturn}% - {plan.maxDailyReturn}%
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
-                                            <span className="text-gray-400 text-xs sm:text-sm">Promedio diario</span>
-                                            <span className="font-bold gradient-text-profit text-sm sm:text-lg">
-                                                {plan.dailyAverage}%
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
-                                            <span className="text-gray-400 text-xs sm:text-sm">Comisión mensual</span>
-                                            <span className="font-bold text-white text-sm sm:text-lg">{plan.monthlyCommission}%</span>
-                                        </div>
-                                        <div className="flex justify-between items-center pt-2">
-                                            <span className="text-gray-400 text-xs sm:text-sm">Tiempo para duplicar</span>
-                                            <span className="font-bold gradient-text-primary text-sm sm:text-lg">
-                                                {plan.doublingTime}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => navigate('/login')}
-                                        className="w-full mt-5 sm:mt-8 bg-transparent border-2 border-accent text-accent hover:bg-accent hover:text-white font-bold py-2 sm:py-3 rounded-xl transition-all duration-300 text-sm sm:text-base hover:scale-[1.02] hover:shadow-lg hover:shadow-accent/30"
-                                    >
-                                        Comenzar a invertir
-                                    </button>
-                                </div>
-                            </ScrollReveal>
-                        ))}
+                                    Inicia sesión
+                                </button>
+                            </p>
+                        </div>
                     </div>
-                ) : (
-                    <div className="text-center text-gray-500">
-                        <p>No hay planes de inversión disponibles en este momento.</p>
-                    </div>
-                )}
+                </ScrollReveal>
             </section>
 
             {/* FAQ Section */}
@@ -233,13 +186,13 @@ export const LandingPage: React.FC = () => {
                             onClick={() => navigate('/login')}
                             className="btn btn-success py-3 px-8 sm:px-10 text-base sm:text-lg"
                         >
-                            Iniciar sesión
+                            Inicia sesión
                         </button>
                         <button
                             onClick={() => navigate('/register')}
                             className="btn btn-primary py-3 px-8 sm:px-10 text-base sm:text-lg"
                         >
-                            Crear cuenta
+                            Crea tu cuenta
                         </button>
                     </div>
                 </section>

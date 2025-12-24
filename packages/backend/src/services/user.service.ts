@@ -195,6 +195,10 @@ export const reinvestProfit = async (userId: string, amountUSD: number) => {
     throw new Error('Saldo insuficiente para reinvertir');
   }
 
+  if (amountUSD < 50) {
+    throw new Error('El monto mínimo de reinversión es $50 USDT');
+  }
+
   // Update user capital and create transaction
   const updatedUser = await prisma.user.update({
     where: { id: userId },
@@ -284,8 +288,30 @@ export const createAutoDepositRequest = async (
   userId: string,
   amountUSDT: number,
   txid?: string,
-  proof?: string
+  proof?: string,
+  reservedAddressId?: string // NEW: use pre-reserved address
 ) => {
+  // Validate minimum amount
+  if (amountUSDT < 50) {
+    throw new Error('El monto mínimo de aporte es $50 USDT');
+  }
+
+  let assignedAddress: string | null = null;
+
+  // If we have a pre-reserved address, use it
+  if (reservedAddressId) {
+    const address = await prisma.btcAddressPool.findUnique({
+      where: { id: reservedAddressId },
+    });
+
+    if (!address || address.status !== 'RESERVED') {
+      throw new Error('La dirección reservada ya no está disponible');
+    }
+
+    assignedAddress = address.address;
+  }
+
+  // Create task
   const task = await prisma.task.create({
     data: {
       userId,
@@ -293,12 +319,63 @@ export const createAutoDepositRequest = async (
       amountUSD: amountUSDT,
       txid,
       proof,
+      assignedAddress,
       depositMethod: 'AUTO',
       status: 'PENDING',
     }
   });
 
+  // Link the reserved address to this task
+  if (reservedAddressId) {
+    await prisma.btcAddressPool.update({
+      where: { id: reservedAddressId },
+      data: { reservedForTaskId: task.id },
+    });
+  }
+
   return task;
+};
+
+/**
+ * Reserve BTC address for user (NEW FLOW)
+ * Does NOT create task - only reserves address temporarily
+ */
+export const reserveBtcAddress = async (
+  userId: string,
+  amountUSDT: number
+) => {
+  const { reserveAddressTemporarily } = await import('./btc-address-pool.service.js');
+
+  const { address, reservationId } = await reserveAddressTemporarily(userId, amountUSDT);
+
+  return {
+    address,
+    reservationId,
+  };
+};
+
+/**
+ * Release a reserved address (when user closes modal without submitting)
+ */
+export const releaseAddressReservation = async (addressId: string) => {
+  const address = await prisma.btcAddressPool.findUnique({
+    where: { id: addressId },
+  });
+
+  if (!address) {
+    return; // Already gone, nothing to do
+  }
+
+  // Only release if it's RESERVED and has NO task associated yet
+  if (address.status === 'RESERVED' && !address.reservedForTaskId) {
+    await prisma.btcAddressPool.update({
+      where: { id: addressId },
+      data: {
+        status: 'AVAILABLE',
+        reservedAt: null,
+      },
+    });
+  }
 };
 
 export const createManualDepositOrder = async (
@@ -400,6 +477,10 @@ export const createEarlyLiquidationRequest = async (
 
   if (capital <= 0) {
     throw new Error('No tienes capital activo para liquidar');
+  }
+
+  if (capital < 50) {
+    throw new Error('El monto mínimo de liquidación es $50 USDT');
   }
 
   // 38% Penalty Calculation

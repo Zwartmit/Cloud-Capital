@@ -42,6 +42,21 @@ enum InvestmentClass {
   DIAMOND
 }
 
+enum BtcAddressStatus {
+  AVAILABLE  // Disponible para asignar
+  RESERVED   // Reservada para un depósito pendiente
+  USED       // Ya recibió fondos, archivada
+}
+
+enum AuditAction {
+  APPROVED_DEPOSIT
+  REJECTED_DEPOSIT
+  ADJUSTED_AMOUNT
+  UPLOADED_ADDRESSES
+  RECYCLED_ADDRESS
+  VERIFIED_BLOCKCHAIN
+}
+
 model User {
   id                 String           @id @default(uuid())
   email              String           @unique
@@ -68,6 +83,11 @@ model User {
   whatsappNumber     String?                   // Número de WhatsApp (para colaboradores)
   collaboratorConfig Json?                     // Configuración específica de colaborador (comisión, tiempo, límites)
   
+  // Account Blocking (for liquidation)
+  isBlocked          Boolean          @default(false)  // Cuenta bloqueada tras liquidación
+  blockedAt          DateTime?                          // Fecha de bloqueo
+  blockedReason      String?                            // Razón del bloqueo
+  
   // Contact Information (for landing page)
   contactEmail       String?                   // Email de contacto público
   contactTelegram    String?                   // Usuario de Telegram para contacto
@@ -80,6 +100,11 @@ model User {
   tasksAsCollaborator Task[]     @relation("TaskCollaborator")
   commissionsEarned  ReferralCommission[] @relation("CommissionsEarned")
   commissionsGenerated ReferralCommission[] @relation("CommissionsGenerated")
+  
+  // BTC Address Pool Relations
+  btcAddressesUploaded BtcAddressPool[] @relation("AddressUploader")
+  btcAddressesUsed     BtcAddressPool[]
+  auditLogs            AuditLog[]
   
   @@map("users")
 }
@@ -139,6 +164,13 @@ model Task {
   liquidationDetails Json?      // For liquidation tasks
   
   collaboratorVerified Boolean    @default(false) // Si el admin verificó que el colaborador envió los fondos
+  
+  // BTC Address Pool Integration
+  assignedAddress     String?   // Dirección asignada desde el pool
+  verificationMethod  String?   // "MANUAL_EXPLORER", "API_VERIFIED"
+  blockchainData      Json?     // Datos obtenidos de Blockstream API
+  adminNotes          String?   @db.Text
+  adjustedAmount      Float?    // Monto ajustado por el admin (si difiere del declarado)
   
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
@@ -214,4 +246,66 @@ model Bank {
   updatedAt DateTime @updatedAt
   
   @@map("banks")
+}
+
+model BtcAddressPool {
+  id                String           @id @default(uuid())
+  address           String           @unique
+  status            BtcAddressStatus @default(AVAILABLE)
+  
+  // Tracking de reserva
+  reservedAt        DateTime?
+  reservedForTaskId String?
+  
+  // Tracking de uso
+  usedAt            DateTime?
+  usedByUserId      String?
+  usedByUser        User?            @relation(fields: [usedByUserId], references: [id])
+  
+  // Auditoría de carga
+  uploadedBy        String
+  uploadedByUser    User             @relation("AddressUploader", fields: [uploadedBy], references: [id])
+  uploadedAt        DateTime         @default(now())
+  
+  // Metadata
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  
+  @@index([status])
+  @@index([reservedAt])
+  @@index([uploadedBy])
+  @@map("btc_address_pool")
+}
+
+model AuditLog {
+  id             String      @id @default(uuid())
+  
+  // Quién
+  adminId        String
+  admin          User        @relation(fields: [adminId], references: [id])
+  adminEmail     String
+  adminRole      UserRole
+  
+  // Qué
+  action         AuditAction
+  entityType     String      // "DEPOSIT", "WITHDRAWAL", "ADDRESS"
+  entityId       String      // ID del Task, Address, etc.
+  
+  // Detalles
+  oldValue       Json?
+  newValue       Json?
+  blockchainLink String?     @db.Text
+  notes          String?     @db.Text
+  
+  // Tracking
+  ipAddress      String?
+  userAgent      String?     @db.Text
+  
+  createdAt      DateTime    @default(now())
+  
+  @@index([adminId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

@@ -46,6 +46,12 @@ router.delete('/users/:id', adminController.deleteUser);
 // PUT /api/admin/users/:id/reset-password
 router.put('/users/:id/reset-password', adminController.resetUserPassword);
 
+// PUT /api/admin/users/:id/unblock
+router.put('/users/:id/unblock', adminController.unblockUser);
+
+// PUT /api/admin/users/:id/block
+router.put('/users/:id/block', adminController.blockUser);
+
 // GET /api/admin/stats
 router.get('/stats', adminController.getStats);
 

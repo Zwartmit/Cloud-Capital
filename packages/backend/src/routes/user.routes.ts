@@ -42,9 +42,14 @@ router.get('/referrals', userController.getReferrals);
 // GET /api/user/referral-commissions
 router.get('/referral-commissions', userController.getReferralCommissions);
 
-// Enhanced deposit/withdrawal routes
-// POST /api/user/deposit/auto
+// Enhanced deposit - Step 1: Reserve BTC address (NO task created yet)
+router.post('/deposit/reserve-address', userController.reserveBtcAddress);
+
+// Enhanced deposit - Step 2: Submit with proof (creates task with reserved address)
 router.post('/deposit/auto', upload.single('proof'), userController.requestAutoDeposit);
+
+// Release reserved address (when user closes modal)
+router.post('/deposit/release-address', userController.releaseReservedAddress);
 
 // POST /api/user/deposit/manual
 router.post('/deposit/manual', userController.requestManualDepositOrder);

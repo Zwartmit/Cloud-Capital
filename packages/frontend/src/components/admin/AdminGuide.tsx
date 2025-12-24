@@ -4,21 +4,6 @@ import { Book, TrendingUp, DollarSign, Users, AlertTriangle, ShieldCheck } from 
 export const AdminGuide: React.FC = () => {
     return (
         <div className="space-y-8 animate-fade-in">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 rounded-xl border border-blue-500/30">
-                <div className="flex items-start gap-4">
-                    <div className="p-3 bg-blue-500/20 rounded-lg">
-                        <Book className="w-8 h-8 text-blue-400" />
-                    </div>
-                    <div>
-                        <p className="text-gray-300">
-                            Bienvenido al panel de control. Aquí encontrarás explicaciones detalladas sobre los conceptos clave
-                            del sistema para evitar confusiones y errores operativos.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
             {/* Critical Difference Section */}
             <div className="card p-6 rounded-xl border-t-4 border-yellow-500">
                 <h3 className="text-xl font-bold text-white mb-6 flex items-center">

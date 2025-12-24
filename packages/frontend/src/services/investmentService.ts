@@ -47,12 +47,19 @@ export interface Bank {
     name: string;
 }
 
-// Auto deposit (direct BTC)
-export const createAutoDeposit = async (data: AutoDepositRequest) => {
+// Reserve BTC address (NEW FLOW - doesn't create task)
+export const reserveBtcAddress = async (amountUSDT: number) => {
+    const response = await apiClient.post('/user/deposit/reserve-address', { amountUSDT });
+    return response.data;
+};
+
+// Auto deposit (creates task with reserved address)
+export const createAutoDeposit = async (data: AutoDepositRequest & { reservedAddressId?: string }) => {
     const formData = new FormData();
     formData.append('amountUSDT', data.amountUSDT.toString());
     if (data.txid) formData.append('txid', data.txid);
     if (data.proof) formData.append('proof', data.proof);
+    if (data.reservedAddressId) formData.append('reservedAddressId', data.reservedAddressId);
 
     const response = await apiClient.post('/user/deposit/auto', formData, {
         headers: {
@@ -98,7 +105,14 @@ export const getBanks = async (): Promise<Bank[]> => {
     return response.data;
 };
 
+// Release reserved address (when user closes modal)
+export const releaseReservedAddress = async (addressId: string) => {
+    const response = await apiClient.post('/user/deposit/release-address', { addressId });
+    return response.data;
+};
+
 export const investmentService = {
+    reserveBtcAddress,
     createAutoDeposit,
     createManualDepositOrder,
     createWithdrawal,
@@ -106,6 +120,7 @@ export const investmentService = {
     reinvestProfit,
     getCollaborators,
     getBanks,
+    releaseReservedAddress,
 };
 
 

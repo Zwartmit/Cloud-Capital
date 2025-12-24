@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Bell, CheckCircle, XCircle, Clock, TrendingUp, TrendingDown, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bell, CheckCircle, XCircle, Clock, TrendingUp, TrendingDown, Search, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react';
 
 interface Task {
     id: string;
@@ -10,6 +10,7 @@ interface Task {
     approvedByAdmin?: string;
     rejectionReason?: string;
     destinationUserId?: string;
+    assignedAddress?: string; // BTC address for auto deposits
 }
 
 interface NotificationCenterProps {
@@ -21,6 +22,9 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'REJECTED' | 'PENDING'>('ALL');
     const [typeFilter, setTypeFilter] = useState<'ALL' | 'DEPOSIT' | 'WITHDRAWAL'>('ALL');
+
+    // Copy state
+    const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
     // Date filters
     const [dateFrom, setDateFrom] = useState('');
@@ -104,6 +108,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
                 return 'Depósito Auto';
             case 'WITHDRAWAL':
                 return 'Retiro';
+            case 'LIQUIDATION':
+                return 'Liquidación de Capital';
             default:
                 return type;
         }
@@ -114,6 +120,17 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
             return <TrendingUp className="w-4 h-4" />;
         }
         return <TrendingDown className="w-4 h-4" />;
+    };
+
+    // Copy BTC address to clipboard
+    const handleCopyAddress = async (address: string) => {
+        try {
+            await navigator.clipboard.writeText(address);
+            setCopiedAddress(address);
+            setTimeout(() => setCopiedAddress(null), 2000); // Reset after 2 seconds
+        } catch (err) {
+            console.error('Failed to copy address:', err);
+        }
     };
 
     // Filter tasks based on search and filters
@@ -302,6 +319,28 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
                                                 <div className="mt-2 p-2 bg-red-500/10 border border-red-500/20 rounded text-xs text-red-400">
                                                     <span className="font-semibold">Motivo: </span>
                                                     {task.rejectionReason}
+                                                </div>
+                                            )}
+                                            {/* Show BTC address for auto deposits */}
+                                            {task.type === 'DEPOSIT_AUTO' && task.assignedAddress && (
+                                                <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-[10px] text-gray-400 mb-0.5">Dirección BTC asignada:</p>
+                                                            <p className="text-xs text-blue-400 font-mono truncate">{task.assignedAddress}</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleCopyAddress(task.assignedAddress!)}
+                                                            className="flex-shrink-0 p-1.5 hover:bg-blue-500/20 rounded transition"
+                                                            title="Copiar dirección"
+                                                        >
+                                                            {copiedAddress === task.assignedAddress ? (
+                                                                <Check className="w-4 h-4 text-green-400" />
+                                                            ) : (
+                                                                <Copy className="w-4 h-4 text-blue-400" />
+                                                            )}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>

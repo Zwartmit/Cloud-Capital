@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
+import { Countdown } from '../common/Countdown';
 import { Copy, Upload, MessageCircle } from 'lucide-react';
 import { investmentService, Bank } from '../../services/investmentService';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface DepositModalProps {
     isOpen: boolean;
@@ -13,7 +15,7 @@ interface DepositModalProps {
 export const DepositModal: React.FC<DepositModalProps> = ({
     isOpen,
     onClose,
-    userDepositAddress = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', // Placeholder
+    userDepositAddress = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', // Fallback only
     onSuccess,
 }) => {
     const [activeTab, setActiveTab] = useState<'direct' | 'collaborator'>('direct');
@@ -22,13 +24,64 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     const [proof, setProof] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [showManualOrder, setShowManualOrder] = useState(false);
+
+    // NEW: Dynamic address assignment state
+    const [assignedAddress, setAssignedAddress] = useState<string | null>(null);
+    const [addressExpiration, setAddressExpiration] = useState<string | null>(null);
+    const [addressLoading, setAddressLoading] = useState(false);
+    const [reservedAddressId, setReservedAddressId] = useState<string | null>(null); // Store address ID
+
     const [collaborators, setCollaborators] = useState<Array<{
         id: string;
         name: string;
         whatsappNumber?: string;
         role: string;
-        collaboratorConfig?: { commission: number; processingTime: string; minAmount: number; maxAmount: number };
+        btcDepositAddress?: string;
+        collaboratorConfig?: {
+            commission: number;
+            processingTime: string;
+            minAmount: number;
+            maxAmount: number;
+        };
     }>>([]);
+    const [selectedCollaborator, setSelectedCollaborator] = useState<string>('');
+    const [manualAmount, setManualAmount] = useState('');
+    const [manualTxid, setManualTxid] = useState('');
+    const [manualNotes, setManualNotes] = useState('');
+
+    // Reset form function
+    const resetForm = () => {
+        setAmount('');
+        setTxid('');
+        setProof(null);
+        setAssignedAddress(null);
+        setAddressExpiration(null);
+        setReservedAddressId(null);
+        setManualAmount('');
+        setManualTxid('');
+        setManualNotes('');
+        setSelectedCollaborator('');
+        setActiveTab('direct');
+        setShowManualOrder(false);
+    };
+
+    // Reset form when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            // Save the addressId BEFORE resetting
+            const addressToRelease = reservedAddressId;
+
+            // Reset the form first
+            resetForm();
+
+            // Then release the address if it exists
+            if (addressToRelease) {
+                investmentService.releaseReservedAddress(addressToRelease)
+                    .catch(err => console.error('Error releasing address:', err));
+            }
+        }
+    }, [isOpen, reservedAddressId]);
+
     const [banks, setBanks] = useState<Bank[]>([]);
 
     // Fetch collaborators and banks on mount
@@ -48,8 +101,43 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         fetchData();
     }, []);
 
+    // Address is requested manually by clicking "Solicitar Dirección" button
+
+    const requestDepositAddress = async () => {
+        if (!amount || parseFloat(amount) <= 0) {
+            alert('Por favor ingrese un monto válido primero');
+            return;
+        }
+
+        setAddressLoading(true);
+
+        try {
+            // Use NEW service that only reserves address (no task created)
+            const response = await investmentService.reserveBtcAddress(parseFloat(amount));
+
+            if (response.address && response.reservationId) {
+                setAssignedAddress(response.address);
+                setReservedAddressId(response.reservationId); // Store address ID
+
+                // Calculate expiration (24 hours from now)
+                const expirationDate = new Date();
+                expirationDate.setHours(expirationDate.getHours() + 24);
+                setAddressExpiration(expirationDate.toISOString());
+            } else {
+                alert('No se pudo asignar una dirección. Por favor contacte al soporte.');
+            }
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.error || 'Error al obtener dirección de depósito';
+            console.error('[Request Address Error]:', errorMessage);
+            alert(errorMessage);
+        } finally {
+            setAddressLoading(false);
+        }
+    };
+
     const handleCopyAddress = () => {
-        navigator.clipboard.writeText(userDepositAddress);
+        const addressToCopy = assignedAddress || userDepositAddress;
+        navigator.clipboard.writeText(addressToCopy);
         alert('Dirección copiada al portapapeles');
     };
 
@@ -65,14 +153,23 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             return;
         }
 
+        const amountNum = parseFloat(amount);
+        if (amountNum < 50) {
+            alert('El monto mínimo de aporte es $50 USDT');
+            return;
+        }
+
         setLoading(true);
         try {
+            // Create task with reserved address ID
             await investmentService.createAutoDeposit({
-                amountUSDT: parseFloat(amount),
+                amountUSDT: amountNum,
                 txid,
-                proof: proof, // Updated to send File object
+                proof: proof,
+                reservedAddressId: reservedAddressId || undefined,
             });
             alert('Solicitud de depósito enviada. Pendiente de aprobación.');
+            resetForm(); // Clear form after successful submission
             onSuccess();
             onClose();
         } catch (error: any) {
@@ -82,6 +179,8 @@ export const DepositModal: React.FC<DepositModalProps> = ({
             setLoading(false);
         }
     };
+
+
 
     // Collaborators list is now fetched from API
 
@@ -127,24 +226,64 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                             </div>
 
                             <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
-                                <p className="text-xs text-gray-400 mb-1">Tu dirección de aporte BTC:</p>
-                                <div className="flex items-center gap-2">
-                                    <code className="flex-1 bg-gray-900 p-2 rounded text-accent text-xs break-all font-mono">
-                                        {userDepositAddress}
-                                    </code>
-                                    <button
-                                        onClick={handleCopyAddress}
-                                        className="p-2 bg-accent hover:bg-blue-500 rounded transition shrink-0"
-                                        title="Copiar dirección"
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                    </button>
-                                </div>
+                                <p className="text-xs text-gray-400 mb-2">Dirección de depósito BTC:</p>
+
+                                {addressLoading ? (
+                                    <div className="text-center py-4">
+                                        <p className="text-sm text-gray-400">Solicitando dirección...</p>
+                                    </div>
+                                ) : assignedAddress ? (
+                                    <>
+                                        {/* QR Code */}
+                                        <div className="flex justify-center mb-3">
+                                            <div className="bg-white p-3 rounded-lg">
+                                                <QRCodeSVG value={assignedAddress} size={160} />
+                                            </div>
+                                        </div>
+
+                                        {/* Address */}
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <code className="flex-1 bg-gray-900 p-2 rounded text-accent text-xs break-all font-mono">
+                                                {assignedAddress}
+                                            </code>
+                                            <button
+                                                onClick={handleCopyAddress}
+                                                className="p-2 bg-accent hover:bg-blue-500 rounded transition shrink-0"
+                                                title="Copiar dirección"
+                                            >
+                                                <Copy className="w-4 h-4" />
+                                            </button>
+                                        </div>
+
+                                        {/* Expiration Timer */}
+                                        {addressExpiration && (
+                                            <div className="bg-yellow-900/20 border border-yellow-700 p-2 rounded text-center">
+                                                <p className="text-xs text-yellow-400">
+                                                    ⏱️ Esta dirección expira en: <Countdown targetDate={addressExpiration} />
+                                                </p>
+                                                <p className="text-xs text-gray-400 mt-1">
+                                                    Envía tu depósito antes de la expiración
+                                                </p>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="text-center py-4">
+                                        <p className="text-sm text-gray-400 mb-2">Ingrese un monto para obtener dirección</p>
+                                        <button
+                                            onClick={requestDepositAddress}
+                                            className="bg-accent hover:bg-blue-500 text-white px-4 py-2 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled={!amount || parseFloat(amount) < 50}
+                                        >
+                                            Solicitar dirección
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <div>
                                 <label className="block text-xs font-medium text-gray-300 mb-1">
-                                    Monto aportado (USDT)
+                                    Monto a aportar (USDT)
                                 </label>
                                 <input
                                     type="number"
@@ -153,6 +292,12 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                     placeholder="Ej: 1000"
                                     className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                                 />
+                                {amount && parseFloat(amount) < 50 && (
+                                    <p className="text-[10px] text-yellow-400 mt-1 flex items-center gap-1">
+                                        <span>⚠️</span>
+                                        <span>Monto mínimo de aporte: $50 USDT</span>
+                                    </p>
+                                )}
                             </div>
 
                             <div>
@@ -360,7 +505,7 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
 
             <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Monto aportado (USDT) *
+                    Monto a aportar (USDT) *
                 </label>
                 <input
                     type="number"

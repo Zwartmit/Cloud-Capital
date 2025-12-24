@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
+import * as btcPoolService from '../../services/btcPool.service';
 import { TaskDTO, UserDTO } from '@cloud-capital/shared';
 import { Check, X, Eye, Clock, ListChecks, Download, ExternalLink, ChevronLeft, ChevronRight, AlertCircle, MessageCircle, Shield } from 'lucide-react';
 import { formatUSDT } from '../../utils/formatters';
@@ -31,6 +32,12 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     // Proof Modal state
     const [showProofModal, setShowProofModal] = useState(false);
     const [selectedProof, setSelectedProof] = useState<string | null>(null);
+
+    // Blockchain Verification Modal state
+    const [showBlockchainModal, setShowBlockchainModal] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<TaskDTO | null>(null);
+    const [blockchainData, setBlockchainData] = useState<any>(null);
+    const [verifying, setVerifying] = useState(false);
 
     // History filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -239,6 +246,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
             case 'DEPOSIT_MANUAL': return 'Depósito Manual';
             case 'DEPOSIT_AUTO': return 'Depósito Auto';
             case 'WITHDRAWAL': return 'Retiro';
+            case 'LIQUIDATION': return 'Liquidación de Capital';
             default: return type;
         }
     };
@@ -255,6 +263,75 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
         // Assuming API_URL ends with /api, remove it to get base URL
         const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace('/api', '');
         return `${baseUrl}${path}`;
+    };
+
+    const handleVerifyBlockchain = async (task: TaskDTO) => {
+        if (!task.assignedAddress) {
+            setError('Esta tarea no tiene dirección BTC asignada');
+            return;
+        }
+
+        setSelectedTask(task);
+        setShowBlockchainModal(true);
+        setVerifying(true);
+        setBlockchainData(null);
+        setError('');
+
+        try {
+            // Calculate expected BTC amount if we have the price
+            const expectedAmountBTC = task.amountBTC || (task.btcPrice ? task.amountUSD / task.btcPrice : undefined);
+
+            const result = await btcPoolService.verifyDeposit({
+                address: task.assignedAddress,
+                expectedAmountBTC,
+                minConfirmations: 1,
+            });
+
+            const explorerLink = `https://mempool.space/${import.meta.env.VITE_BTC_NETWORK === 'mainnet' ? '' : 'testnet/'}address/${task.assignedAddress}`;
+
+            // Enhanced validation
+            let validationMessage = '';
+            if (result.verified) {
+                validationMessage = '✅ Depósito verificado exitosamente';
+
+                // Check if amount matches expected
+                if (expectedAmountBTC && result.totalReceived) {
+                    const difference = Math.abs(result.totalReceived - expectedAmountBTC);
+                    const tolerance = expectedAmountBTC * 0.01; // 1% tolerance
+
+                    if (difference > tolerance) {
+                        validationMessage += `\n⚠️ Advertencia: El monto recibido (${result.totalReceived} BTC) difiere del esperado (${expectedAmountBTC} BTC)`;
+                    }
+                }
+            } else {
+                validationMessage = '⚠️ Depósito pendiente de confirmación';
+
+                if (result.totalReceived === 0) {
+                    validationMessage += '\n❌ No se han detectado transacciones en esta dirección';
+                }
+            }
+
+            setBlockchainData({
+                ...result,
+                explorerLink,
+                validationMessage,
+                expectedAmountBTC,
+            });
+        } catch (error: any) {
+            console.error('Error verifying deposit:', error);
+            setError(error.response?.data?.error || 'Error al verificar depósito en blockchain. Por favor, intenta de nuevo.');
+            // Don't close the modal, show error inside
+            setBlockchainData({
+                verified: false,
+                balance: 0,
+                totalReceived: 0,
+                confirmations: 0,
+                message: 'Error al conectar con la blockchain',
+                error: true,
+            });
+        } finally {
+            setVerifying(false);
+        }
     };
 
     const getStatusLabel = (status: string) => {
@@ -282,18 +359,9 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     );
 
     return (
-        <div className="card p-6 rounded-xl border-t-4 border-gray-700">
-            {/* Section Header */}
-            <div className="p-6 bg-gray-800 rounded-xl border border-gray-700 mb-6">
-                <h3 className="text-xl font-bold text-white mb-2">Centro de tareas</h3>
-                <p className="text-gray-400">
-                    Administra las solicitudes de depósito y retiro de los usuarios. Revisa los comprobantes de pago, verifica los montos
-                    y aprueba o rechaza las transacciones. Las acciones aquí impactan directamente los balances de los usuarios.
-                </p>
-            </div>
-
+        <div className="card p-6 rounded-xl">
             {/* Tabs */}
-            <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0 border-b mb-4 border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0 mb-4">
                 <button
                     onClick={() => setActiveTab('pending')}
                     className={`relative pb-2 sm:pb-3 px-3 sm:px-4 font-bold transition-colors text-left sm:text-center ${activeTab === 'pending'
@@ -459,7 +527,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                 <>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {paginatedTasks.map(task => (
-                            <div key={task.id} className={`bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${disintegratingTaskId === task.id ? 'disintegrate' : ''}`}>
+                            <div key={task.id} className={`bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col gap-4 ${disintegratingTaskId === task.id ? 'disintegrate' : ''}`}>
 
                                 {/* Task Info */}
                                 <div className="flex-1">
@@ -477,34 +545,62 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                             {getStatusLabel(task.status)}
                                         </span>
                                     </div>
-                                    <div className="text-sm text-gray-400">
-                                        <span className="text-gray-300 font-medium">{task.user?.name}</span> ({task.user?.email})
-                                    </div>
-                                    {activeTab === 'preapproved' && task.approvedByAdmin && (
-                                        <div className="text-xs text-orange-400 mt-1">
-                                            Pre-aprobada por: {task.approvedByAdmin}
-                                        </div>
-                                    )}
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        Ref: {task.reference || 'N/A'} • {new Date(task.createdAt).toLocaleString()}
-                                    </div>
-                                    {task.status === 'REJECTED' && task.rejectionReason && (
-                                        <div className="mt-2 text-xs text-red-400 bg-red-500/10 p-2 rounded border border-red-500/20">
-                                            <strong>Motivo de rechazo:</strong> {task.rejectionReason}
+                                    <p className="text-sm text-gray-400 mt-1">{task.user?.name} ({task.user?.email})</p>
+                                    {task.reference && <p className="text-xs text-gray-500 mt-1">Ref: {task.reference}</p>}
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {new Date(task.createdAt).toLocaleString('es-ES')}
+                                    </p>
+
+                                    {task.assignedAddress && (
+                                        <div className="mt-2 bg-gray-900/50 p-2 rounded">
+                                            <p className="text-xs text-gray-400 mb-1">Dirección BTC asignada:</p>
+                                            <p className="text-xs text-accent font-mono break-all">{task.assignedAddress}</p>
                                         </div>
                                     )}
 
-                                    {/* Collaborator info & Verification */}
-                                    {task.collaborator && (
-                                        <div className="mt-3 bg-gray-700/30 p-2 rounded-lg border border-gray-600/50">
-                                            <div className="text-sm text-gray-300 flex items-center gap-2 mb-1">
-                                                <Shield className="w-3 h-3 text-accent" />
-                                                <span>A cargo de: <strong>{task.collaborator.name}</strong></span>
-                                            </div>
+                                    {task.btcAddress && (
+                                        <div className="mt-2 bg-gray-900/50 p-2 rounded">
+                                            <p className="text-xs text-gray-400 mb-1">Dirección BTC destino:</p>
+                                            <p className="text-xs text-accent font-mono break-all">{task.btcAddress}</p>
+                                        </div>
+                                    )}
 
-                                            {task.type === 'DEPOSIT_MANUAL' && user?.role === 'SUPERADMIN' && (
+                                    {task.txid && (
+                                        <p className="text-xs text-gray-400 mt-2">
+                                            TXID: <span className="text-white font-mono break-all">{task.txid}</span>
+                                        </p>
+                                    )}
+
+                                    {task.rejectionReason && (
+                                        <div className="mt-2 p-2 bg-red-900/20 border border-red-700 rounded">
+                                            <p className="text-xs text-red-400">
+                                                <span className="font-bold">Razón de rechazo:</span> {task.rejectionReason}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'history' && task.approvedByAdmin && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Procesado por: {task.approvedByAdmin}
+                                        </p>
+                                    )}
+
+                                    {task.type === 'DEPOSIT_MANUAL' && task.depositMethod === 'COLLABORATOR' && (
+                                        <div className="mt-2">
+                                            <p className="text-xs text-gray-400">Via colaborador: {task.collaborator?.name}</p>
+                                            {task.bankDetails && (
+                                                <div className="text-xs text-gray-500 mt-1 bg-gray-900/50 p-2 rounded">
+                                                    <strong className="text-gray-400">Datos bancarios del usuario:</strong><br />
+                                                    Banco: {task.bankDetails.bankName}<br />
+                                                    Tipo: {task.bankDetails.accountType}<br />
+                                                    Cuenta: {task.bankDetails.accountNumber}<br />
+                                                    Titular: {task.bankDetails.ownerName} ({task.bankDetails.ownerId})
+                                                </div>
+                                            )}
+
+                                            {user?.role === 'SUPERADMIN' && (
                                                 <div className="flex items-center gap-2 mt-2">
-                                                    <label className="flex items-center cursor-pointer">
+                                                    <label className="relative inline-flex items-center cursor-pointer">
                                                         <div className="relative">
                                                             <input
                                                                 type="checkbox"
@@ -531,14 +627,26 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                 </div>
 
                                 {/* Actions */}
-                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {/* Blockchain Verification for DEPOSIT_AUTO */}
+                                    {task.type === 'DEPOSIT_AUTO' && task.assignedAddress && (
+                                        <button
+                                            onClick={() => handleVerifyBlockchain(task)}
+                                            className="p-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white flex justify-center items-center gap-2"
+                                            title="Verificar en Blockchain"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                            <span className="text-xs">Blockchain</span>
+                                        </button>
+                                    )}
+
                                     {task.proof && (
                                         <button
                                             onClick={() => {
                                                 setSelectedProof(task.proof || null);
                                                 setShowProofModal(true);
                                             }}
-                                            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white self-center sm:self-auto w-full sm:w-auto flex justify-center"
+                                            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white flex justify-center items-center"
                                             title="Ver comprobante"
                                         >
                                             <Eye className="w-5 h-5" />
@@ -555,7 +663,7 @@ Referencia: ${task.reference || 'N/A'}`
                                             )}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="p-2 bg-green-600 hover:bg-green-500 rounded-lg text-white self-center sm:self-auto w-full sm:w-auto flex justify-center"
+                                            className="p-2 bg-green-600 hover:bg-green-500 rounded-lg text-white flex justify-center items-center"
                                             title={`Contactar colaborador: ${task.collaborator.name}`}
                                         >
                                             <MessageCircle className="w-5 h-5" />
@@ -565,15 +673,15 @@ Referencia: ${task.reference || 'N/A'}`
                                     {(activeTab === 'pending' || activeTab === 'preapproved') && (
                                         <>
                                             {actionStatus[task.id] === 'APPROVED' ? (
-                                                <div className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500/20 text-green-500 font-bold rounded-lg animate-pulse w-full sm:w-auto">
-                                                    <Check className="w-5 h-5" /> Tarea aprobada
+                                                <div className="flex items-center justify-center gap-2 px-3 py-2 bg-green-500/20 text-green-500 font-bold rounded-lg animate-pulse">
+                                                    <Check className="w-4 h-4" /> Aprobada
                                                 </div>
                                             ) : actionStatus[task.id] === 'REJECTED' ? (
-                                                <div className="flex items-center justify-center gap-2 px-4 py-2 bg-red-500/20 text-red-500 font-bold rounded-lg animate-pulse w-full sm:w-auto">
-                                                    <X className="w-5 h-5" /> Tarea rechazada
+                                                <div className="flex items-center justify-center gap-2 px-3 py-2 bg-red-500/20 text-red-500 font-bold rounded-lg animate-pulse">
+                                                    <X className="w-4 h-4" /> Rechazada
                                                 </div>
                                             ) : activeTab === 'preapproved' && user?.role !== 'SUPERADMIN' ? (
-                                                <div className="text-xs text-gray-500 italic px-4 py-2 bg-gray-700/50 rounded-lg w-full sm:w-auto text-center">
+                                                <div className="text-xs text-gray-500 italic px-3 py-2 bg-gray-700/50 rounded-lg text-center">
                                                     Solo SUPERADMIN puede tomar decisión final
                                                 </div>
                                             ) : (
@@ -581,14 +689,14 @@ Referencia: ${task.reference || 'N/A'}`
                                                     <button
                                                         onClick={() => handleApprove(task.id)}
                                                         disabled={processingId === task.id}
-                                                        className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-sm sm:text-base font-bold rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                        className="px-3 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-sm font-bold rounded-lg flex items-center gap-2"
                                                     >
                                                         <Check className="w-4 h-4" /> Aprobar
                                                     </button>
                                                     <button
                                                         onClick={() => openRejectModal(task.id)}
                                                         disabled={processingId === task.id}
-                                                        className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm sm:text-base font-bold rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                        className="px-3 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm font-bold rounded-lg flex items-center gap-2"
                                                     >
                                                         <X className="w-4 h-4" /> Rechazar
                                                     </button>
@@ -701,6 +809,92 @@ Referencia: ${task.reference || 'N/A'}`
                                 Ver
                             </button>
                         </div>
+                    )}
+                </div>
+            </Modal>
+
+            {/* Blockchain Verification Modal */}
+            <Modal
+                isOpen={showBlockchainModal}
+                onClose={() => setShowBlockchainModal(false)}
+                title="Verificación en Blockchain"
+            >
+                <div className="space-y-4">
+                    {verifying ? (
+                        <div className="text-center py-8">
+                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
+                            <p className="mt-4 text-gray-300">Verificando en Blockchain...</p>
+                        </div>
+                    ) : blockchainData ? (
+                        <>
+                            <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                                <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+                                    {blockchainData.error ? (
+                                        <><AlertCircle className="w-5 h-5 text-red-500" /> ❌ Error</>
+                                    ) : blockchainData.verified ? (
+                                        <><Check className="w-5 h-5 text-green-500" /> ✅ Verificado</>
+                                    ) : (
+                                        <><AlertCircle className="w-5 h-5 text-yellow-500" /> ⚠️ Pendiente</>
+                                    )}
+                                </h3>
+
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">Dirección:</span>
+                                        <code className="text-cyan-400 text-xs">{selectedTask?.assignedAddress}</code>
+                                    </div>
+                                    {blockchainData.expectedAmountBTC && (
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-400">Monto esperado:</span>
+                                            <strong className="text-yellow-400">{blockchainData.expectedAmountBTC.toFixed(8)} BTC</strong>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">Balance:</span>
+                                        <strong className="text-white">{blockchainData.balance} BTC</strong>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">Total recibido:</span>
+                                        <strong className={blockchainData.totalReceived > 0 ? "text-green-400" : "text-white"}>{blockchainData.totalReceived} BTC</strong>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">Confirmaciones:</span>
+                                        <strong className={blockchainData.confirmations >= 1 ? 'text-green-500' : 'text-yellow-500'}>
+                                            {blockchainData.confirmations}
+                                        </strong>
+                                    </div>
+                                </div>
+
+                                {blockchainData.validationMessage && (
+                                    <div className={`mt-3 p-3 rounded border-l-4 ${blockchainData.error ? 'bg-red-900/20 border-red-500' :
+                                        blockchainData.verified ? 'bg-green-900/20 border-green-500' :
+                                            'bg-yellow-900/20 border-yellow-500'
+                                        }`}>
+                                        <p className="text-sm text-gray-300 whitespace-pre-line">{blockchainData.validationMessage}</p>
+                                    </div>
+                                )}
+
+                                {blockchainData.message && !blockchainData.validationMessage && (
+                                    <div className="mt-3 p-3 bg-gray-900/50 rounded border-l-4 border-cyan-500">
+                                        <p className="text-sm text-gray-300">{blockchainData.message}</p>
+                                    </div>
+                                )}
+
+                                {blockchainData.explorerLink && !blockchainData.error && (
+                                    <a
+                                        href={blockchainData.explorerLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="mt-4 flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition w-full"
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                        Ver en Explorador de Bloques
+                                    </a>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <p className="text-gray-400 text-center py-4">No hay datos disponibles</p>
                     )}
                 </div>
             </Modal>

@@ -67,6 +67,26 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
 
     const btcEquivalent = netAmount ? (netAmount / btcPrice).toFixed(8) : '0.00000000';
 
+    // Reset form function
+    const resetForm = () => {
+        setAmount('');
+        setBtcAddress('');
+        setCollaboratorId('');
+        setBankName('');
+        setAccountType('Corriente');
+        setAccountNumber('');
+        setOwnerName('');
+        setOwnerId('');
+        setActiveTab('direct');
+    };
+
+    // Reset form when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            resetForm();
+        }
+    }, [isOpen]);
+
     const handleWithdrawal = async () => {
         if (!amount) {
             alert('Por favor ingresa el monto');
@@ -80,7 +100,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         }
 
         if (amountNum < 50) {
-            alert('El monto mínimo de liquidación es $50 USDT');
+            alert('El monto mínimo de retiro es $50 USDT');
             return;
         }
 
@@ -126,21 +146,22 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             });
 
             alert('Solicitud de retiro enviada. Pendiente de aprobación.');
+            resetForm(); // Clear form after successful submission
             onSuccess();
             onClose();
         } catch (error: any) {
             console.error('Error:', error);
-            alert(error.response?.data?.error || 'Error al enviar solicitud de liquidación');
+            alert(error.response?.data?.error || 'Error al enviar solicitud de retiro');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Liquidación de Ganancias" maxWidth="xl">
+        <Modal isOpen={isOpen} onClose={onClose} title="Retiro de ganancias" maxWidth="xl">
             {/* Balance Info */}
             <div className="bg-profit/10 border border-profit p-3 rounded-lg mb-4 text-center">
-                <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Profit Disponible para Liquidación</p>
+                <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Profit Disponible para retiro</p>
                 <p className="text-2xl font-black text-profit">${availableProfit.toFixed(2)} USDT</p>
             </div>
 
@@ -173,13 +194,13 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                 <div className="space-y-3">
                     <div className="bg-blue-900/20 border border-blue-700 p-3 rounded-lg">
                         <p className="text-xs text-blue-400 text-center">
-                            Liquida tus ganancias directamente a tu wallet personal de BTC
+                            Retira tus ganancias directamente a tu wallet personal de BTC
                         </p>
                     </div>
 
                     <div>
                         <label className="block text-xs font-medium text-gray-300 mb-1">
-                            Monto a liquidar (USDT)
+                            Monto a retirar (USDT)
                         </label>
                         <input
                             type="number"
@@ -190,7 +211,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                             className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                         />
                         <p className="text-[10px] text-gray-400 mt-1 flex justify-between flex-wrap gap-2">
-                            <span>Comisión Operativa (4.5%): <span className="text-red-400">-${platformFee.toFixed(2)}</span></span>
+                            <span>Comisión operativa (4.5%): <span className="text-red-400">-${platformFee.toFixed(2)}</span></span>
                             <span>Neto a recibir: <span className="text-accent font-bold">${netAmount.toFixed(2)} ({btcEquivalent} BTC)</span></span>
                         </p>
                     </div>
@@ -216,7 +237,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                         disabled={loading}
                         className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-accent/20 hover:shadow-accent/40 text-sm mt-1"
                     >
-                        {loading ? 'Enviando...' : 'Solicitar Liquidación'}
+                        {loading ? 'Enviando...' : 'Solicitar retiro'}
                     </button>
                 </div>
             )}
@@ -227,9 +248,9 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     {collaborators.length === 0 ? (
                         <div className="text-center p-6 bg-gray-800 rounded-lg border border-gray-700">
                             <p className="text-gray-400 text-sm">
-                                Lo sentimos, en este momento no hay colaboradores disponibles para gestionar liquidaciones.
+                                Lo sentimos, en este momento no hay colaboradores disponibles para gestionar retiros.
                                 <br />
-                                Por favor utiliza la liquidación directa a tu wallet personal.
+                                Por favor utiliza el retiro directo a tu wallet personal.
                             </p>
                         </div>
                     ) : (
@@ -244,7 +265,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
 
                             <div>
                                 <label className="block text-xs font-medium text-gray-300 mb-1">
-                                    Monto a liquidar (USDT)
+                                    Monto a retirar (USDT)
                                 </label>
                                 <input
                                     type="number"
@@ -371,7 +392,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                                     {/* Breakdown */}
                                     <div className="bg-gray-800 p-2 rounded text-[10px] space-y-1 mt-2">
                                         <div className="flex justify-between text-gray-400">
-                                            <span>Monto a liquidar:</span>
+                                            <span>Monto a retirar:</span>
                                             <span>${amount || 0}</span>
                                         </div>
                                         <div className="flex justify-between text-red-400">
@@ -395,7 +416,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                                 disabled={loading}
                                 className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-profit/20 hover:shadow-profit/40 text-sm mt-1"
                             >
-                                {loading ? 'Enviando...' : 'Solicitar liquidación con colaborador'}
+                                {loading ? 'Enviando...' : 'Solicitar retiro con colaborador'}
                             </button>
                         </>
                     )}
@@ -406,7 +427,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             <div className="mt-4 bg-yellow-900/20 border border-yellow-700 p-2.5 rounded-lg flex gap-2 items-center">
                 <span className="text-yellow-400 text-xs">⚠️</span>
                 <p className="text-[10px] text-yellow-400 leading-tight">
-                    <strong>NOTA IMPORTANTE:</strong> Todos los retiros/liquidaciones están sujetos a un costo operativo fijo del 4.5%, independientemente de si la orden es aceptada o rechazada. Este fee corresponde a los costos de procesamiento de red, verificación interna y gestión operativa.
+                    <strong>NOTA IMPORTANTE:</strong> Todos los retiros están sujetos a un costo operativo fijo del 4.5%, independientemente de si la orden es aceptada o rechazada. Este fee corresponde a los costos de procesamiento de red, verificación interna y gestión operativa.
                 </p>
             </div>
         </Modal>

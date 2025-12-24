@@ -18,7 +18,10 @@ export interface LoginData {
 }
 
 export interface AuthResponse {
-  user: Omit<User, 'password'> & { referralsCount?: number };
+  user: Omit<User, 'password'> & {
+    referralsCount?: number;
+    referredBy?: { name: string; username: string } | null;
+  };
   accessToken: string;
   refreshToken: string;
 }
@@ -84,8 +87,15 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
   // Remove password from response
   const { password: _, ...userWithoutPassword } = user;
 
+  // Get referrer info
+  const referrerInfo = referrer ? { name: referrer.name, username: referrer.username } : null;
+
   return {
-    user: { ...userWithoutPassword, referralsCount: 0 },
+    user: {
+      ...userWithoutPassword,
+      referralsCount: 0,
+      referredBy: referrerInfo
+    },
     accessToken,
     refreshToken,
   };
@@ -113,6 +123,11 @@ export const login = async (data: LoginData): Promise<AuthResponse> => {
     throw new Error('Error al iniciar sesión. Verifica tus credenciales.');
   }
 
+  // Check if account is blocked
+  if (user.isBlocked) {
+    throw new Error('Tu cuenta ha sido bloqueada. Contacta al administrador para más información.');
+  }
+
   // Generate tokens
   const accessToken = generateAccessToken({
     userId: user.id,
@@ -131,11 +146,25 @@ export const login = async (data: LoginData): Promise<AuthResponse> => {
     where: { referrerId: user.id }
   });
 
+  // Get referrer info if exists
+  let referrerInfo = null;
+  if (user.referrerId) {
+    const referrer = await prisma.user.findUnique({
+      where: { id: user.referrerId },
+      select: { name: true, username: true }
+    });
+    referrerInfo = referrer;
+  }
+
   // Remove password from response
   const { password: _, ...userWithoutPassword } = user;
 
   return {
-    user: { ...userWithoutPassword, referralsCount },
+    user: {
+      ...userWithoutPassword,
+      referralsCount,
+      referredBy: referrerInfo
+    },
     accessToken,
     refreshToken,
   };
@@ -143,10 +172,10 @@ export const login = async (data: LoginData): Promise<AuthResponse> => {
 
 export const refreshAccessToken = async (refreshToken: string): Promise<{ accessToken: string }> => {
   const { verifyRefreshToken } = await import('../utils/jwt.util.js');
-  
+
   try {
     const payload = verifyRefreshToken(refreshToken);
-    
+
     // Verify user still exists
     const user = await prisma.user.findUnique({
       where: { id: payload.userId }
@@ -194,13 +223,13 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
 
 export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
   const { verifyAccessToken } = await import('../utils/jwt.util.js');
-  
+
   try {
     const payload = verifyAccessToken(token);
-    
+
     // Hash new password
     const hashedPassword = await hashPassword(newPassword);
-    
+
     // Update user password
     await prisma.user.update({
       where: { id: payload.userId },

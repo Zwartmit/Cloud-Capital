@@ -1,18 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
-import { Search } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
 
 import { getPlanColor, getPlanIcon } from '../utils/planStyles';
-import { ReferralsModal } from '../components/modals/ReferralsModal';
 
 export const ClassesPage: React.FC = () => {
     const { user } = useAuthStore();
     const [plans, setPlans] = useState<InvestmentPlan[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
 
     const currentBalance = user?.currentBalanceUSDT || 0;
     const referralsCount = user?.referralsCount || 0;
@@ -65,9 +62,9 @@ export const ClassesPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="mb-8 border-b border-secondary pb-4">
-                        <h1 className="text-2xl sm:text-3xl font-black text-white mb-2">
+                        <h2 className="text-2xl sm:text-4xl font-extrabold text-accent mb-2">
                             Planes de Inversión
-                        </h1>
+                        </h2>
                         <p className="text-gray-400 text-sm sm:text-base">
                             Descubre los diferentes niveles de inversión y sus beneficios.
                         </p>
@@ -78,21 +75,6 @@ export const ClassesPage: React.FC = () => {
                             </span>
                         </div>
 
-                        <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                            <div className="text-sm text-gray-400">
-                                Tu código de referido: <span className="text-accent font-bold text-base ml-1">{user?.referralCode || 'N/A'}</span>
-                            </div>
-                            <div className="text-sm text-gray-500 flex items-center gap-2">
-                                <span>Referidos activos: <span className="text-white font-bold">{referralsCount}</span></span>
-                                <button
-                                    onClick={() => setIsReferralsModalOpen(true)}
-                                    className="p-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors border border-gray-700"
-                                    title="Ver referidos"
-                                >
-                                    <Search className="w-3 h-3" />
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
                     {loading ? (
@@ -217,11 +199,6 @@ export const ClassesPage: React.FC = () => {
                     )}
                 </div>
             </main>
-
-            <ReferralsModal
-                isOpen={isReferralsModalOpen}
-                onClose={() => setIsReferralsModalOpen(false)}
-            />
         </div>
     );
 };

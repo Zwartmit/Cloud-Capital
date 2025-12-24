@@ -28,12 +28,13 @@ export const LoginPage: React.FC = () => {
 
             // Redirect based on user role
             if (response.user.role === 'SUPERADMIN' || response.user.role === 'SUBADMIN') {
-                navigate('/admin');
+                navigate('/admin/deposit-validation');
             } else {
                 navigate('/dashboard');
             }
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Error al iniciar sesión. Verifica tus credenciales.');
+            const errorMessage = err.response?.data?.error || 'Error al iniciar sesión. Verifica tus credenciales.';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }

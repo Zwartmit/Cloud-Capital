@@ -14,7 +14,6 @@ interface BalanceCardProps {
     currentPlan: InvestmentPlan | null;
     onReinvest: () => void;
     onWithdraw: () => void;
-    onLiquidateCapital: () => void;
 }
 
 export const BalanceCard: React.FC<BalanceCardProps> = ({
@@ -25,7 +24,6 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
     currentPlan,
     onReinvest,
     onWithdraw,
-    onLiquidateCapital,
 }) => {
     const profitUSDT = currentBalanceUSDT - capitalUSDT;
     const profitPercent = capitalUSDT > 0 ? (profitUSDT / capitalUSDT) * 100 : 0;
@@ -121,7 +119,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
                                 onClick={onWithdraw}
                                 className="bg-red-600 hover:bg-red-500 text-white font-bold py-1.5 px-4 rounded-lg transition-all duration-200 text-xs shadow-lg hover:shadow-red-500/50"
                             >
-                                LIQUIDAR
+                                RETIRAR
                             </button>
                         </div>
                     </div>
@@ -131,12 +129,6 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
                         {currentPlan ? (
                             <div className={`flex items-center justify-between space-x-2 py-2 px-4 rounded-lg text-xs sm:text-sm font-bold transition-all ${planColor} bg-opacity-10 border border-gray-700 hover:border-accent w-full sm:w-auto`}>
                                 <span>PLAN {currentPlan.name}: {currentPlan.minDailyReturn}% - {currentPlan.maxDailyReturn}% Diario</span>
-                                <button
-                                    onClick={onLiquidateCapital}
-                                    className="ml-2 text-[10px] bg-red-900/50 hover:bg-red-600 text-red-200 hover:text-white border border-red-800 px-2 py-1 rounded transition-colors uppercase tracking-wider"
-                                >
-                                    Liquidar Plan
-                                </button>
                             </div>
                         ) : (
                             <div className="flex items-center justify-center space-x-2 py-2 px-4 rounded-lg text-xs sm:text-sm font-bold text-gray-400 border border-gray-700 w-full sm:w-auto bg-gray-800/50">

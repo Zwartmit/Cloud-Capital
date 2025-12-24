@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { adminService, CollaboratorConfig } from '../../services/adminService';
 import { UserDTO } from '@cloud-capital/shared';
-import { Settings, Shield, XCircle, Plus, Trash2, Wallet, Phone } from 'lucide-react';
+import { Settings, XCircle, Plus, Trash2, Wallet, Phone } from 'lucide-react';
 
 export const CollaboratorsManager: React.FC = () => {
     const [staff, setStaff] = useState<UserDTO[]>([]);
@@ -155,12 +155,9 @@ export const CollaboratorsManager: React.FC = () => {
 
     return (
         <div className="card p-6 rounded-xl border-t-4 border-purple-500">
-            <div className="mb-6">
-                <h3 className="text-xl font-bold text-white flex items-start sm:items-center">
-                    <Shield className="w-6 h-6 mr-2 text-purple-400 flex-shrink-0 mt-1 sm:mt-0" />
-                    <span>Gestión de Colaboradores y Staff</span>
-                </h3>
-                <p className="text-gray-400 text-sm mt-1 ml-8 sm:ml-0">
+            <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700">
+                <h3 className="text-xl font-bold text-white mb-2">Gestión de Colaboradores y Staff</h3>
+                <p className="text-gray-400">
                     Administra las configuraciones específicas de cada colaborador, como comisiones y tiempos de procesamiento.
                 </p>
             </div>
@@ -324,10 +321,8 @@ export const CollaboratorsManager: React.FC = () => {
 
             {/* Config Modal */}
             {isConfigModalOpen && selectedCollaborator && createPortal(
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-                    onClick={() => setIsConfigModalOpen(false)}
-                >
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    {/* Overlay - click disabled to prevent accidental close */}
                     <div
                         className="bg-gray-800 rounded-xl w-[95%] sm:w-full sm:max-w-lg border border-gray-700 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
@@ -495,10 +490,8 @@ export const CollaboratorsManager: React.FC = () => {
 
             {/* Create Modal */}
             {isCreateModalOpen && createPortal(
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-                    onClick={() => setIsCreateModalOpen(false)}
-                >
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                    {/* Overlay - click disabled to prevent accidental close */}
                     <div
                         className="bg-gray-800 rounded-xl w-[95%] sm:w-full sm:max-w-lg border border-gray-700 shadow-2xl overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
