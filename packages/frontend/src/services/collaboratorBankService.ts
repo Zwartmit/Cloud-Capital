@@ -71,9 +71,19 @@ export const deleteBankAccount = async (id: string): Promise<void> => {
     await apiClient.delete(`/admin/collaborator-banks/${id}`);
 };
 
+/**
+ * Get ACTIVE bank accounts for a specific collaborator (For regular users/investors)
+ */
+export const getActiveCollaboratorBankAccounts = async (collaboratorId: string): Promise<CollaboratorBankAccount[]> => {
+    // We reuse the existing endpoint. The backend controller handles the logic:
+    // If a regular user calls this with a collaboratorId, it returns only active accounts for that collaborator.
+    return getBankAccounts({ collaboratorId });
+};
+
 export const collaboratorBankService = {
     createBankAccount,
     getBankAccounts,
+    getActiveCollaboratorBankAccounts,
     updateBankAccount,
     deleteBankAccount,
 };

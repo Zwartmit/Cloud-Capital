@@ -115,8 +115,8 @@ export const Sidebar: React.FC = () => {
                 {/* NEW: Deposit Validation (all admins) */}
                 {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
                     <button
-                        onClick={() => navigate('/admin/deposit-validation')}
-                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/deposit-validation')
+                        onClick={() => navigate('/admin/tasks')}
+                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/tasks')
                             ? 'bg-gradient-to-br from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-600/30'
                             : 'text-gray-400 hover:bg-gray-700/50 hover:text-emerald-400'
                             }`}

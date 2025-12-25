@@ -11,7 +11,7 @@ export const getActiveBanks = async (_req: Request, res: Response) => {
     }
 };
 
-export const getBanks = async (req: Request, res: Response) => {
+export const getBanks = async (_req: Request, res: Response) => {
     try {
         const banks = await bankService.getAllBanks();
         res.json(banks);

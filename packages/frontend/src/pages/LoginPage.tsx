@@ -28,7 +28,7 @@ export const LoginPage: React.FC = () => {
 
             // Redirect based on user role
             if (response.user.role === 'SUPERADMIN' || response.user.role === 'SUBADMIN') {
-                navigate('/admin/deposit-validation');
+                navigate('/admin/tasks');
             } else {
                 navigate('/dashboard');
             }

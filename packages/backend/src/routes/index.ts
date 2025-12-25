@@ -15,14 +15,19 @@ const router = Router();
 // Mount routes
 router.use('/auth', authRoutes);
 router.use('/user', userRoutes);
+// Specific admin routes that need special permissions or are public to auth users
+router.use('/admin/collaborator-banks', collaboratorBankRoutes);
+router.use('/admin/btc-pool', btcPoolRoutes); // Also specific, keep before generic if needed? 
+router.use('/admin/audit', auditRoutes);      // Keep specific ones before generic
+
+// Generic admin route (catches /admin/* and applies global admin check)
 router.use('/admin', adminRoutes);
+
 router.use('/investment-plans', investmentPlanRoutes);
 router.use('/profit', profitRoutes);
 router.use('/contact', contactRoutes);
-router.use('/admin/btc-pool', btcPoolRoutes);
+
 router.use('/blockchain', blockchainRoutes);
-router.use('/admin/audit', auditRoutes);
-router.use('/admin/collaborator-banks', collaboratorBankRoutes);
 
 export default router;
 

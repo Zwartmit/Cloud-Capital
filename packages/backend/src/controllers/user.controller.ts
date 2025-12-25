@@ -259,8 +259,8 @@ export const requestManualDepositOrder = async (req: Request, res: Response): Pr
       return;
     }
 
-    if (!txid || !collaboratorName) {
-      res.status(400).json({ error: 'TXID y nombre del colaborador son requeridos' });
+    if (!collaboratorName) {
+      res.status(400).json({ error: 'Nombre del colaborador es requerido' });
       return;
     }
 
@@ -275,7 +275,7 @@ export const requestManualDepositOrder = async (req: Request, res: Response): Pr
 export const requestWithdrawalEnhanced = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
-    const { amountUSDT, btcAddress, destinationType, destinationUserId } = req.body;
+    const { amountUSDT, btcAddress, destinationType, destinationUserId, bankDetails } = req.body;
 
     if (!amountUSDT || amountUSDT <= 0) {
       res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
@@ -297,7 +297,8 @@ export const requestWithdrawalEnhanced = async (req: Request, res: Response): Pr
       amountUSDT,
       btcAddress,
       destinationType,
-      destinationUserId
+      destinationUserId,
+      bankDetails
     );
     res.status(201).json(task);
   } catch (error: any) {

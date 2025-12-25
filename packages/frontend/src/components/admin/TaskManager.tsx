@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import * as btcPoolService from '../../services/btcPool.service';
 import { TaskDTO, UserDTO } from '@cloud-capital/shared';
-import { Check, X, Eye, Clock, ListChecks, Download, ExternalLink, ChevronLeft, ChevronRight, AlertCircle, MessageCircle, Shield } from 'lucide-react';
+import { Check, X, Eye, Clock, ListChecks, Download, ExternalLink, ChevronLeft, ChevronRight, AlertCircle, Shield } from 'lucide-react';
 import { formatUSDT } from '../../utils/formatters';
 import { Modal } from '../common/Modal';
 import { useAuthStore } from '../../store/authStore';
@@ -148,7 +148,13 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     const [disintegratingTaskId, setDisintegratingTaskId] = useState<string | null>(null);
 
     const handleApprove = async (taskId: string) => {
-        if (!confirm('¿Deseas aprobar esta transacción?')) return;
+        const task = tasks.find(t => t.id === taskId);
+        const isPreApproval = user?.role === 'SUBADMIN' && !task?.collaboratorId && !task?.destinationUserId;
+        const isFinalApproval = task?.status === 'PRE_APPROVED';
+
+        const actionText = isPreApproval ? 'PRE-APROBAR' : isFinalApproval ? 'APROBAR FINALMENTE' : 'aprobar';
+
+        if (!confirm(`¿Deseas ${actionText} esta transacción?`)) return;
 
         setProcessingId(taskId);
         try {
@@ -653,22 +659,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                         </button>
                                     )}
 
-                                    {task.collaborator?.whatsappNumber && (
-                                        <a
-                                            href={`https://wa.me/${task.collaborator.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                                                `Hola ${task.collaborator.name}, requerimos la transferencia del depósito manual:
-Usuario: ${task.user?.name}
-Monto: ${formatUSDT(task.amountUSD)}
-Referencia: ${task.reference || 'N/A'}`
-                                            )}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="p-2 bg-green-600 hover:bg-green-500 rounded-lg text-white flex justify-center items-center"
-                                            title={`Contactar colaborador: ${task.collaborator.name}`}
-                                        >
-                                            <MessageCircle className="w-5 h-5" />
-                                        </a>
-                                    )}
+
 
                                     {(activeTab === 'pending' || activeTab === 'preapproved') && (
                                         <>
@@ -689,16 +680,27 @@ Referencia: ${task.reference || 'N/A'}`
                                                     <button
                                                         onClick={() => handleApprove(task.id)}
                                                         disabled={processingId === task.id}
-                                                        className="px-3 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-sm font-bold rounded-lg flex items-center gap-2"
+                                                        className={`px-3 py-2 text-white text-sm font-bold rounded-lg flex items-center gap-2 disabled:opacity-50 ${user?.role === 'SUBADMIN' && !task.collaboratorId && !task.destinationUserId
+                                                            ? 'bg-orange-600 hover:bg-orange-500' // Pre-approve style
+                                                            : 'bg-green-600 hover:bg-green-500' // Approve style
+                                                            }`}
                                                     >
-                                                        <Check className="w-4 h-4" /> Aprobar
+                                                        <Check className="w-4 h-4" />
+                                                        {user?.role === 'SUBADMIN' && !task.collaboratorId && !task.destinationUserId
+                                                            ? 'Pre-Aprobar'
+                                                            : task.status === 'PRE_APPROVED'
+                                                                ? 'Aprobar Final'
+                                                                : 'Aprobar'}
                                                     </button>
                                                     <button
                                                         onClick={() => openRejectModal(task.id)}
                                                         disabled={processingId === task.id}
                                                         className="px-3 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm font-bold rounded-lg flex items-center gap-2"
                                                     >
-                                                        <X className="w-4 h-4" /> Rechazar
+                                                        <X className="w-4 h-4" />
+                                                        {user?.role === 'SUBADMIN' && !task.collaboratorId && !task.destinationUserId
+                                                            ? 'Pre-Rechazar'
+                                                            : 'Rechazar'}
                                                     </button>
                                                 </>
                                             )}

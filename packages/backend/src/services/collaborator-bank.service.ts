@@ -46,6 +46,19 @@ export const getCollaboratorBankAccounts = async (userId: string) => {
 };
 
 /**
+ * Get active bank accounts for a specific collaborator (for users/investors)
+ */
+export const getActiveCollaboratorBankAccounts = async (userId: string) => {
+    return await prisma.collaboratorBankAccount.findMany({
+        where: {
+            userId,
+            isActive: true
+        },
+        orderBy: { createdAt: 'desc' },
+    });
+};
+
+/**
  * Get all bank accounts (for superadmin) with optional filters
  */
 export const getAllCollaboratorBankAccounts = async (filters?: {

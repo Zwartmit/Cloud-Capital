@@ -129,13 +129,10 @@ export const InvestmentPlanManager: React.FC = () => {
     return (
         <div className="card p-6 rounded-xl border-t-4 border-accent space-y-8">
             {/* Section Header */}
-
-            <div className="p-6 bg-gray-800 rounded-xl border border-gray-700">
+            <div className="p-6 bg-gray-800 rounded-xl border border-gray-700 text-center">
                 <h3 className="text-xl font-bold text-white mb-2">Configuración de planes de inversión</h3>
                 <p className="text-gray-400">
-                    Define las reglas y parámetros de los planes de inversión ofrecidos.
-                    Estos valores (como el promedio diario) se utilizan para <b>marketing y proyecciones</b> en la calculadora del usuario,
-                    pero no determinan el pago real diario (eso se hace en "Rentabilidad").
+                    Planes de Inversión. Configuración de reglas y proyección comercial.
                 </p>
                 {loading && <p className="text-accent mt-2">Cargando planes...</p>}
                 {error && <p className="text-red-500 mt-2">{error}</p>}

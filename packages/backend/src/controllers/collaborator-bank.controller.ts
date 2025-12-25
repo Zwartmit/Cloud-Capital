@@ -46,14 +46,20 @@ export const getBankAccounts = async (req: Request, res: Response): Promise<void
         let accounts;
 
         if (userRole === 'ADMIN' || userRole === 'SUPERADMIN') {
-            // Superadmin can see all accounts with filters
+            // Superadmin/Admin can see all accounts with filters
             accounts = await collaboratorBankService.getAllCollaboratorBankAccounts({
                 userId: collaboratorId as string | undefined,
                 search: search as string | undefined,
             });
         } else {
-            // SUBADMIN only sees their own accounts
-            accounts = await collaboratorBankService.getCollaboratorBankAccounts(userId);
+            // Non-admin users
+            if (collaboratorId) {
+                // If asking for a specific collaborator (e.g. withdrawal modal), ONLY return ACTIVE accounts
+                accounts = await collaboratorBankService.getActiveCollaboratorBankAccounts(collaboratorId as string);
+            } else {
+                // SUBADMIN only sees their own accounts (or USER sees empty list)
+                accounts = await collaboratorBankService.getCollaboratorBankAccounts(userId);
+            }
         }
 
         res.status(200).json(accounts);

@@ -127,12 +127,10 @@ export const ProfitManager: React.FC = () => {
     return (
         <div className="card p-6 rounded-xl border-t-4 border-profit">
             {/* Section Header */}
-            <div className="mb-6 p-6 bg-gray-800 rounded-xl border border-gray-700">
+            <div className="mb-6 p-6 bg-gray-800 rounded-xl border border-gray-700 text-center">
                 <h3 className="text-xl font-bold text-white mb-2">Control de rentabilidad diaria</h3>
                 <p className="text-gray-400">
-                    Configura los rendimientos diarios que se pagarán a los usuarios.
-                    Define la tasa para cada plan (dentro de los rangos permitidos). Los pagos se procesarán automáticamente a la media noche.
-                    <span className="block mt-2 text-yellow-500 text-sm">⚠️ Las tasas aquí configuradas son las que realmente suman dinero al balance de los usuarios.</span>
+                    Rentabilidad Diaria. Ejecución de tasas de rendimiento real.
                 </p>
             </div>
 

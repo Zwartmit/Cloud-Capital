@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
-import { Search, Users, TrendingUp, User, DollarSign, Building, Shield } from 'lucide-react';
+import { Search, Users, TrendingUp, User, DollarSign, Building, Shield, Copy, Check } from 'lucide-react';
 import { InvestmentPlanManager } from '../components/admin/InvestmentPlanManager';
 import { ProfitManager } from '../components/admin/ProfitManager';
 import { BankManager } from '../components/admin/BankManager';
@@ -29,6 +29,7 @@ export const AdminPage: React.FC = () => {
     const [btcWithdrawAddr, setBtcWithdrawAddr] = useState(user?.btcWithdrawAddress || '');
     const [whatsappNum, setWhatsappNum] = useState(user?.whatsappNumber || '');
     const [contactMessage, setContactMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [whatsappMessage, setWhatsappMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [contactEmail, setContactEmail] = useState(user?.contactEmail || '');
     const [contactTelegram, setContactTelegram] = useState(user?.contactTelegram || '');
 
@@ -47,34 +48,28 @@ export const AdminPage: React.FC = () => {
 
     const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
     const [isUserReferralsModalOpen, setIsUserReferralsModalOpen] = useState(false);
+    const [copiedLink, setCopiedLink] = useState(false);
+
+    // Generate invitation link
+    const invitationLink = `${window.location.origin}/register?ref=${user?.referralCode || ''}`;
+
+    const handleCopyLink = async () => {
+        try {
+            await navigator.clipboard.writeText(invitationLink);
+            setCopiedLink(true);
+            setTimeout(() => setCopiedLink(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy link:', err);
+        }
+    };
 
     // Capital modification state
     const [newCapital, setNewCapital] = useState('');
     const [capitalMessage, setCapitalMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    const [stats, setStats] = useState({
-        totalUsers: 0,
-        totalCapital: 0,
-        totalBalance: 0,
-        pendingTasks: 0
-    });
 
-    // Fetch stats
-    const fetchStats = async () => {
-        try {
-            const data = await adminService.getStats();
-            setStats(data);
-        } catch (error) {
-            console.error('Error fetching stats:', error);
-        }
-    };
 
-    useEffect(() => {
-        fetchStats();
-        // Refresh every minute
-        const interval = setInterval(fetchStats, 60000);
-        return () => clearInterval(interval);
-    }, []);
+
 
     // Inside render:
     // {activeTab === 'tasks' && <TaskManager onTaskProcessed={fetchStats} />}
@@ -286,7 +281,7 @@ export const AdminPage: React.FC = () => {
                                 Colaboradores
                             </button>
                         )}
-                        {(user?.role === 'ADMIN' || user?.role === 'SUBADMIN') && (
+                        {user?.role === 'SUBADMIN' && (
                             <button
                                 onClick={() => setActiveTab('banks')}
                                 className={`pb-2 sm:pb-4 px-1 font-bold transition-colors text-left sm:text-center ${activeTab === 'banks'
@@ -300,18 +295,18 @@ export const AdminPage: React.FC = () => {
                         )}
                     </div>
 
-                    {(user?.role === 'ADMIN' || user?.role === 'SUBADMIN') && activeTab === 'banks' && <BankManager />}
+                    {user?.role === 'SUBADMIN' && activeTab === 'banks' && <BankManager />}
 
                     {user?.role === 'SUPERADMIN' && activeTab === 'collabs' && <CollaboratorsManager />}
 
                     {activeTab === 'users' && (
                         <div className="card p-6 rounded-xl border-t-4 border-blue-500">
                             {/* Section Header */}
-                            <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700">
+                            {/* User Management Section Header */}
+                            <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700 text-center">
                                 <h3 className="text-xl font-bold text-white mb-2">Gestión de usuarios</h3>
                                 <p className="text-gray-400">
-                                    Administra la base de usuarios de la plataforma. Puedes buscar usuarios específicos, ver sus detalles financieros,
-                                    modificar sus balances manualmente, restablecer contraseñas y eliminar cuentas si es necesario.
+                                    Control de Usuarios. Auditoría de cuentas, balances y seguridad.
                                 </p>
                             </div>
 
@@ -499,7 +494,7 @@ export const AdminPage: React.FC = () => {
                                                             setNewCapital('');
                                                             setTimeout(() => setCapitalMessage(null), 5000);
                                                             // Refresh stats
-                                                            fetchStats();
+
                                                         } catch (err: any) {
                                                             setCapitalMessage({
                                                                 type: 'error',
@@ -702,58 +697,213 @@ export const AdminPage: React.FC = () => {
                         // Profile Tab
                         <div className="card p-6 rounded-xl border-t-4 border-purple-500 space-y-6">
                             {/* Section Header */}
-                            <div className="p-6 bg-gray-800 rounded-xl border border-gray-700">
+                            <div className="p-6 bg-gray-800 rounded-xl border border-gray-700 text-center">
                                 <h3 className="text-xl font-bold text-white mb-2">Perfil de administrador</h3>
                                 <p className="text-gray-400">
-                                    Gestiona tu información personal y seguridad. Aquí puedes ver tus estadísticas de referido (si aplica)
-                                    y actualizar tu contraseña de acceso al panel.
+                                    Perfil de Administrador. Gestión de credenciales y métricas.
                                 </p>
                             </div>
 
                             <div className="card-s p-8 rounded-xl border-t-4 border-accent">
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     {/* Profile Information - Left Column - Compact Layout */}
-                                    <div>
+                                    {/* Profile Information */}
+                                    <div className={`${user?.role === 'SUBADMIN' ? 'lg:col-span-2' : ''}`}>
                                         <h3 className="text-xl font-bold text-white mb-6">Información del perfil</h3>
-                                        <div className="space-y-3">
-                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Nombre</p>
-                                                <p className="text-base font-semibold text-white">{user?.name}</p>
-                                            </div>
-                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Email</p>
-                                                <p className="text-base font-semibold text-white break-all">{user?.email}</p>
-                                            </div>
-                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Usuario</p>
-                                                <p className="text-base font-semibold text-white">{user?.username}</p>
-                                            </div>
-                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Rol</p>
-                                                <p className="text-base font-semibold text-admin">{user?.role}</p>
-                                            </div>
-                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Código de referido</p>
-                                                <p className="text-base font-semibold text-accent">{user?.referralCode || 'N/A'}</p>
-                                            </div>
-                                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-                                                <p className="text-sm text-gray-400 sm:min-w-[140px]">Usuarios referidos</p>
-                                                <div className="flex items-center gap-2">
-                                                    <p className="text-base font-semibold text-white">{user?.referralsCount || 0}</p>
-                                                    <button
-                                                        onClick={() => setIsReferralsModalOpen(true)}
-                                                        className="p-1 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors"
-                                                        title="Ver referidos"
-                                                    >
-                                                        <Search className="w-4 h-4" />
-                                                    </button>
+
+                                        {/* Layout for SUBADMIN: Grid 4 up, 3 down */}
+                                        {user?.role === 'SUBADMIN' ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                                {/* Row 1 */}
+                                                <div>
+                                                    <p className="text-sm text-gray-400 mb-1">Nombre</p>
+                                                    <p className="text-base font-semibold text-white">{user?.name}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-400 mb-1">Email</p>
+                                                    <p className="text-base font-semibold text-white break-all">{user?.email}</p>
+                                                </div>
+                                                <div className="lg:col-span-1">
+                                                    <p className="text-sm text-gray-400 mb-1">WhatsApp</p>
+                                                    <form onSubmit={async (e) => {
+                                                        e.preventDefault();
+                                                        try {
+                                                            const updatedUser = await userService.updateProfile({
+                                                                whatsappNumber: whatsappNum || undefined
+                                                            });
+                                                            updateUser(updatedUser);
+                                                            setWhatsappMessage({ type: 'success', text: 'Actualizado' });
+                                                            setTimeout(() => setWhatsappMessage(null), 3000);
+                                                        } catch (error: any) {
+                                                            setWhatsappMessage({ type: 'error', text: 'Error' });
+                                                        }
+                                                    }} className="flex flex-col gap-2">
+                                                        <div className="flex gap-2">
+                                                            <input
+                                                                type="text"
+                                                                value={whatsappNum}
+                                                                onChange={(e) => setWhatsappNum(e.target.value)}
+                                                                placeholder="+593..."
+                                                                className="w-full p-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:ring-accent focus:border-accent focus:outline-none"
+                                                            />
+                                                            <button
+                                                                type="submit"
+                                                                className="px-2 py-1.5 bg-gray-700 hover:bg-accent text-white rounded text-xs font-bold transition-colors"
+                                                            >
+                                                                Guardar
+                                                            </button>
+                                                        </div>
+                                                        {whatsappMessage && (
+                                                            <p className={`text-xs ${whatsappMessage.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
+                                                                {whatsappMessage.text}
+                                                            </p>
+                                                        )}
+                                                    </form>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-400 mb-1">Usuario</p>
+                                                    <p className="text-base font-semibold text-white">{user?.username}</p>
+                                                </div>
+
+                                                {/* Row 2 */}
+                                                <div>
+                                                    <p className="text-sm text-gray-400 mb-1">Rol</p>
+                                                    <p className="text-base font-semibold text-admin">{user?.role}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-400 mb-1">Código de referido</p>
+                                                    <p className="text-base font-semibold text-accent">{user?.referralCode || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-400 mb-1">Usuarios referidos</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-base font-semibold text-white">{user?.referralsCount || 0}</p>
+                                                        <button
+                                                            onClick={() => setIsReferralsModalOpen(true)}
+                                                            className="p-1 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors"
+                                                            title="Ver referidos"
+                                                        >
+                                                            <Search className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Referral Link Section for SUBADMIN */}
+                                                <div className="lg:col-span-4 mt-6 pt-6 border-t border-gray-700">
+                                                    <label className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">
+                                                        Link de invitación
+                                                    </label>
+                                                    <div className="flex flex-col sm:flex-row gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={invitationLink}
+                                                            readOnly
+                                                            className="w-full sm:flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-300 font-mono focus:outline-none focus:border-accent"
+                                                        />
+                                                        <button
+                                                            onClick={handleCopyLink}
+                                                            className="w-full sm:w-auto px-4 py-2 bg-accent hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+                                                            title="Copiar link"
+                                                        >
+                                                            {copiedLink ? (
+                                                                <>
+                                                                    <Check className="w-4 h-4" />
+                                                                    <span className="hidden sm:inline">Copiado</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Copy className="w-4 h-4" />
+                                                                    <span className="hidden sm:inline">Copiar</span>
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 mt-2">
+                                                        Comparte este link para invitar a nuevos usuarios.
+                                                    </p>
                                                 </div>
                                             </div>
-                                        </div>
+                                        ) : (
+                                            /* Original Vertical Layout for SUPERADMIN */
+                                            <div className="space-y-3">
+                                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                    <p className="text-sm text-gray-400 sm:min-w-[140px]">Nombre</p>
+                                                    <p className="text-base font-semibold text-white">{user?.name}</p>
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                    <p className="text-sm text-gray-400 sm:min-w-[140px]">Email</p>
+                                                    <p className="text-base font-semibold text-white break-all">{user?.email}</p>
+                                                </div>
+
+                                                {/* WhatsApp Edit Field */}
+                                                <div className="py-2">
+                                                    <form onSubmit={async (e) => {
+                                                        e.preventDefault();
+                                                        try {
+                                                            const updatedUser = await userService.updateProfile({
+                                                                whatsappNumber: whatsappNum || undefined
+                                                            });
+                                                            updateUser(updatedUser);
+                                                            setWhatsappMessage({ type: 'success', text: 'WhatsApp actualizado' });
+                                                            setTimeout(() => setWhatsappMessage(null), 3000);
+                                                        } catch (error: any) {
+                                                            setWhatsappMessage({ type: 'error', text: error.response?.data?.error || 'Error' });
+                                                        }
+                                                    }} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                                        <p className="text-sm text-gray-400 sm:min-w-[140px] pt-2 sm:pt-0">WhatsApp</p>
+                                                        <div className="flex-grow flex gap-2 w-full sm:w-auto">
+                                                            <input
+                                                                type="text"
+                                                                value={whatsappNum}
+                                                                onChange={(e) => setWhatsappNum(e.target.value)}
+                                                                placeholder="+593 99 999 9999"
+                                                                className="w-full p-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:ring-accent focus:border-accent focus:outline-none"
+                                                            />
+                                                            <button
+                                                                type="submit"
+                                                                className="px-3 py-1.5 bg-gray-700 hover:bg-accent text-white rounded text-xs font-bold transition-colors"
+                                                            >
+                                                                Guardar
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                    {whatsappMessage && (
+                                                        <p className={`text-xs mt-1 ml-0 sm:ml-[148px] ${whatsappMessage.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
+                                                            {whatsappMessage.text}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                    <p className="text-sm text-gray-400 sm:min-w-[140px]">Usuario</p>
+                                                    <p className="text-base font-semibold text-white">{user?.username}</p>
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                    <p className="text-sm text-gray-400 sm:min-w-[140px]">Rol</p>
+                                                    <p className="text-base font-semibold text-admin">{user?.role}</p>
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                    <p className="text-sm text-gray-400 sm:min-w-[140px]">Código de referido</p>
+                                                    <p className="text-base font-semibold text-accent">{user?.referralCode || 'N/A'}</p>
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                                                    <p className="text-sm text-gray-400 sm:min-w-[140px]">Usuarios referidos</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-base font-semibold text-white">{user?.referralsCount || 0}</p>
+                                                        <button
+                                                            onClick={() => setIsReferralsModalOpen(true)}
+                                                            className="p-1 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors"
+                                                            title="Ver referidos"
+                                                        >
+                                                            <Search className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {/* Contact Information - Right Column (Only for Admins) */}
-                                    {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
+                                    {/* Contact Information - Right Column (Only for Superadmins) */}
+                                    {user?.role === 'SUPERADMIN' && (
                                         <div>
                                             <h3 className="text-xl font-bold text-white mb-6">Información de contacto pública</h3>
                                             <p className="text-sm text-gray-400 mb-6">
@@ -771,8 +921,7 @@ export const AdminPage: React.FC = () => {
                                                 try {
                                                     const updatedUser = await userService.updateProfile({
                                                         contactEmail: contactEmail || undefined,
-                                                        contactTelegram: contactTelegram || undefined,
-                                                        whatsappNumber: whatsappNum || undefined
+                                                        contactTelegram: contactTelegram || undefined
                                                     });
                                                     updateUser(updatedUser);
                                                     setContactMessage({ type: 'success', text: 'Información de contacto actualizada exitosamente' });
@@ -802,20 +951,8 @@ export const AdminPage: React.FC = () => {
                                                             className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
                                                         />
                                                     </div>
-                                                    <div className="sm:col-span-2">
-                                                        <label className="block text-sm text-gray-400 mb-2">Número de WhatsApp</label>
-                                                        <input
-                                                            type="text"
-                                                            value={whatsappNum}
-                                                            onChange={(e) => setWhatsappNum(e.target.value)}
-                                                            placeholder="+593 99 999 9999"
-                                                            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
-                                                        />
-                                                        <p className="text-xs text-gray-500 mt-2 italic">
-                                                            Este número permitirá que los usuarios te contacten directamente vía WhatsApp
-                                                        </p>
-                                                    </div>
                                                 </div>
+
                                                 <div className="pt-2">
                                                     <button
                                                         type="submit"
@@ -825,6 +962,7 @@ export const AdminPage: React.FC = () => {
                                                     </button>
                                                 </div>
                                             </form>
+                                            {/* Reuse message state, might need separation later if concurrent edits happen */}
                                             {contactMessage && (
                                                 <div className={`mt-4 p-3 rounded-lg text-sm ${contactMessage.type === 'success'
                                                     ? 'bg-green-500/10 border border-green-500/20 text-green-500'
@@ -1032,10 +1170,10 @@ export const AdminPage: React.FC = () => {
                         </div>
                     )}
                 </div>
-            </main >
+            </main>
 
             {/* Delete Confirmation Modal */}
-            < ConfirmModal
+            <ConfirmModal
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={confirmDeleteUser}
@@ -1059,6 +1197,6 @@ export const AdminPage: React.FC = () => {
                     />
                 )
             }
-        </div >
+        </div>
     );
 };

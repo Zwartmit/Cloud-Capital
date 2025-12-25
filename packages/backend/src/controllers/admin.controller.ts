@@ -59,7 +59,8 @@ export const updateUserBalance = async (req: Request, res: Response): Promise<vo
 export const getTasks = async (req: Request, res: Response): Promise<void> => {
   try {
     const { status } = req.query;
-    const tasks = await adminService.getAllTasks(status as string);
+    const user = req.user as any;
+    const tasks = await adminService.getAllTasks({ id: user.userId, role: user.role }, status as string);
     res.status(200).json(tasks);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -79,10 +80,12 @@ export const getTaskById = async (req: Request, res: Response): Promise<void> =>
 export const approveTask = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const adminEmail = req.user!.email;
-    const adminRole = req.user!.role;
+    const user = req.user as any;
+    const adminEmail = user.email;
+    const adminRole = user.role;
+    const adminId = user.userId;
 
-    const task = await adminService.approveTask(id, adminEmail, adminRole);
+    const task = await adminService.approveTask(id, adminEmail, adminRole, adminId);
     res.status(200).json(task);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -92,11 +95,13 @@ export const approveTask = async (req: Request, res: Response): Promise<void> =>
 export const rejectTask = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const adminEmail = req.user!.email;
-    const adminRole = req.user!.role;
+    const user = req.user as any;
+    const adminEmail = user.email;
+    const adminRole = user.role;
+    const adminId = user.userId;
     const { rejectionReason } = req.body;
 
-    const task = await adminService.rejectTask(id, adminEmail, adminRole, rejectionReason);
+    const task = await adminService.rejectTask(id, adminEmail, adminRole, rejectionReason, adminId);
     res.status(200).json(task);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

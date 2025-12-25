@@ -138,7 +138,7 @@ function AppContent() {
                     }
                 />
                 <Route
-                    path="/admin/deposit-validation"
+                    path="/admin/tasks"
                     element={
                         <ProtectedRoute requireAdmin>
                             <TaskManagerPage />

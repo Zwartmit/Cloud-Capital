@@ -237,6 +237,7 @@ export const DashboardPage: React.FC = () => {
                     const data = await userService.getTransactions();
                     setTransactions(data);
                 }}
+                userData={{ name: user?.name || '', username: user?.username || '' }}
             />
 
             <WithdrawalModal

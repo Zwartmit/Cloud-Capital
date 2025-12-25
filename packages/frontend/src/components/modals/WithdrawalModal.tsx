@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
-import { Wallet, Users } from 'lucide-react';
+import { Wallet, Users, AlertCircle, CheckCircle2, Building2 } from 'lucide-react';
 import { investmentService, Bank } from '../../services/investmentService';
+import collaboratorBankService, { CollaboratorBankAccount } from '../../services/collaboratorBankService';
 
 interface WithdrawalModalProps {
     isOpen: boolean;
@@ -10,6 +11,9 @@ interface WithdrawalModalProps {
     btcPrice: number;
     onSuccess: () => void;
 }
+
+
+const MIN_WITHDRAWAL_AMOUNT = 50;
 
 export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
     isOpen,
@@ -39,6 +43,12 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
     }>>([]);
     const [banks, setBanks] = useState<Bank[]>([]);
 
+    // New state for collaborator banks logic
+    const [collaboratorBanks, setCollaboratorBanks] = useState<CollaboratorBankAccount[]>([]);
+    const [loadingBanks, setLoadingBanks] = useState(false);
+    const [selectedCollaboratorBank, setSelectedCollaboratorBank] = useState<CollaboratorBankAccount | null>(null);
+    const [bankSelectionError, setBankSelectionError] = useState('');
+
     // Fetch collaborators and banks on mount
     useEffect(() => {
         const fetchData = async () => {
@@ -55,6 +65,49 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         };
         fetchData();
     }, []);
+
+    // Fetch collaborator banks when collaborator changes
+    useEffect(() => {
+        const fetchCollaboratorBanks = async () => {
+            if (!collaboratorId) {
+                setCollaboratorBanks([]);
+                setSelectedCollaboratorBank(null);
+                return;
+            }
+
+            setLoadingBanks(true);
+            setBankSelectionError('');
+            setSelectedCollaboratorBank(null);
+
+            // Reset form fields
+            setBankName('');
+            setAccountType('Corriente');
+            setAccountNumber('');
+            setOwnerName('');
+            setOwnerId('');
+
+            try {
+                const accounts = await collaboratorBankService.getBankAccounts({ collaboratorId });
+                // Filter only active accounts
+                const activeAccounts = accounts.filter(acc => acc.isActive);
+                setCollaboratorBanks(activeAccounts);
+            } catch (error) {
+                console.error('Error fetching collaborator banks:', error);
+                setCollaboratorBanks([]);
+            } finally {
+                setLoadingBanks(false);
+            }
+        };
+
+        fetchCollaboratorBanks();
+    }, [collaboratorId]);
+
+    const handleBankSelection = (bank: CollaboratorBankAccount) => {
+        setSelectedCollaboratorBank(bank);
+        setBankName(bank.bankName);
+        // We don't autofill other fields because user must enter THEIR OWN data
+        // But we lock the bank name to ensure match
+    };
 
     const selectedCollaborator = collaborators.find(c => c.id === collaboratorId);
 
@@ -77,7 +130,16 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         setAccountNumber('');
         setOwnerName('');
         setOwnerId('');
+        setCollaboratorId('');
+        setBankName('');
+        setAccountType('Corriente');
+        setAccountNumber('');
+        setOwnerName('');
+        setOwnerId('');
         setActiveTab('direct');
+        setCollaboratorBanks([]);
+        setSelectedCollaboratorBank(null);
+        setBankSelectionError('');
     };
 
     // Reset form when modal closes
@@ -99,19 +161,29 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             return;
         }
 
-        if (amountNum < 50) {
-            alert('El monto mínimo de retiro es $50 USDT');
+        if (amountNum < MIN_WITHDRAWAL_AMOUNT) {
+            alert(`El monto mínimo de retiro es $${MIN_WITHDRAWAL_AMOUNT} USDT`);
             return;
         }
 
-        if (activeTab === 'direct' && !btcAddress) {
-            alert('Por favor ingresa una dirección BTC válida');
-            return;
-        }
-
-        if (activeTab === 'collaborator' && !collaboratorId) {
-            alert('Por favor selecciona un colaborador');
-            return;
+        if (activeTab === 'collaborator') {
+            if (!collaboratorId) {
+                alert('Selecciona un colaborador');
+                return;
+            }
+            if (!selectedCollaboratorBank) {
+                alert('Debes seleccionar un banco receptor de la lista');
+                return;
+            }
+            if (!bankName || !accountNumber || !ownerName || !ownerId) {
+                alert('Por favor completa todos los datos bancarios');
+                return;
+            }
+        } else {
+            if (!btcAddress) {
+                alert('Por favor ingresa una dirección BTC válida');
+                return;
+            }
         }
 
         setLoading(true);
@@ -150,7 +222,10 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             onSuccess();
             onClose();
         } catch (error: any) {
-            console.error('Error:', error);
+            // Only log if it's NOT a 400 error (validation error)
+            if (error.response?.status !== 400) {
+                console.error('Error:', error);
+            }
             alert(error.response?.data?.error || 'Error al enviar solicitud de retiro');
         } finally {
             setLoading(false);
@@ -222,10 +297,16 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             {/* Direct Withdrawal Tab */}
             {activeTab === 'direct' && (
                 <div className="space-y-3">
+                    {/* Direct Withdrawal Instructions */}
                     <div className="bg-blue-900/20 border border-blue-700 p-3 rounded-lg">
-                        <p className="text-xs text-blue-400 text-center">
-                            Retira tus ganancias directamente a tu wallet personal de BTC
-                        </p>
+                        <h4 className="font-bold text-blue-400 mb-2 text-sm">Instrucciones:</h4>
+                        <ol className="text-xs text-gray-300 space-y-1.5 list-decimal list-inside">
+                            <li>Ingresa el monto en USDT que deseas retirar.</li>
+                            <li>Verifica la comisión operativa del 4.5% y el monto neto a recibir.</li>
+                            <li>Ingresa tu dirección de billetera Bitcoin (BTC) personal.</li>
+                            <li>Asegúrate de que la dirección sea correcta e irreversible.</li>
+                            <li>Haz clic en "Solicitar retiro" y espera la aprobación (viernes).</li>
+                        </ol>
                     </div>
 
                     <div>
@@ -241,7 +322,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                             className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                         />
                         <p className="text-[10px] text-gray-400 mt-1 flex justify-between flex-wrap gap-2">
-                            <span>Comisión operativa (4.5%): <span className="text-red-400">-${platformFee.toFixed(2)}</span></span>
+                            <span>Costo operativo (4.5%): <span className="text-red-400">-${platformFee.toFixed(2)}</span></span>
                             <span>Neto a recibir: <span className="text-accent font-bold">${netAmount.toFixed(2)} ({btcEquivalent} BTC)</span></span>
                         </p>
                     </div>
@@ -286,10 +367,13 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     ) : (
                         <>
                             <div className="bg-green-900/20 border border-green-700 p-3 rounded-lg">
-                                <h4 className="font-bold text-green-400 mb-1 text-xs">Intercambio BTC → FIAT:</h4>
-                                <ol className="text-[10px] text-gray-300 space-y-1 list-decimal list-inside">
-                                    <li>El sistema enviará BTC al colaborador</li>
-                                    <li>El colaborador te entregará FIAT (USD, etc.)</li>
+                                <h4 className="font-bold text-green-400 mb-2 text-sm">Instrucciones:</h4>
+                                <ol className="text-xs text-gray-300 space-y-1.5 list-decimal list-inside">
+                                    <li>Ingresa el monto en USDT que deseas recibir en tu banco.</li>
+                                    <li>Selecciona un colaborador que tenga cuenta en TU mismo banco.</li>
+                                    <li>De la lista de bancos disponibles, elige tu banco.</li>
+                                    <li>Completa los datos de tu cuenta para recibir la transferencia.</li>
+                                    <li>El colaborador procesará tu retiro enviándote dinero local (FIAT).</li>
                                 </ol>
                             </div>
 
@@ -328,21 +412,21 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                                 </select>
                                 {collaboratorId && (
                                     <>
-                                        <div className="mt-2 p-2 bg-gray-800 rounded border border-gray-700 flex flex-col gap-1">
+                                        {/* <div className="mt-2 p-2 bg-gray-800 rounded border border-gray-700 flex flex-col gap-1">
                                             <p className="text-[10px] text-gray-400">Wallet del colaborador:</p>
                                             <code className="text-[10px] text-accent break-all font-mono">
                                                 {collaborators.find(c => c.id === collaboratorId)?.btcDepositAddress}
                                             </code>
-                                        </div>
+                                        </div> */}
                                         <div className="flex flex-wrap gap-2 mt-2">
                                             {selectedCollaborator?.collaboratorConfig?.minAmount !== undefined && (
                                                 <span className="text-[10px] bg-gray-700 px-2 py-0.5 rounded text-gray-300">
-                                                    Min: ${selectedCollaborator.collaboratorConfig.minAmount}
+                                                    Retiro min: ${selectedCollaborator.collaboratorConfig.minAmount}
                                                 </span>
                                             )}
                                             {selectedCollaborator?.collaboratorConfig?.maxAmount !== undefined && (
                                                 <span className="text-[10px] bg-gray-700 px-2 py-0.5 rounded text-gray-300">
-                                                    Max: ${selectedCollaborator.collaboratorConfig.maxAmount}
+                                                    Retiro max: ${selectedCollaborator.collaboratorConfig.maxAmount}
                                                 </span>
                                             )}
                                             <span className="text-[10px] bg-yellow-900/40 text-yellow-400 px-2 py-0.5 rounded border border-yellow-700/50">
@@ -353,71 +437,125 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                                 )}
                             </div>
 
-                            {/* Bank Details Form */}
+                            {/* Bank Details Form Logic */}
                             {collaboratorId && (
-                                <div className="space-y-3 pt-2 border-t border-gray-700">
-                                    <h5 className="font-semibold text-white text-xs">Datos bancarios para recibir FIAT:</h5>
+                                <div className="space-y-4 pt-4 border-t border-gray-700">
+                                    <h5 className="font-semibold text-white text-sm flex items-center">
+                                        <Building2 className="w-4 h-4 mr-2 text-blue-400" />
+                                        Selección de Banco
+                                    </h5>
 
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="block text-xs font-medium text-gray-300 mb-1">Banco receptor</label>
-                                            <select
-                                                value={bankName}
-                                                onChange={e => setBankName(e.target.value)}
-                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
-                                            >
-                                                <option value="">Selecciona un banco</option>
-                                                {banks.map(bank => (
-                                                    <option key={bank.id} value={bank.name}>{bank.name}</option>
-                                                ))}
-                                            </select>
+                                    {loadingBanks ? (
+                                        <div className="text-center py-4 text-gray-400 text-sm">Cargando bancos disponibles...</div>
+                                    ) : collaboratorBanks.length === 0 ? (
+                                        <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 flex items-start">
+                                            <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+                                            <div className="text-xs text-red-200">
+                                                <p className="font-bold mb-1">Sin bancos disponibles</p>
+                                                Este colaborador no tiene cuentas bancarias activas. Por favor selecciona otro colaborador.
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-medium text-gray-300 mb-1">Tipo de cuenta</label>
-                                            <select
-                                                value={accountType}
-                                                onChange={e => setAccountType(e.target.value)}
-                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
-                                            >
-                                                <option value="Corriente">Corriente</option>
-                                                <option value="Ahorros">Ahorros</option>
-                                            </select>
-                                        </div>
-                                    </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {!selectedCollaboratorBank ? (
+                                                <>
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                        {collaboratorBanks.map((bank) => (
+                                                            <button
+                                                                key={bank.id}
+                                                                onClick={() => handleBankSelection(bank)}
+                                                                className="p-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 hover:border-blue-500 rounded-lg transition text-left group relative ring-offset-2 ring-offset-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                            >
+                                                                <p className="font-bold text-white text-xs mb-1">{bank.bankName}</p>
+                                                                <p className="text-[10px] text-gray-400 truncate">{bank.accountType}</p>
+                                                            </button>
+                                                        ))}
+                                                    </div>
 
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-300 mb-1">Número de cuenta</label>
-                                        <input
-                                            type="text"
-                                            value={accountNumber}
-                                            onChange={e => setAccountNumber(e.target.value)}
-                                            placeholder="xxxxxxxxxx"
-                                            className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
-                                        />
-                                    </div>
+                                                    <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-lg p-3">
+                                                        <p className="text-xs text-yellow-200">
+                                                            <span className="font-bold">⚠️ Importante:</span> Selecciona el banco donde tienes tu cuenta. Si tu banco no aparece en la lista, por favor selecciona otro colaborador o contacta al administrador.
+                                                        </p>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                                                    <div className="flex items-center justify-between bg-blue-500/10 border border-blue-500/30 p-3 rounded-lg">
+                                                        <div className="flex items-center">
+                                                            <CheckCircle2 className="w-5 h-5 text-blue-400 mr-2" />
+                                                            <div>
+                                                                <p className="text-xs text-blue-200">Banco seleccionado:</p>
+                                                                <p className="text-sm font-bold text-white">{selectedCollaboratorBank.bankName}</p>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setSelectedCollaboratorBank(null)}
+                                                            className="text-xs text-gray-400 hover:text-white underline"
+                                                        >
+                                                            Cambiar
+                                                        </button>
+                                                    </div>
 
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="block text-xs font-medium text-gray-300 mb-1">Nombre del titular</label>
-                                            <input
-                                                type="text"
-                                                value={ownerName}
-                                                onChange={e => setOwnerName(e.target.value)}
-                                                placeholder="Nombre completo"
-                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
-                                            />
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-300 mb-1">Banco receptor</label>
+                                                            <input
+                                                                type="text"
+                                                                value={bankName}
+                                                                disabled
+                                                                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-gray-300 text-xs cursor-not-allowed"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-300 mb-1">Tipo de cuenta</label>
+                                                            <select
+                                                                value={accountType}
+                                                                onChange={e => setAccountType(e.target.value)}
+                                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs focus:border-accent outline-none"
+                                                            >
+                                                                <option value="Corriente">Corriente</option>
+                                                                <option value="Ahorros">Ahorros</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-gray-300 mb-1">Número de cuenta</label>
+                                                        <input
+                                                            type="text"
+                                                            value={accountNumber}
+                                                            onChange={e => setAccountNumber(e.target.value)}
+                                                            placeholder="Ingrese su número de cuenta"
+                                                            className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs focus:border-accent outline-none"
+                                                        />
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-300 mb-1">Nombre del titular</label>
+                                                            <input
+                                                                type="text"
+                                                                value={ownerName}
+                                                                onChange={e => setOwnerName(e.target.value)}
+                                                                placeholder="Nombre completo"
+                                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs focus:border-accent outline-none"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-300 mb-1">Cédula / Documento</label>
+                                                            <input
+                                                                type="text"
+                                                                value={ownerId}
+                                                                onChange={e => setOwnerId(e.target.value)}
+                                                                placeholder="Número de documento"
+                                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs focus:border-accent outline-none"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-medium text-gray-300 mb-1">Cédula / ID</label>
-                                            <input
-                                                type="text"
-                                                value={ownerId}
-                                                onChange={e => setOwnerId(e.target.value)}
-                                                placeholder="Documento de identidad"
-                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white text-xs"
-                                            />
-                                        </div>
-                                    </div>
+                                    )}
 
                                     {/* Breakdown */}
                                     <div className="bg-gray-800 p-2 rounded text-[10px] space-y-1 mt-2">
@@ -426,7 +564,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                                             <span>${amount || 0}</span>
                                         </div>
                                         <div className="flex justify-between text-red-400">
-                                            <span>Comisión Plataforma (4.5%):</span>
+                                            <span>Costo operativo (4.5%):</span>
                                             <span>-${platformFee.toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between text-yellow-500">
@@ -460,6 +598,6 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     <strong>NOTA IMPORTANTE:</strong> Todos los retiros están sujetos a un costo operativo fijo del 4.5%, independientemente de si la orden es aceptada o rechazada. Este fee corresponde a los costos de procesamiento de red, verificación interna y gestión operativa.
                 </p>
             </div>
-        </Modal>
+        </Modal >
     );
 };

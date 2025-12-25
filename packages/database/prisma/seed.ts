@@ -158,40 +158,29 @@ async function main() {
   });
   console.log('✅ Created sample transactions (Deposit, Profit, Withdrawal, Reinvest)');
 
-  // Create a pending task
-  await prisma.task.create({
-    data: {
-      userId: user.id,
-      type: 'DEPOSIT_MANUAL',
-      amountUSD: 500,
-      reference: 'TXID789012',
-      proof: 'https://example.com/proof.jpg',
-      status: 'PENDING',
+
+  // Create another subadmin acting as "Collaborator"
+  const collaboratorPassword = await bcrypt.hash('collab123', 10);
+  const collaborator = await prisma.user.upsert({
+    where: { email: 'collaborator@cloudcapital.com' },
+    update: {},
+    create: {
+      email: 'collaborator@cloudcapital.com',
+      password: collaboratorPassword,
+      name: 'Collaborator Demo',
+      username: 'collab_demo',
+      role: 'SUBADMIN',
+      referralCode: 'COLLAB123',
+      whatsappNumber: '+593977777777',
+      // ... default config
     },
   });
+  console.log('✅ Created collaborator user:', collaborator.email);
 
-  await prisma.task.createMany({
-    data: [
-      {
-        userId: user.id,
-        type: 'WITHDRAWAL',
-        amountUSD: 200,
-        status: 'REJECTED',
-        rejectionReason: 'Dirección de billetera incorrecta / Red no soportada',
-        createdAt: new Date('2024-02-01')
-      },
-      {
-        userId: user.id,
-        type: 'DEPOSIT_MANUAL',
-        amountUSD: 1500,
-        reference: 'TXID_PENDING_APP',
-        status: 'PRE_APPROVED',
-        proof: 'https://example.com/proof2.jpg',
-        createdAt: new Date('2024-02-05')
-      }
-    ]
-  });
-  console.log('✅ Created sample tasks (Pending, Rejected, Pre-Approved)');
+
+  console.log('✅ Created collaborator user:', collaborator.email);
+
+
 
   // Seed Investment Plans
   const plans = [
@@ -341,6 +330,20 @@ async function main() {
     skipDuplicates: true
   });
   console.log('✅ Created 30 days of profit rate history');
+
+  // Seed BTC Address Pool
+  await prisma.btcAddressPool.createMany({
+    data: [
+      { address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', uploadedBy: admin.id },
+      { address: 'bc1q5d7rjq7g6ratdwq2n0yrf2493p83kkfj923kjs', uploadedBy: admin.id },
+      { address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', uploadedBy: admin.id },
+      { address: 'bc1q42lja79lem0ankyj4lgw5rj7q4s04p82935j83', uploadedBy: admin.id },
+      { address: 'bc1qza3j230005d5t67890abcdef1234567890abcd', uploadedBy: admin.id },
+      { address: 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4', uploadedBy: admin.id },
+    ],
+    skipDuplicates: true,
+  });
+  console.log('✅ Seeded 6 BTC addresses to the pool');
 
   console.log('🎉 Seeding completed!');
   console.log('\n📝 Test credentials:');

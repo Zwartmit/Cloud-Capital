@@ -51,7 +51,7 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
   }
 
   // Generate unique referral code for new user
-  const { nanoid } = await import('nanoid');
+  // const { nanoid } = await import('nanoid'); // Removed unused import
   // Generate custom referral code: initials + 6 digits (e.g., "ju511893" for Javier Urbano)
   const generateCustomReferralCode = (name: string): string => {
     const nameParts = name.trim().split(' ').filter(part => part.length > 0);

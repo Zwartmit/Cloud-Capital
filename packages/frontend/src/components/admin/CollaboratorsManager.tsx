@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { adminService, CollaboratorConfig } from '../../services/adminService';
 import collaboratorBankService, { CollaboratorBankAccount } from '../../services/collaboratorBankService';
 import { UserDTO } from '@cloud-capital/shared';
-import { Settings, XCircle, Plus, Trash2, Wallet, Phone, CreditCard } from 'lucide-react';
+import { Settings, XCircle, Plus, Trash2, Wallet, Phone, CreditCard, Search } from 'lucide-react';
+import { ReferralsModal } from '../modals/ReferralsModal';
 
 // Collaborators Manager Component
 export const CollaboratorsManager: React.FC = () => {
@@ -41,6 +42,10 @@ export const CollaboratorsManager: React.FC = () => {
     const [isBankInfoModalOpen, setIsBankInfoModalOpen] = useState(false);
     const [selectedCollabForBanks, setSelectedCollabForBanks] = useState<UserDTO | null>(null);
     const [collabBankAccounts, setCollabBankAccounts] = useState<CollaboratorBankAccount[]>([]);
+
+    // Referrals modal state
+    const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
+    const [selectedCollabForReferrals, setSelectedCollabForReferrals] = useState<UserDTO | null>(null);
 
     useEffect(() => {
         fetchStaff();
@@ -174,10 +179,10 @@ export const CollaboratorsManager: React.FC = () => {
 
     return (
         <div className="card p-6 rounded-xl border-t-4 border-purple-500">
-            <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700">
-                <h3 className="text-xl font-bold text-white mb-2">Gestión de Colaboradores y Staff</h3>
+            <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700 text-center">
+                <h3 className="text-xl font-bold text-white mb-2">Gestión de Colaboradores</h3>
                 <p className="text-gray-400">
-                    Administra las configuraciones específicas de cada colaborador, como comisiones y tiempos de procesamiento.
+                    Red de Colaboradores. Gestión de socios, cajeros y comisiones.
                 </p>
             </div>
 
@@ -236,8 +241,26 @@ export const CollaboratorsManager: React.FC = () => {
                                             <div className="font-medium text-white">{user.name}</div>
                                             <div className="text-xs text-gray-400">{user.email}</div>
                                             {(user as any).whatsappNumber && (
-                                                <div className="text-xs text-green-400 mt-1">{`WA: ${(user as any).whatsappNumber}`}</div>
+                                                <div className="text-xs text-green-400 mt-1 flex items-center">
+                                                    <Phone className="w-3 h-3 mr-1" />
+                                                    {(user as any).whatsappNumber}
+                                                </div>
                                             )}
+                                            <div className="mt-2 text-xs text-gray-500">
+                                                <div>Ref: <span className="text-gray-300">{(user as any).referralCode || 'N/A'}</span></div>
+                                                <div>Referidos: <span className="text-gray-300">{(user as any).referralsCount || 0}</span>
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedCollabForReferrals(user);
+                                                            setIsReferralsModalOpen(true);
+                                                        }}
+                                                        className="ml-2 p-1 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors inline-flex align-middle"
+                                                        title="Ver referidos"
+                                                    >
+                                                        <Search className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="p-4">
                                             <span className={`px-2 py-1 rounded text-xs font-bold ${user.role === 'SUPERADMIN' ? 'bg-red-500/10 text-red-500' : 'bg-purple-500/10 text-purple-500'}`}>
@@ -249,8 +272,13 @@ export const CollaboratorsManager: React.FC = () => {
                                                 <div className="space-y-1">
                                                     <div><span className="text-gray-500">Comisión:</span> <span className="text-accent font-bold">{config.commission}%</span></div>
                                                     <div><span className="text-gray-500">Tiempo:</span> {config.processingTime}</div>
-                                                    <div><span className="text-gray-500">Tiempo:</span> {config.processingTime}</div>
                                                     <div><span className="text-gray-500">Límites:</span> ${config.minAmount} - ${config.maxAmount}</div>
+                                                    {config.walletAddress && (
+                                                        <div className="flex items-start gap-1">
+                                                            <Wallet className="w-3 h-3 mt-1 text-gray-500 flex-shrink-0" />
+                                                            <span className="text-xs break-all text-gray-300">{config.walletAddress}</span>
+                                                        </div>
+                                                    )}
                                                     <div className="pt-1">
                                                         <span className={`text-xs px-2 py-0.5 rounded border ${config.isActive === false ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-green-500 text-green-500 bg-green-500/10'}`}>
                                                             {config.isActive === false ? 'No disponible' : 'Disponible'}
@@ -301,11 +329,34 @@ export const CollaboratorsManager: React.FC = () => {
                             <div key={user.id} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
                                 <div className="flex justify-between items-start mb-3 gap-3">
                                     <div className="min-w-0 flex-1">
-                                        <h4 className="font-medium text-white text-lg truncate pr-2">{user.name}</h4>
-                                        <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                                        <h4 className="font-medium text-white text-lg break-words pr-2">{user.name}</h4>
+                                        <p className="text-xs text-gray-400 break-all">{user.email}</p>
                                         {(user as any).whatsappNumber && (
-                                            <p className="text-xs text-green-400 mt-1 truncate">{`WA: ${(user as any).whatsappNumber}`}</p>
+                                            <div className="text-xs text-green-400 mt-1 flex items-center">
+                                                <Phone className="w-3 h-3 mr-1" />
+                                                {(user as any).whatsappNumber}
+                                            </div>
                                         )}
+                                        <div className="mt-2 text-xs text-gray-500 flex flex-col gap-1">
+                                            <div className="flex items-center gap-2">
+                                                <span>Ref:</span>
+                                                <span className="text-gray-300 font-mono">{(user as any).referralCode || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span>Referidos:</span>
+                                                <span className="text-gray-300">{(user as any).referralsCount || 0}</span>
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedCollabForReferrals(user);
+                                                        setIsReferralsModalOpen(true);
+                                                    }}
+                                                    className="p-1 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white transition-colors flex items-center justify-center ml-1"
+                                                    title="Ver referidos"
+                                                >
+                                                    <Search className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                     <span className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap flex-shrink-0 ${user.role === 'SUPERADMIN' ? 'bg-red-500/10 text-red-500' : 'bg-purple-500/10 text-purple-500'}`}>
                                         {user.role}
@@ -323,10 +374,16 @@ export const CollaboratorsManager: React.FC = () => {
                                                 <span className="text-gray-500">Tiempo:</span>
                                                 <span className="text-gray-300">{config.processingTime}</span>
                                             </div>
-                                            <div className="flex justify-between">
+                                            <div className="flex justify-between border-b border-gray-800 pb-1 mb-1">
                                                 <span className="text-gray-500">Límites:</span>
                                                 <span className="text-gray-300">${config.minAmount} - ${config.maxAmount}</span>
                                             </div>
+                                            {config.walletAddress && (
+                                                <div className="flex justify-between items-start pt-1">
+                                                    <span className="text-gray-500 whitespace-nowrap mr-2">Wallet:</span>
+                                                    <span className="text-gray-300 text-xs text-right break-all">{config.walletAddress}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="text-center text-gray-500 italic py-1">
@@ -518,7 +575,7 @@ export const CollaboratorsManager: React.FC = () => {
                                     className="w-full flex items-center justify-center px-4 py-2 border border-red-500/30 text-red-500 rounded-lg hover:bg-red-500/10 transition text-sm"
                                 >
                                     <Trash2 className="w-4 h-4 mr-2" />
-                                    Eliminar Colaborador
+                                    Eliminar colaborador
                                 </button>
                             </div>
                         </form>
@@ -629,7 +686,7 @@ export const CollaboratorsManager: React.FC = () => {
                     >
                         <div className="p-4 sm:p-6 border-b border-gray-700 flex justify-between items-center bg-gray-800 sticky top-0 z-10">
                             <h3 className="text-lg sm:text-xl font-bold text-white pr-4">
-                                Cuentas Bancarias: {selectedCollabForBanks.name}
+                                Cuentas Bancarias y Wallets: {selectedCollabForBanks.name}
                             </h3>
                             <button
                                 onClick={() => setIsBankInfoModalOpen(false)}
@@ -639,50 +696,96 @@ export const CollaboratorsManager: React.FC = () => {
                             </button>
                         </div>
 
-                        <div className="p-4 sm:p-6">
-                            {collabBankAccounts.length === 0 ? (
-                                <div className="text-center py-8 text-gray-400">
-                                    <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                    <p>Este colaborador no tiene cuentas bancarias registradas</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {collabBankAccounts.map((account) => (
-                                        <div key={account.id} className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div className="flex items-center">
-                                                    <CreditCard className="w-5 h-5 text-blue-400 mr-2" />
-                                                    <h4 className="font-bold text-white">{account.bankName}</h4>
-                                                </div>
-                                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${account.isActive
-                                                    ? 'bg-green-500/10 text-green-500'
-                                                    : 'bg-red-500/10 text-red-500'
-                                                    }`}>
-                                                    {account.isActive ? 'Activa' : 'Inactiva'}
-                                                </span>
-                                            </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                                                <div>
-                                                    <span className="text-gray-500">Tipo de cuenta:</span>
-                                                    <p className="text-white font-medium">{account.accountType}</p>
+                        <div className="p-4 sm:p-6 space-y-6">
+                            {/* Wallets Section */}
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Billeteras Crypto</h4>
+                                <div className="grid grid-cols-1 gap-4">
+                                    {/* Personal BTC Address */}
+                                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-center">
+                                                <div className="bg-orange-500/10 p-1.5 rounded mr-3">
+                                                    <Wallet className="w-5 h-5 text-orange-500" />
                                                 </div>
                                                 <div>
-                                                    <span className="text-gray-500">Número de cuenta:</span>
-                                                    <p className="text-white font-medium">{account.accountNumber}</p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-gray-500">Titular:</span>
-                                                    <p className="text-white font-medium">{account.accountHolder}</p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-gray-500">Documento:</span>
-                                                    <p className="text-white font-medium">{account.documentType}: {account.documentNumber}</p>
+                                                    <h5 className="font-bold text-white text-sm">Wallet Personal (Retiros)</h5>
+                                                    <p className="text-xs text-gray-400">Dirección para enviar pagos al colaborador</p>
                                                 </div>
                                             </div>
                                         </div>
-                                    ))}
+                                        <div className="bg-gray-800 p-2.5 rounded border border-gray-700 font-mono text-sm text-gray-300 break-all">
+                                            {(selectedCollabForBanks as any).btcWithdrawAddress || 'No configurada'}
+                                        </div>
+                                    </div>
+
+                                    {/* Operational Wallet */}
+                                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className="flex items-center">
+                                                <div className="bg-purple-500/10 p-1.5 rounded mr-3">
+                                                    <Wallet className="w-5 h-5 text-purple-500" />
+                                                </div>
+                                                <div>
+                                                    <h5 className="font-bold text-white text-sm">Wallet Operativa (Cobros)</h5>
+                                                    <p className="text-xs text-gray-400">Dirección configurada para recibir depósitos</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="bg-gray-800 p-2.5 rounded border border-gray-700 font-mono text-sm text-gray-300 break-all">
+                                            {((selectedCollabForBanks as any).collaboratorConfig as CollaboratorConfig | undefined)?.walletAddress || 'No configurada'}
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
+                            </div>
+
+                            {/* Bank Accounts Section */}
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Cuentas Bancarias</h4>
+                                {collabBankAccounts.length === 0 ? (
+                                    <div className="text-center py-6 text-gray-400 bg-gray-800/30 rounded-lg border border-gray-700 border-dashed">
+                                        <CreditCard className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                                        <p className="text-sm">No hay cuentas bancarias registradas</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {collabBankAccounts.map((account) => (
+                                            <div key={account.id} className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div className="flex items-center">
+                                                        <CreditCard className="w-5 h-5 text-blue-400 mr-2" />
+                                                        <h4 className="font-bold text-white">{account.bankName}</h4>
+                                                    </div>
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${account.isActive
+                                                        ? 'bg-green-500/10 text-green-500'
+                                                        : 'bg-red-500/10 text-red-500'
+                                                        }`}>
+                                                        {account.isActive ? 'Activa' : 'Inactiva'}
+                                                    </span>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4 text-sm">
+                                                    <div>
+                                                        <span className="text-gray-500 text-xs block">Tipo de cuenta</span>
+                                                        <p className="text-white font-medium">{account.accountType}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-500 text-xs block">Número de cuenta</span>
+                                                        <p className="text-white font-medium font-mono">{account.accountNumber}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-500 text-xs block">Titular</span>
+                                                        <p className="text-white font-medium">{account.accountHolder}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-500 text-xs block">Documento</span>
+                                                        <p className="text-white font-medium">{account.documentType}: {account.documentNumber}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="p-4 sm:p-6 border-t border-gray-700 bg-gray-800 sticky bottom-0">
@@ -697,6 +800,17 @@ export const CollaboratorsManager: React.FC = () => {
                 </div>,
                 document.body
             )}
-        </div>
+
+            {/* Referrals Modal */}
+            {
+                selectedCollabForReferrals && (
+                    <ReferralsModal
+                        isOpen={isReferralsModalOpen}
+                        onClose={() => setIsReferralsModalOpen(false)}
+                        userId={selectedCollabForReferrals.id}
+                    />
+                )
+            }
+        </div >
     );
 };

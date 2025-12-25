@@ -12,13 +12,17 @@ const requireAdminOrSubadmin = (req: any, res: any, next: any) => {
     next();
 };
 
-// All routes require authentication and ADMIN or SUBADMIN role
+// All routes require authentication
 router.use(authenticateToken);
+
+// GET routes (open to all authenticated users, controller handles permissions)
+router.get('/', controller.getBankAccounts);
+
+// Write routes require ADMIN or SUBADMIN role
 router.use(requireAdminOrSubadmin);
 
-// CRUD routes
+// CRUD routes for writing
 router.post('/', controller.createBankAccount);
-router.get('/', controller.getBankAccounts);
 router.put('/:id', controller.updateBankAccount);
 router.delete('/:id', controller.deleteBankAccount);
 

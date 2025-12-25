@@ -1,4 +1,4 @@
-import { PrismaClient, TaskStatus, UserRole } from '@prisma/client';
+import { PrismaClient, TaskStatus } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -226,8 +226,24 @@ export const blockUser = async (id: string, reason: string = 'BLOCKED_BY_ADMIN')
 };
 
 // Task Management
-export const getAllTasks = async (status?: string) => {
-  const where = status ? { status: status as TaskStatus } : {};
+export const getAllTasks = async (adminUser: { id: string, role: string }, status?: string) => {
+  let where: any = status ? { status: status as TaskStatus } : {};
+
+  // Role-based visibility logic
+  if (adminUser.role === 'SUBADMIN') {
+    // SUBADMIN sees:
+    // 1. Direct tasks (collaboratorId is null) -> To Pre-approve
+    // 2. Tasks assigned explicitly to them -> To Complete
+    where = {
+      ...where,
+      OR: [
+        { collaboratorId: null }, // Direct tasks
+        { collaboratorId: adminUser.id }, // Assigned as depositor collaborator
+        { destinationUserId: adminUser.id } // Assigned as withdrawal collaborator
+      ]
+    };
+  }
+  // SUPERADMIN sees everything (no additional filter needed)
 
   const tasks = await prisma.task.findMany({
     where,
@@ -286,7 +302,7 @@ export const getTaskById = async (id: string) => {
   return task;
 };
 
-export const approveTask = async (id: string, adminEmail: string, adminRole: UserRole) => {
+export const approveTask = async (id: string, adminEmail: string, adminRole: string, adminId?: string) => {
   const task = await prisma.task.findUnique({
     where: { id },
     include: {
@@ -302,7 +318,55 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: Use
     throw new Error('La tarea ya está aprobada');
   }
 
-  // Handle different task types
+  // --- Logic for Review/Approval ---
+
+  // 1. Collaborator Tasks (Assigned to a specific subadmin)
+  // Logic: Only the Assigned Collaborator (or Superadmin) can approve.
+  // Approval is DIRECT (goes to COMPLETED).
+  if (task.collaboratorId || task.destinationUserId) {
+    const isAssignedCollaborator = (task.collaboratorId === adminId) || (task.destinationUserId === adminId);
+
+    // Check permissions: Must be Superadmin OR the Assigned Collaborator
+    if (adminRole !== 'SUPERADMIN' && !isAssignedCollaborator) {
+      throw new Error('No tienes permiso para aprobar esta tarea de colaborador.');
+    }
+
+    // Proceed to COMPLETED logic below...
+  }
+
+  // 2. Direct Tasks (No collaborator assigned)
+  // Logic: Double filter.
+  // Subadmin -> PRE_APPROVED
+  // Superadmin -> COMPLETED
+  else {
+    if (adminRole === 'SUBADMIN') {
+      // Subadmin Action: Pre-approve
+      if (task.status !== 'PENDING') {
+        throw new Error('Solo se pueden pre-aprobar tareas pendientes.');
+      }
+
+      return await prisma.task.update({
+        where: { id },
+        data: {
+          status: 'PRE_APPROVED', // Custom status or handle via existing enum if modified? 
+          // Assuming PRE_APPROVED is in TaskStatus enum, if not need to add it or use intermediate state. 
+          // Valid statuses: PENDING, PRE_APPROVED, PRE_REJECTED, COMPLETED, REJECTED
+          approvedByAdmin: adminEmail // Track who pre-approved
+        },
+        include: { user: { select: { id: true, name: true, username: true } } }
+      });
+    }
+
+    // Superadmin Action: Complete (Final Approval)
+    // Can approve from PENDING or PRE_APPROVED
+  }
+
+
+  // --- Final Completion Logic (Update Balances) ---
+  // Reached if:
+  // - Collaborator approves their task
+  // - Superadmin approves any task
+
   let updatedTask;
 
   if (task.type === 'DEPOSIT_AUTO' || task.type === 'DEPOSIT_MANUAL') {
@@ -468,8 +532,40 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: Use
   return updatedTask;
 };
 
-export const rejectTask = async (id: string, adminEmail: string, adminRole: UserRole, rejectionReason?: string) => {
-  const task = await prisma.task.update({
+export const rejectTask = async (id: string, adminEmail: string, adminRole: string, rejectionReason?: string, adminId?: string) => {
+  const task = await prisma.task.findUnique({ where: { id } });
+
+  if (!task) throw new Error('Tarea no encontrada');
+
+  // --- Logic for Review/Rejection ---
+
+  // 1. Collaborator Tasks
+  if (task.collaboratorId || task.destinationUserId) {
+    const isAssignedCollaborator = (task.collaboratorId === adminId) || (task.destinationUserId === adminId);
+    if (adminRole !== 'SUPERADMIN' && !isAssignedCollaborator) {
+      throw new Error('No tienes permiso para rechazar esta tarea.');
+    }
+    // Rejection is FINAL (REJECTED)
+  }
+  // 2. Direct Tasks
+  else {
+    if (adminRole === 'SUBADMIN') {
+      // Subadmin Action: Pre-reject
+      return await prisma.task.update({
+        where: { id },
+        data: {
+          status: 'PRE_REJECTED',
+          approvedByAdmin: adminEmail,
+          rejectionReason
+        },
+        include: { user: true } // Simplified include
+      });
+    }
+    // Superadmin Action: Final Reject (REJECTED)
+  }
+
+  // Final Rejection Logic (REJECTED status)
+  const rejectedTask = await prisma.task.update({
     where: { id },
     data: {
       status: 'REJECTED',
@@ -504,7 +600,7 @@ export const rejectTask = async (id: string, adminEmail: string, adminRole: User
     });
   }
 
-  return task;
+  return rejectedTask;
 };
 
 export const toggleCollaboratorVerification = async (id: string, verified: boolean) => {
@@ -593,13 +689,23 @@ export const getAllStaff = async () => {
       role: true,
       whatsappNumber: true,
       btcDepositAddress: true,
+      btcWithdrawAddress: true,
       collaboratorConfig: true,
-      createdAt: true
+      referralCode: true,
+      createdAt: true,
+      _count: {
+        select: { referrals: true }
+      }
     },
     orderBy: { createdAt: 'desc' }
   });
 
-  return staff;
+  // Map _count to referralsCount for DTO compatibility
+  return staff.map(user => ({
+    ...user,
+    referralsCount: user._count.referrals,
+    _count: undefined
+  }));
 };
 
 export const createCollaborator = async (data: {
