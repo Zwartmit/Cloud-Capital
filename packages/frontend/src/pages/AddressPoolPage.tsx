@@ -62,7 +62,11 @@ export default function AddressPoolPage() {
             ]);
 
             setStats(statsData);
-            setAddresses(addressesData.addresses || []);
+            // Sort addresses by uploadedAt in descending order (newest first)
+            const sortedAddresses = (addressesData.addresses || []).sort((a: Address, b: Address) =>
+                new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+            );
+            setAddresses(sortedAddresses);
             setTotalPages(addressesData.totalPages || 1);
         } catch (error: any) {
             console.error('Error loading pool data:', error);

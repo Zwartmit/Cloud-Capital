@@ -91,7 +91,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
             const matchesDateTo = !dateTo || txDate <= new Date(dateTo + 'T23:59:59');
 
             return matchesSearch && matchesType && matchesStatus && matchesDateFrom && matchesDateTo;
-        });
+        }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [transactions, searchTerm, typeFilter, statusFilter, dateFrom, dateTo]);
 
     // Reset to page 1 when filters change
@@ -151,22 +151,28 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                     </select>
 
                     {/* Date From */}
-                    <input
-                        type="date"
-                        value={dateFrom}
-                        onChange={(e) => setDateFrom(e.target.value)}
-                        placeholder="Desde"
-                        className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                    />
+                    <div>
+                        <label className="block text-xs text-gray-400">Desde</label>
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            placeholder="Desde"
+                            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                        />
+                    </div>
 
                     {/* Date To */}
-                    <input
-                        type="date"
-                        value={dateTo}
-                        onChange={(e) => setDateTo(e.target.value)}
-                        placeholder="Hasta"
-                        className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                    />
+                    <div>
+                        <label className="block text-xs text-gray-400">Hasta</label>
+                        <input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            placeholder="Hasta"
+                            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                        />
+                    </div>
                 </div>
 
                 {/* Results Count and Items Per Page */}

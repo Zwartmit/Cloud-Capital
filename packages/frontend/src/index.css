@@ -439,3 +439,15 @@ input:disabled {
   cursor: not-allowed;
   transform: none !important;
 }
+
+/* ===== FIXED SIDEBAR LAYOUT ===== */
+/* Ensure main content has proper padding to account for fixed sidebar */
+.flex.min-h-screen > main {
+  margin-left: 4rem; /* 64px - width of sidebar on mobile (w-16) */
+}
+
+@media (min-width: 640px) {
+  .flex.min-h-screen > main {
+    margin-left: 5rem; /* 80px - width of sidebar on sm and up (sm:w-20) */
+  }
+}

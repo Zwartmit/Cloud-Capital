@@ -128,10 +128,44 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         }
     };
 
-    const handleCopyAddress = () => {
+    const handleCopyAddress = async () => {
         const addressToCopy = assignedAddress || userDepositAddress;
-        navigator.clipboard.writeText(addressToCopy);
-        alert('Dirección copiada al portapapeles');
+
+        try {
+            // Try modern clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(addressToCopy);
+                alert('Dirección copiada al portapapeles');
+                return;
+            }
+        } catch (err) {
+            console.log('Clipboard API failed, trying fallback');
+        }
+
+        // Fallback method for mobile/older browsers
+        try {
+            const textArea = document.createElement('textarea');
+            textArea.value = addressToCopy;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+
+            if (successful) {
+                alert('Dirección copiada al portapapeles');
+            } else {
+                throw new Error('execCommand failed');
+            }
+        } catch (err) {
+            console.error('Copy failed:', err);
+            // Last resort: show the address in an alert so user can copy manually
+            alert(`Copia esta dirección manualmente:\n\n${addressToCopy}`);
+        }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -249,11 +283,21 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                         {assignedAddress}
                                     </code>
                                     <button
-                                        onClick={handleCopyAddress}
-                                        className="p-2 bg-accent hover:bg-blue-500 rounded transition shrink-0"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleCopyAddress();
+                                        }}
+                                        onTouchEnd={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleCopyAddress();
+                                        }}
+                                        className="p-3 bg-accent hover:bg-blue-500 active:bg-blue-600 rounded transition shrink-0 touch-manipulation"
                                         title="Copiar dirección"
+                                        type="button"
                                     >
-                                        <Copy className="w-4 h-4" />
+                                        <Copy className="w-5 h-5" />
                                     </button>
                                 </div>
 

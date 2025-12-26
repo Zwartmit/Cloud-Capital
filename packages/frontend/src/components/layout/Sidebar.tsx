@@ -30,144 +30,149 @@ export const Sidebar: React.FC = () => {
     const isAdmin = user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN';
 
     return (
-        <aside className="bg-slate-900/80 backdrop-blur-md w-16 sm:w-20 p-3 sm:p-4 flex flex-col items-center border-r border-slate-700/50 transition-all duration-300 sticky top-0 h-screen">
+        <aside className="bg-slate-900/80 backdrop-blur-md w-16 sm:w-20 flex flex-col items-center border-r border-slate-700/50 transition-all duration-300 fixed left-0 top-0 h-screen z-40">
             {/* Logo */}
-            <div className="mb-6 sm:mb-8 mt-2">
+            <div className="mb-6 sm:mb-8 mt-2 pt-3 sm:pt-4 px-3 sm:px-4 flex-shrink-0 w-full flex justify-center">
                 <img src="/logo.png" alt="Cloud Capital" className="w-8 sm:w-12 h-auto object-contain" />
             </div>
 
-            <div className="space-y-4 flex flex-col flex-grow">
-                {/* Dashboard - Only for Users */}
-                {!isAdmin && (
-                    <button
-                        onClick={() => navigate('/dashboard')}
-                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/dashboard')
-                            ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
-                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
-                            }`}
-                        title="Dashboard"
-                    >
-                        <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                    </button>
-                )}
+            {/* Scrollable Navigation Area - Limited height to keep logout visible */}
+            <div className="overflow-y-auto overflow-x-hidden w-full px-3 sm:px-4 pb-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent hover:scrollbar-thumb-slate-600" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+                <div className="space-y-4 flex flex-col items-center">
+                    {/* Dashboard - Only for Users */}
+                    {!isAdmin && (
+                        <button
+                            onClick={() => navigate('/dashboard')}
+                            className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/dashboard')
+                                ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
+                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+                                }`}
+                            title="Dashboard"
+                        >
+                            <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                        </button>
+                    )}
 
-                {/* Investment Classes - Only for Users */}
-                {!isAdmin && (
-                    <button
-                        onClick={() => navigate('/classes')}
-                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/classes')
-                            ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
-                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
-                            }`}
-                        title="Planes de Inversión"
-                    >
-                        <Layers3 className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                    </button>
-                )}
+                    {/* Investment Classes - Only for Users */}
+                    {!isAdmin && (
+                        <button
+                            onClick={() => navigate('/classes')}
+                            className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/classes')
+                                ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
+                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+                                }`}
+                            title="Planes de Inversión"
+                        >
+                            <Layers3 className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                        </button>
+                    )}
 
-                {/* Notifications - Only for Users */}
-                {!isAdmin && (
-                    <button
-                        onClick={() => navigate('/notifications')}
-                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/notifications')
-                            ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
-                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
-                            }`}
-                        title="Notificaciones"
-                    >
-                        <Bell className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                        {notificationCount > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse shadow-lg shadow-red-500/50">
-                                {notificationCount > 9 ? '9+' : notificationCount}
-                            </span>
-                        )}
-                    </button>
-                )}
+                    {/* Notifications - Only for Users */}
+                    {!isAdmin && (
+                        <button
+                            onClick={() => navigate('/notifications')}
+                            className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/notifications')
+                                ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
+                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+                                }`}
+                            title="Notificaciones"
+                        >
+                            <Bell className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                            {notificationCount > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse shadow-lg shadow-red-500/50">
+                                    {notificationCount > 9 ? '9+' : notificationCount}
+                                </span>
+                            )}
+                        </button>
+                    )}
 
-                {/* Profile - Only for Users */}
-                {!isAdmin && (
-                    <button
-                        onClick={() => navigate('/profile')}
-                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/profile')
-                            ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
-                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
-                            }`}
-                        title="Perfil"
-                    >
-                        <User className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                    </button>
-                )}
+                    {/* Profile - Only for Users */}
+                    {!isAdmin && (
+                        <button
+                            onClick={() => navigate('/profile')}
+                            className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/profile')
+                                ? 'bg-gradient-to-br from-accent to-accent/80 text-white shadow-lg shadow-accent/30'
+                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
+                                }`}
+                            title="Perfil"
+                        >
+                            <User className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                        </button>
+                    )}
 
-                {/* Admin Panel (only for admins) */}
-                {isAdmin && (
-                    <button
-                        onClick={() => navigate('/admin')}
-                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin')
-                            ? 'bg-gradient-to-br from-admin to-admin/80 text-black shadow-lg shadow-admin/30'
-                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-admin'
-                            }`}
-                        title="Panel Admin"
-                    >
-                        <ShieldHalf className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                    </button>
-                )}
+                    {/* Admin Panel (only for admins) */}
+                    {isAdmin && (
+                        <button
+                            onClick={() => navigate('/admin')}
+                            className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin')
+                                ? 'bg-gradient-to-br from-admin to-admin/80 text-black shadow-lg shadow-admin/30'
+                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-admin'
+                                }`}
+                            title="Panel Admin"
+                        >
+                            <ShieldHalf className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                        </button>
+                    )}
 
-                {/* NEW: Deposit Validation (all admins) */}
-                {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
-                    <button
-                        onClick={() => navigate('/admin/tasks')}
-                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/tasks')
-                            ? 'bg-gradient-to-br from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-600/30'
-                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-emerald-400'
-                            }`}
-                        title="Validar Depósitos"
-                    >
-                        <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                        {taskCount > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse shadow-lg shadow-emerald-500/50">
-                                {taskCount > 9 ? '9+' : taskCount}
-                            </span>
-                        )}
-                    </button>
-                )}
+                    {/* NEW: Deposit Validation (all admins) */}
+                    {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
+                        <button
+                            onClick={() => navigate('/admin/tasks')}
+                            className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/tasks')
+                                ? 'bg-gradient-to-br from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-600/30'
+                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-emerald-400'
+                                }`}
+                            title="Validar Depósitos"
+                        >
+                            <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                            {taskCount > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse shadow-lg shadow-emerald-500/50">
+                                    {taskCount > 9 ? '9+' : taskCount}
+                                </span>
+                            )}
+                        </button>
+                    )}
 
-                {/* NEW: Address Pool (super admin only) */}
-                {user?.role === 'SUPERADMIN' && (
-                    <button
-                        onClick={() => navigate('/admin/address-pool')}
-                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/address-pool')
-                            ? 'bg-gradient-to-br from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-600/30'
-                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-purple-400'
-                            }`}
-                        title="Pool de Direcciones BTC"
-                    >
-                        <Key className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                    </button>
-                )}
+                    {/* NEW: Address Pool (super admin only) */}
+                    {user?.role === 'SUPERADMIN' && (
+                        <button
+                            onClick={() => navigate('/admin/address-pool')}
+                            className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/address-pool')
+                                ? 'bg-gradient-to-br from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-600/30'
+                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-purple-400'
+                                }`}
+                            title="Pool de Direcciones BTC"
+                        >
+                            <Key className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                        </button>
+                    )}
 
-                {/* Admin Guide (only for admins) - MOVED TO BOTTOM */}
-                {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
-                    <button
-                        onClick={() => navigate('/admin/guide')}
-                        className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/guide')
-                            ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/30'
-                            : 'text-gray-400 hover:bg-gray-700/50 hover:text-blue-400'
-                            }`}
-                        title="Guía de Admin"
-                    >
-                        <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-                    </button>
-                )}
+                    {/* Admin Guide (only for admins) */}
+                    {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
+                        <button
+                            onClick={() => navigate('/admin/guide')}
+                            className={`nav-link p-3 rounded-xl transition-all duration-300 group relative ${isActive('/admin/guide')
+                                ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-600/30'
+                                : 'text-gray-400 hover:bg-gray-700/50 hover:text-blue-400'
+                                }`}
+                            title="Guía de Admin"
+                        >
+                            <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* Logout */}
-            <button
-                onClick={handleLogoutClick}
-                className="nav-link p-3 rounded-xl transition-all duration-300 mt-auto bg-gradient-to-br from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white shadow-lg hover:shadow-red-500/50 hover:scale-105"
-                title="Cerrar Sesión"
-            >
-                <LogOut className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
-            </button>
+            {/* Logout - Always visible at bottom of screen */}
+            <div className="w-full px-3 sm:px-4 pb-3 sm:pb-4 flex-shrink-0 border-t border-slate-700/30 pt-3">
+                <button
+                    onClick={handleLogoutClick}
+                    className="nav-link p-3 rounded-xl transition-all duration-300 w-full bg-gradient-to-br from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white shadow-lg hover:shadow-red-500/50 hover:scale-105"
+                    title="Cerrar Sesión"
+                >
+                    <LogOut className="w-5 h-5 sm:w-6 sm:h-6 mx-auto" />
+                </button>
+            </div>
 
             <Modal
                 isOpen={isLogoutModalOpen}

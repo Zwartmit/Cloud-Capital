@@ -160,7 +160,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
             const matchesDateTo = !dateTo || taskDate <= new Date(dateTo + 'T23:59:59');
 
             return matchesSearch && matchesStatus && matchesType && matchesDateFrom && matchesDateTo;
-        });
+        }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [tasks, searchTerm, statusFilter, typeFilter, dateFrom, dateTo]);
 
     // Pagination logic

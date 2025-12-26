@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { adminService, CollaboratorConfig } from '../../services/adminService';
 import collaboratorBankService, { CollaboratorBankAccount } from '../../services/collaboratorBankService';
@@ -12,6 +12,13 @@ export const CollaboratorsManager: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+
+    // Search and filter state
+    const [searchTerm, setSearchTerm] = useState('');
+    const [roleFilter, setRoleFilter] = useState<string>('ALL');
+    const [statusFilter, setStatusFilter] = useState<string>('ALL');
+    const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+    const [currentPage, setCurrentPage] = useState<number>(1);
 
     // Modal state for editing config
     const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
@@ -177,15 +184,45 @@ export const CollaboratorsManager: React.FC = () => {
         }
     };
 
+    // Filter and paginate staff
+    const filteredStaff = useMemo(() => {
+        return staff.filter((user) => {
+            // Search filter (by name, email, or username)
+            const searchLower = searchTerm.toLowerCase();
+            const matchesSearch = searchTerm === '' ||
+                user.name.toLowerCase().includes(searchLower) ||
+                user.email.toLowerCase().includes(searchLower) ||
+                user.username.toLowerCase().includes(searchLower);
+
+            // Role filter
+            const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
+
+            // Status filter (based on collaboratorConfig.isActive)
+            const config = (user as any).collaboratorConfig as CollaboratorConfig | undefined;
+            let matchesStatus = true;
+            if (statusFilter === 'ACTIVE') {
+                matchesStatus = config?.isActive !== false;
+            } else if (statusFilter === 'INACTIVE') {
+                matchesStatus = config?.isActive === false;
+            }
+
+            return matchesSearch && matchesRole && matchesStatus;
+        }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [staff, searchTerm, roleFilter, statusFilter]);
+
+    // Reset to page 1 when filters change
+    useMemo(() => {
+        setCurrentPage(1);
+    }, [searchTerm, roleFilter, statusFilter]);
+
+    // Pagination calculations
+    const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(filteredStaff.length / itemsPerPage);
+    const paginatedStaff = itemsPerPage === -1
+        ? filteredStaff
+        : filteredStaff.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
     return (
         <div className="card p-6 rounded-xl border-t-4 border-purple-500">
-            <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700 text-center">
-                <h3 className="text-xl font-bold text-white mb-2">Gestión de Colaboradores</h3>
-                <p className="text-gray-400">
-                    Red de Colaboradores. Gestión de socios, cajeros y comisiones.
-                </p>
-            </div>
-
             <div className="flex justify-end mb-6">
                 <button
                     onClick={() => {
@@ -212,6 +249,71 @@ export const CollaboratorsManager: React.FC = () => {
                 </div>
             )}
 
+            {/* Search and Filter Controls */}
+            <div className="mb-6 space-y-4">
+                {/* Search Input */}
+                <div className="w-full">
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre, email o usuario..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                    />
+                </div>
+
+                {/* Filters Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {/* Role Filter */}
+                    <select
+                        value={roleFilter}
+                        onChange={(e) => setRoleFilter(e.target.value)}
+                        className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                    >
+                        <option value="ALL">Todos los roles</option>
+                        <option value="SUBADMIN">SUBADMIN</option>
+                        <option value="SUPERADMIN">SUPERADMIN</option>
+                    </select>
+
+                    {/* Status Filter */}
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                    >
+                        <option value="ALL">Todos los estados</option>
+                        <option value="ACTIVE">Disponibles</option>
+                        <option value="INACTIVE">No disponibles</option>
+                    </select>
+
+                    {/* Items Per Page Selector */}
+                    <div className="flex items-center gap-2">
+                        <label className="text-sm text-gray-400 whitespace-nowrap">Mostrar:</label>
+                        <select
+                            value={itemsPerPage}
+                            onChange={(e) => {
+                                setItemsPerPage(Number(e.target.value));
+                                setCurrentPage(1);
+                            }}
+                            className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                        >
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={-1}>Todos</option>
+                        </select>
+                    </div>
+                </div>
+
+                {/* Results Count */}
+                <div className="text-sm text-gray-400">
+                    {itemsPerPage === -1
+                        ? `Mostrando ${filteredStaff.length} de ${staff.length} colaboradores`
+                        : `Mostrando ${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filteredStaff.length)} de ${filteredStaff.length} colaboradores`
+                    }
+                </div>
+            </div>
+
             {/* Desktop Table View */}
             <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left">
@@ -228,12 +330,17 @@ export const CollaboratorsManager: React.FC = () => {
                             <tr>
                                 <td colSpan={4} className="p-8 text-center text-gray-400">Cargando...</td>
                             </tr>
-                        ) : staff.length === 0 ? (
+                        ) : filteredStaff.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="p-8 text-center text-gray-400">No hay colaboradores registrados</td>
+                                <td colSpan={4} className="p-8 text-center text-gray-400">
+                                    {staff.length === 0
+                                        ? 'No hay colaboradores registrados'
+                                        : 'No se encontraron colaboradores con los filtros aplicados'
+                                    }
+                                </td>
                             </tr>
                         ) : (
-                            staff.map(user => {
+                            paginatedStaff.map(user => {
                                 const config = (user as any).collaboratorConfig as CollaboratorConfig | undefined;
                                 return (
                                     <tr key={user.id} className="hover:bg-gray-800/50 transition">
@@ -320,10 +427,15 @@ export const CollaboratorsManager: React.FC = () => {
             <div className="sm:hidden space-y-4">
                 {loading && staff.length === 0 ? (
                     <div className="text-center text-gray-400 py-8">Cargando...</div>
-                ) : staff.length === 0 ? (
-                    <div className="text-center text-gray-400 py-8">No hay colaboradores registrados</div>
+                ) : filteredStaff.length === 0 ? (
+                    <div className="text-center text-gray-400 py-8">
+                        {staff.length === 0
+                            ? 'No hay colaboradores registrados'
+                            : 'No se encontraron colaboradores con los filtros aplicados'
+                        }
+                    </div>
                 ) : (
-                    staff.map(user => {
+                    paginatedStaff.map(user => {
                         const config = (user as any).collaboratorConfig as CollaboratorConfig | undefined;
                         return (
                             <div key={user.id} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
@@ -414,6 +526,57 @@ export const CollaboratorsManager: React.FC = () => {
                     })
                 )}
             </div>
+
+            {/* Pagination Controls */}
+            {filteredStaff.length > 0 && itemsPerPage !== -1 && totalPages > 1 && (
+                <div className="mt-6 flex justify-center items-center gap-2">
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 bg-gray-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition"
+                    >
+                        Anterior
+                    </button>
+
+                    <div className="flex gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                            // Show first page, last page, current page, and pages around current
+                            if (
+                                page === 1 ||
+                                page === totalPages ||
+                                (page >= currentPage - 1 && page <= currentPage + 1)
+                            ) {
+                                return (
+                                    <button
+                                        key={page}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={`px-3 py-2 rounded-lg transition ${currentPage === page
+                                            ? 'bg-accent text-white font-semibold'
+                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                            }`}
+                                    >
+                                        {page}
+                                    </button>
+                                );
+                            } else if (
+                                page === currentPage - 2 ||
+                                page === currentPage + 2
+                            ) {
+                                return <span key={page} className="px-2 text-gray-500">...</span>;
+                            }
+                            return null;
+                        })}
+                    </div>
+
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 bg-gray-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition"
+                    >
+                        Siguiente
+                    </button>
+                </div>
+            )}
 
             {/* Config Modal */}
             {isConfigModalOpen && selectedCollaborator && createPortal(

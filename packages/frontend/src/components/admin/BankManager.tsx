@@ -250,13 +250,6 @@ export const BankManager: React.FC = () => {
 
     return (
         <div className="card p-6 rounded-xl border-t-4 border-blue-500">
-            {/* Section Header */}
-            <div className="mb-6 p-6 bg-gray-800 rounded-xl border border-gray-700 text-center">
-                <h3 className="text-xl font-bold text-white mb-2">Gestión de bancos</h3>
-                <p className="text-gray-400">
-                    Infraestructura Bancaria. Gestión de pasarelas y cuentas receptoras.
-                </p>
-            </div>
 
             {/* Tabs - Only show if user has access to both */}
             {isAdmin && (

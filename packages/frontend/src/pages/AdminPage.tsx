@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Search, Users, TrendingUp, User, DollarSign, Building, Shield, Copy, Check } from 'lucide-react';
 import { InvestmentPlanManager } from '../components/admin/InvestmentPlanManager';
@@ -10,6 +10,7 @@ import { ReferralsModal } from '../components/modals/ReferralsModal';
 import { PasswordInput } from '../components/common/PasswordInput';
 import { adminService } from '../services/adminService';
 import { userService } from '../services/userService';
+import { investmentPlanService } from '../services/investmentPlanService';
 import { UserDTO } from '@cloud-capital/shared';
 import { useAuthStore } from '../store/authStore';
 
@@ -40,6 +41,15 @@ export const AdminPage: React.FC = () => {
     const [usersLimit, setUsersLimit] = useState(25);
     const [usersTotalPages, setUsersTotalPages] = useState(0);
     const [loadingUsers, setLoadingUsers] = useState(false);
+
+    // User list filters
+    const [classFilter, setClassFilter] = useState<string>('ALL');
+    const [accountStatusFilter, setAccountStatusFilter] = useState<string>('ALL');
+    const [minCapital, setMinCapital] = useState('');
+    const [maxCapital, setMaxCapital] = useState('');
+
+    // Investment plans for filter
+    const [investmentPlans, setInvestmentPlans] = useState<any[]>([]);
 
     // Delete modal state
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -142,6 +152,46 @@ export const AdminPage: React.FC = () => {
         }
     };
 
+    // Filter and sort users
+    const filteredUsers = useMemo(() => {
+        return allUsers.filter((user) => {
+            // Class filter
+            let matchesClass = true;
+            if (classFilter === 'NONE') {
+                matchesClass = !user.investmentClass || user.investmentClass === null;
+            } else if (classFilter !== 'ALL') {
+                matchesClass = user.investmentClass === classFilter;
+            }
+
+            // Account status filter
+            let matchesStatus = true;
+            if (accountStatusFilter === 'ACTIVE') {
+                matchesStatus = !!user.isBlocked === false;
+            } else if (accountStatusFilter === 'BLOCKED') {
+                matchesStatus = !!user.isBlocked === true;
+            }
+
+            // Capital range filter
+            const capital = user.capitalUSDT || 0;
+            const matchesMinCapital = !minCapital || capital >= parseFloat(minCapital);
+            const matchesMaxCapital = !maxCapital || capital <= parseFloat(maxCapital);
+
+            return matchesClass && matchesStatus && matchesMinCapital && matchesMaxCapital;
+        }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [allUsers, classFilter, accountStatusFilter, minCapital, maxCapital]);
+
+    // Pagination for filtered users
+    const totalFilteredPages = Math.ceil(filteredUsers.length / usersLimit);
+    const paginatedUsers = filteredUsers.slice(
+        (usersPage - 1) * usersLimit,
+        usersPage * usersLimit
+    );
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setUsersPage(1);
+    }, [classFilter, accountStatusFilter, minCapital, maxCapital]);
+
     // Load all users for the list
     const loadAllUsers = async () => {
         try {
@@ -207,12 +257,25 @@ export const AdminPage: React.FC = () => {
         }
     };
 
-    // Load users when tab changes to users or pagination changes
+    // Load users when tab changes or pagination changes
     useEffect(() => {
         if (activeTab === 'users') {
             loadAllUsers();
         }
     }, [activeTab, usersPage, usersLimit]);
+
+    // Load investment plans for filter
+    useEffect(() => {
+        const loadPlans = async () => {
+            try {
+                const plans = await investmentPlanService.getAllPlans();
+                setInvestmentPlans(plans);
+            } catch (err) {
+                console.error('Error loading investment plans:', err);
+            }
+        };
+        loadPlans();
+    }, []);
 
     return (
         <div className="flex min-h-screen">
@@ -301,15 +364,6 @@ export const AdminPage: React.FC = () => {
 
                     {activeTab === 'users' && (
                         <div className="card p-6 rounded-xl border-t-4 border-blue-500">
-                            {/* Section Header */}
-                            {/* User Management Section Header */}
-                            <div className="mb-8 p-6 bg-gray-800 rounded-xl border border-gray-700 text-center">
-                                <h3 className="text-xl font-bold text-white mb-2">Gestión de usuarios</h3>
-                                <p className="text-gray-400">
-                                    Control de Usuarios. Auditoría de cuentas, balances y seguridad.
-                                </p>
-                            </div>
-
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                                 {/* Search Card */}
                                 <div className="lg:col-span-1 card-s p-6 rounded-xl border-t-4 border-accent relative">
@@ -567,6 +621,79 @@ export const AdminPage: React.FC = () => {
                                     </div>
                                 </div>
 
+                                {/* Filters Section */}
+                                <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-4 space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                        {/* Investment Class Filter */}
+                                        <select
+                                            value={classFilter}
+                                            onChange={(e) => setClassFilter(e.target.value)}
+                                            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
+                                        >
+                                            <option value="ALL">Todas las clases</option>
+                                            <option value="NONE">Ninguna</option>
+                                            {investmentPlans.map((plan) => (
+                                                <option key={plan.id} value={plan.name}>
+                                                    {plan.name}
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        {/* Account Status Filter */}
+                                        <select
+                                            value={accountStatusFilter}
+                                            onChange={(e) => setAccountStatusFilter(e.target.value)}
+                                            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
+                                        >
+                                            <option value="ALL">Todos los estados</option>
+                                            <option value="ACTIVE">Activas</option>
+                                            <option value="BLOCKED">Bloqueadas</option>
+                                        </select>
+
+                                        {/* Min Capital Filter */}
+                                        <input
+                                            type="number"
+                                            placeholder="Capital mínimo"
+                                            value={minCapital}
+                                            onChange={(e) => setMinCapital(e.target.value)}
+                                            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
+                                            min="0"
+                                            step="0.01"
+                                        />
+
+                                        {/* Max Capital Filter */}
+                                        <input
+                                            type="number"
+                                            placeholder="Capital máximo"
+                                            value={maxCapital}
+                                            onChange={(e) => setMaxCapital(e.target.value)}
+                                            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent focus:outline-none"
+                                            min="0"
+                                            step="0.01"
+                                        />
+                                    </div>
+
+                                    {/* Results Counter */}
+                                    {(classFilter !== 'ALL' || accountStatusFilter !== 'ALL' || minCapital || maxCapital) && (
+                                        <div className="flex justify-between items-center">
+                                            <p className="text-sm text-gray-400">
+                                                Mostrando <span className="text-white font-semibold">{filteredUsers.length}</span> de {allUsers.length} usuarios
+                                            </p>
+                                            <button
+                                                onClick={() => {
+                                                    setClassFilter('ALL');
+                                                    setAccountStatusFilter('ALL');
+                                                    setMinCapital('');
+                                                    setMaxCapital('');
+                                                }}
+                                                className="text-sm text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                Limpiar filtros
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
                                 {userListMessage && (
                                     <div className={`mb-4 p-3 rounded-lg text-sm ${userListMessage.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
                                         {userListMessage.text}
@@ -575,8 +702,13 @@ export const AdminPage: React.FC = () => {
 
                                 {loadingUsers ? (
                                     <div className="text-center text-gray-500 py-8">Cargando usuarios...</div>
-                                ) : allUsers.length === 0 ? (
-                                    <div className="text-center text-gray-500 py-8">No hay usuarios registrados</div>
+                                ) : filteredUsers.length === 0 ? (
+                                    <div className="text-center text-gray-500 py-8">
+                                        {allUsers.length === 0
+                                            ? 'No hay usuarios registrados'
+                                            : 'No se encontraron usuarios con los filtros aplicados'
+                                        }
+                                    </div>
                                 ) : (
                                     <>
                                         <div className="overflow-x-auto">
@@ -594,7 +726,7 @@ export const AdminPage: React.FC = () => {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {allUsers.map((tableUser) => (
+                                                    {paginatedUsers.map((tableUser) => (
                                                         <tr key={tableUser.id} className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors">
                                                             <td className="p-2 sm:p-3 text-white whitespace-nowrap">{tableUser.name}</td>
                                                             <td className="p-2 sm:p-3 text-gray-300 whitespace-nowrap">{tableUser.email}</td>
@@ -664,7 +796,7 @@ export const AdminPage: React.FC = () => {
                                         {/* Pagination */}
                                         <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-700">
                                             <div className="text-sm text-gray-400">
-                                                Página {usersPage} de {usersTotalPages} ({usersTotal} usuarios)
+                                                Página {usersPage} de {totalFilteredPages} ({filteredUsers.length} usuarios{(classFilter !== 'ALL' || accountStatusFilter !== 'ALL' || minCapital || maxCapital) ? ' filtrados' : ''})
                                             </div>
                                             <div className="flex gap-2">
                                                 <button
@@ -675,8 +807,8 @@ export const AdminPage: React.FC = () => {
                                                     Anterior
                                                 </button>
                                                 <button
-                                                    onClick={() => setUsersPage(Math.min(usersTotalPages, usersPage + 1))}
-                                                    disabled={usersPage >= usersTotalPages}
+                                                    onClick={() => setUsersPage(Math.min(totalFilteredPages, usersPage + 1))}
+                                                    disabled={usersPage >= totalFilteredPages}
                                                     className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                                 >
                                                     Siguiente
@@ -696,14 +828,6 @@ export const AdminPage: React.FC = () => {
                     {activeTab === 'profile' && (
                         // Profile Tab
                         <div className="card p-6 rounded-xl border-t-4 border-purple-500 space-y-6">
-                            {/* Section Header */}
-                            <div className="p-6 bg-gray-800 rounded-xl border border-gray-700 text-center">
-                                <h3 className="text-xl font-bold text-white mb-2">Perfil de administrador</h3>
-                                <p className="text-gray-400">
-                                    Perfil de Administrador. Gestión de credenciales y métricas.
-                                </p>
-                            </div>
-
                             <div className="card-s p-8 rounded-xl border-t-4 border-accent">
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     {/* Profile Information - Left Column - Compact Layout */}
