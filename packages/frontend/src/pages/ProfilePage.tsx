@@ -3,17 +3,21 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { useAuthStore } from '../store/authStore';
 import { userService } from '../services/userService';
 import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
-import { User, Mail, Calendar, Copy, Check, Search } from 'lucide-react';
+import { User, Mail, Calendar, Copy, Check, Search, Phone } from 'lucide-react';
 import { PasswordInput } from '../components/common/PasswordInput';
 import { ReferralsModal } from '../components/modals/ReferralsModal';
 import { EarlyLiquidationModal } from '../components/modals/EarlyLiquidationModal';
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
 
 export const ProfilePage: React.FC = () => {
     const { user, updateUser } = useAuthStore();
     const [investmentPlan, setInvestmentPlan] = useState<InvestmentPlan | null>(null);
     const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [btcAddressMessage, setBtcAddressMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [whatsappMessage, setWhatsappMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [btcAddress, setBtcAddress] = useState(user?.btcDepositAddress || '');
+    const [whatsappNum, setWhatsappNum] = useState(user?.whatsappNumber || '');
     const [copiedLink, setCopiedLink] = useState(false);
     const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
     const [isLiquidationModalOpen, setIsLiquidationModalOpen] = useState(false);
@@ -32,6 +36,14 @@ export const ProfilePage: React.FC = () => {
             console.error('Failed to copy link:', err);
         }
     };
+
+    // Sync state with user data when it changes
+    useEffect(() => {
+        if (user) {
+            setBtcAddress(user.btcDepositAddress || '');
+            setWhatsappNum(user.whatsappNumber || '');
+        }
+    }, [user]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -288,6 +300,49 @@ export const ProfilePage: React.FC = () => {
                                             : 'bg-red-500/10 border border-red-500/20 text-red-500'
                                             }`}>
                                             {passwordMessage.text}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* WhatsApp Section - For all users */}
+                                <div className="pt-4 sm:pt-3 border-t border-secondary">
+                                    <h3 className="text-xs text-gray-500 mb-3">NÚMERO DE WHATSAPP</h3>
+                                    <form onSubmit={async (e) => {
+                                        e.preventDefault();
+                                        try {
+                                            const updatedUser = await userService.updateProfile({
+                                                whatsappNumber: whatsappNum || undefined
+                                            });
+                                            updateUser(updatedUser);
+                                            setWhatsappMessage({ type: 'success', text: 'WhatsApp actualizado exitosamente' });
+                                            setTimeout(() => setWhatsappMessage(null), 5000);
+                                        } catch (error: any) {
+                                            setWhatsappMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar WhatsApp' });
+                                        }
+                                    }} className="space-y-3">
+                                        <div>
+                                            <PhoneInput
+                                                value={whatsappNum}
+                                                onChange={(phone) => setWhatsappNum(phone)}
+                                                defaultCountry=""
+                                                placeholder="Selecciona país y escribe número"
+                                                className="w-full"
+                                                inputClassName="p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white font-mono focus:ring-accent focus:border-accent focus:outline-none"
+                                            />
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition duration-200 text-sm"
+                                        >
+                                            Guardar WhatsApp
+                                        </button>
+                                    </form>
+                                    {whatsappMessage && (
+                                        <div className={`mt-3 p-3 rounded-lg text-sm ${whatsappMessage.type === 'success'
+                                            ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                                            : 'bg-red-500/10 border border-red-500/20 text-red-500'
+                                            }`}>
+                                            {whatsappMessage.text}
                                         </div>
                                     )}
                                 </div>

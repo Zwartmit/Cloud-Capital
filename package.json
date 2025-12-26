@@ -27,5 +27,8 @@
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "react-international-phone": "^4.6.1"
   }
 }

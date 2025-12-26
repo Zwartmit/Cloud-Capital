@@ -75,6 +75,7 @@ export interface RegisterRequest {
   name: string;
   username: string;
   referralCode: string;
+  whatsappNumber: string;
 }
 
 export interface AuthResponse {

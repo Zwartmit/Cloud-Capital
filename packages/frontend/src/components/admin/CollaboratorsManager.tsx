@@ -4,6 +4,8 @@ import { adminService, CollaboratorConfig } from '../../services/adminService';
 import collaboratorBankService, { CollaboratorBankAccount } from '../../services/collaboratorBankService';
 import { UserDTO } from '@cloud-capital/shared';
 import { Settings, XCircle, Plus, Trash2, Wallet, Phone, CreditCard, Search } from 'lucide-react';
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
 import { ReferralsModal } from '../modals/ReferralsModal';
 
 // Collaborators Manager Component
@@ -658,12 +660,13 @@ export const CollaboratorsManager: React.FC = () => {
                                     <label className="block text-sm text-gray-400 mb-1 flex items-center">
                                         <Phone className="w-3 h-3 mr-1" /> WhatsApp de órdenes
                                     </label>
-                                    <input
-                                        type="text"
+                                    <PhoneInput
                                         value={whatsappNumber}
-                                        onChange={(e) => setWhatsappNumber(e.target.value)}
-                                        className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-accent focus:border-accent"
-                                        placeholder="Ej: 58412..."
+                                        onChange={(phone) => setWhatsappNumber(phone)}
+                                        defaultCountry=""
+                                        placeholder="Selecciona país y escribe número"
+                                        className="w-full"
+                                        inputClassName="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-accent focus:border-accent"
                                     />
                                 </div>
                             </div>
@@ -817,13 +820,13 @@ export const CollaboratorsManager: React.FC = () => {
                             </div>
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">WhatsApp (Número completo)</label>
-                                <input
-                                    type="text"
+                                <PhoneInput
                                     value={createForm.whatsappNumber}
-                                    onChange={(e) => setCreateForm({ ...createForm, whatsappNumber: e.target.value })}
-                                    className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                                    placeholder="Ej: 584121234567"
-                                    required
+                                    onChange={(phone) => setCreateForm({ ...createForm, whatsappNumber: phone })}
+                                    defaultCountry=""
+                                    placeholder="Selecciona país y escribe número"
+                                    className="w-full"
+                                    inputClassName="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
                                 />
                             </div>
 

@@ -4,6 +4,8 @@ import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 import { PasswordInput } from '../components/common/PasswordInput';
 import { TermsModal } from '../components/modals/TermsModal';
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
 
 export const RegisterPage: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -13,6 +15,7 @@ export const RegisterPage: React.FC = () => {
         password: '',
         confirmPassword: '',
         referralCode: '',
+        whatsappNumber: '',
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -46,7 +49,7 @@ export const RegisterPage: React.FC = () => {
         setError('');
 
         // Validations
-        if (!formData.name || !formData.username || !formData.email || !formData.password || !formData.referralCode) {
+        if (!formData.name || !formData.username || !formData.email || !formData.password || !formData.referralCode || !formData.whatsappNumber) {
             setError('Todos los campos son obligatorios');
             return;
         }
@@ -82,6 +85,7 @@ export const RegisterPage: React.FC = () => {
                 email: formData.email,
                 password: formData.password,
                 referralCode: formData.referralCode,
+                whatsappNumber: formData.whatsappNumber,
             });
 
             // Update Zustand store with user and token
@@ -111,101 +115,135 @@ export const RegisterPage: React.FC = () => {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
-                            Nombre completo
-                        </label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            required
-                            disabled={loading}
-                            placeholder="Digita tu nombre completo"
-                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
-                        />
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Personal Information Section */}
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
+                                    Nombre completo
+                                </label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    required
+                                    disabled={loading}
+                                    placeholder="Digita tu nombre completo"
+                                    className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
+                                    Nombre de usuario
+                                </label>
+                                <input
+                                    type="text"
+                                    name="username"
+                                    value={formData.username}
+                                    onChange={handleChange}
+                                    required
+                                    disabled={loading}
+                                    placeholder="Digita tu nombre de usuario"
+                                    className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
-                            Nombre de usuario
-                        </label>
-                        <input
-                            type="text"
-                            name="username"
-                            value={formData.username}
-                            onChange={handleChange}
-                            required
-                            disabled={loading}
-                            placeholder="Digita tu nombre de usuario"
-                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
-                        />
+                    {/* Contact Information Section */}
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
+                                    Correo electrónico
+                                </label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    required
+                                    disabled={loading}
+                                    placeholder="Digita tu correo electrónico"
+                                    className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
+                                    WhatsApp
+                                </label>
+                                <PhoneInput
+                                    value={formData.whatsappNumber}
+                                    onChange={(phone) => setFormData({ ...formData, whatsappNumber: phone })}
+                                    defaultCountry=""
+                                    placeholder="Selecciona país y escribe número"
+                                    disabled={loading}
+                                    className="w-full"
+                                    inputClassName="p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
-                            Código de referido
-                        </label>
-                        <input
-                            type="text"
-                            name="referralCode"
-                            value={formData.referralCode}
-                            onChange={handleChange}
-                            required
-                            disabled={loading}
-                            placeholder="Ingresa el código de quien te invitó"
-                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
-                        />
+                    {/* Security Section */}
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
+                                    Contraseña
+                                </label>
+                                <PasswordInput
+                                    name="password"
+                                    placeholder="Digita una contraseña"
+                                    required
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
+                                    Confirmar contraseña
+                                </label>
+                                <PasswordInput
+                                    name="confirmPassword"
+                                    placeholder="Confirma tu contraseña"
+                                    required
+                                    value={formData.confirmPassword}
+                                    onChange={handleChange}
+                                    className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
-                            Correo electrónico
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            required
-                            disabled={loading}
-                            placeholder="Digita tu correo electrónico"
-                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
-                        />
+                    {/* Referral Section */}
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
+                                Código de quien te invitó
+                            </label>
+                            <input
+                                type="text"
+                                name="referralCode"
+                                value={formData.referralCode}
+                                onChange={handleChange}
+                                required
+                                disabled={loading}
+                                placeholder="Ingresa el código de quien te invitó"
+                                className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
+                            />
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
-                            Contraseña
-                        </label>
-                        <PasswordInput
-                            name="password"
-                            placeholder="Digita una contraseña"
-                            required
-                            value={formData.password}
-                            onChange={handleChange}
-                            className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-base font-medium text-gray-300 mb-1.5 sm:mb-2">
-                            Confirmar contraseña
-                        </label>
-                        <PasswordInput
-                            name="confirmPassword"
-                            placeholder="Confirma tu contraseña"
-                            required
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            className="w-full p-2.5 sm:p-3 mb-4 sm:mb-0 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50"
-                        />
-                    </div>
-
-                    <div className="md:col-span-2">
-                        <div className="flex items-start space-x-3 mt-2">
+                    {/* Terms and Submit */}
+                    <div className="space-y-4 pt-2">
+                        <div className="flex items-start space-x-3">
                             <div className="flex items-center h-5">
                                 <input
                                     id="terms"
@@ -227,13 +265,11 @@ export const RegisterPage: React.FC = () => {
                                 </button>
                             </label>
                         </div>
-                    </div>
 
-                    <div className="md:col-span-2">
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-profit hover:bg-emerald-500 text-white font-bold py-2.5 sm:py-3 rounded-lg mt-2 sm:mt-4 transition duration-200 shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-base"
+                            className="w-full bg-profit hover:bg-emerald-500 text-white font-bold py-2.5 sm:py-3 rounded-lg transition duration-200 shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-base"
                         >
                             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
                         </button>

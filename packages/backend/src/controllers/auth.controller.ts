@@ -3,15 +3,15 @@ import * as authService from '../services/auth.service.js';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password, name, username, referralCode } = req.body;
+    const { email, password, name, username, referralCode, whatsappNumber } = req.body;
 
     // Validate input
-    if (!email || !password || !name || !username || !referralCode) {
+    if (!email || !password || !name || !username || !referralCode || !whatsappNumber) {
       res.status(400).json({ error: 'Todos los campos son obligatorios' });
       return;
     }
 
-    const result = await authService.register({ email, password, name, username, referralCode });
+    const result = await authService.register({ email, password, name, username, referralCode, whatsappNumber });
     res.status(201).json(result);
   } catch (error: any) {
     next(error);

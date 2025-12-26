@@ -10,6 +10,7 @@ export interface RegisterData {
   name: string;
   username: string;
   referralCode: string;
+  whatsappNumber: string;
 }
 
 export interface LoginData {
@@ -101,6 +102,7 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
       referrerId: referrer.id,
       capitalUSDT: 0,
       currentBalanceUSDT: 0,
+      whatsappNumber: data.whatsappNumber,
     }
   });
 
