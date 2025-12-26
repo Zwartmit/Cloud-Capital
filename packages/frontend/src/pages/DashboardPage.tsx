@@ -246,6 +246,11 @@ export const DashboardPage: React.FC = () => {
                 availableProfit={profitUSDT}
                 btcPrice={btcPrice}
                 onSuccess={async () => {
+                    const { updateUser } = useAuthStore.getState();
+                    // Refresh user data immediately to update balance/capital/profit
+                    const userData = await userService.getProfile();
+                    updateUser(userData);
+                    // Also refresh transactions
                     const data = await userService.getTransactions();
                     setTransactions(data);
                 }}
@@ -257,6 +262,11 @@ export const DashboardPage: React.FC = () => {
                 availableProfit={profitUSDT}
                 currentCapital={capitalUSDT}
                 onSuccess={async () => {
+                    const { updateUser } = useAuthStore.getState();
+                    // Refresh user data immediately to update balance/capital/profit
+                    const userData = await userService.getProfile();
+                    updateUser(userData);
+                    // Also refresh transactions
                     const data = await userService.getTransactions();
                     setTransactions(data);
                 }}

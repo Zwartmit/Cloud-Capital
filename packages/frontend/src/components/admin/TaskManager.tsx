@@ -577,9 +577,10 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                         </p>
                                     )}
 
-                                    {task.rejectionReason && (
-                                        <div className="mt-2 p-2 bg-red-900/20 border border-red-700 rounded">
-                                            <p className="text-xs text-red-400">
+
+                                    {(task.status === 'REJECTED' || task.status === 'PRE_REJECTED') && task.rejectionReason && (
+                                        <div className={`mt-2 p-2 ${task.status === 'PRE_REJECTED' ? 'bg-orange-900/20 border-orange-700' : 'bg-red-900/20 border-red-700'} border rounded`}>
+                                            <p className={`text-xs ${task.status === 'PRE_REJECTED' ? 'text-orange-400' : 'text-red-400'}`}>
                                                 <span className="font-bold">Razón de rechazo:</span> {task.rejectionReason}
                                             </p>
                                         </div>

@@ -435,7 +435,7 @@ export const AdminPage: React.FC = () => {
                                             </div>
 
                                             <div className="border-t border-gray-700 pt-4">
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                                                     <div>
                                                         <p className="text-xs sm:text-sm text-gray-400">Capital invertido</p>
                                                         <p className="text-xl sm:text-2xl font-black text-accent">
@@ -443,8 +443,14 @@ export const AdminPage: React.FC = () => {
                                                         </p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs sm:text-sm text-gray-400">Balance total</p>
+                                                        <p className="text-xs sm:text-sm text-gray-400">Profit</p>
                                                         <p className="text-xl sm:text-2xl font-black text-profit">
+                                                            +${(selectedUser.currentBalanceUSDT - selectedUser.capitalUSDT).toFixed(2)}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs sm:text-sm text-gray-400">Balance total</p>
+                                                        <p className="text-xl sm:text-2xl font-black text-white">
                                                             ${selectedUser.currentBalanceUSDT.toFixed(2)}
                                                         </p>
                                                     </div>

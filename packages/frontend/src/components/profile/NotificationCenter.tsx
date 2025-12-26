@@ -84,14 +84,6 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
             case 'PENDING':
                 return 'Orden creada';
             case 'PRE_APPROVED':
-                if (!isDeposit) {
-                    return (
-                        <span className="flex flex-col gap-0.5">
-                            <span>Orden aceptada</span>
-                            <span className="text-xs text-yellow-500/80">Comisión aplicada • Pendiente de comprobante</span>
-                        </span>
-                    );
-                }
                 return 'Pre-aprobada';
             case 'PRE_REJECTED':
                 return 'Pre-rechazada';
@@ -310,13 +302,13 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
                                                     year: 'numeric'
                                                 })}</span>
                                             </div>
-                                            {task.approvedByAdmin && (
+                                            {(task.status === 'PRE_APPROVED' || task.status === 'PRE_REJECTED') && task.approvedByAdmin && (
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     Por: {task.approvedByAdmin}
                                                 </p>
                                             )}
-                                            {task.status === 'REJECTED' && task.rejectionReason && (
-                                                <div className="mt-2 p-2 bg-red-500/10 border border-red-500/20 rounded text-xs text-red-400">
+                                            {(task.status === 'REJECTED' || task.status === 'PRE_REJECTED') && task.rejectionReason && (
+                                                <div className={`mt-2 p-2 ${task.status === 'PRE_REJECTED' ? 'bg-orange-500/10 border-orange-500/20' : 'bg-red-500/10 border-red-500/20'} border rounded text-xs ${task.status === 'PRE_REJECTED' ? 'text-orange-400' : 'text-red-400'}`}>
                                                     <span className="font-semibold">Motivo: </span>
                                                     {task.rejectionReason}
                                                 </div>

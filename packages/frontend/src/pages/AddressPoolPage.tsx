@@ -28,6 +28,7 @@ interface Address {
     usedByUser?: {
         name: string;
         email: string;
+        username: string;
     };
 }
 
@@ -325,7 +326,7 @@ export default function AddressPoolPage() {
                                                 <td>{new Date(addr.uploadedAt).toLocaleDateString()}</td>
                                                 <td>
                                                     {addr.usedByUser ? (
-                                                        <span>{addr.usedByUser.name}</span>
+                                                        <span>{addr.usedByUser.name} (@{addr.usedByUser.username})</span>
                                                     ) : addr.status === 'RESERVED' ? (
                                                         <span className="text-muted">Pendiente...</span>
                                                     ) : (

@@ -262,6 +262,7 @@ export async function getAddresses(params: {
                         id: true,
                         name: true,
                         email: true,
+                        username: true,
                     },
                 },
             },
