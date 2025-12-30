@@ -15,14 +15,14 @@
 
 @media (min-width: 768px) {
   .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
   }
 }
 
 @media (min-width: 1024px) {
   .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 1.5rem;
   }
 }
@@ -60,6 +60,10 @@
 
 .stat-card.used {
   border-top: 3px solid #9ca3af;
+}
+
+.stat-card.deleted {
+  border-top: 3px solid #ef4444;
 }
 
 .stat-value {
@@ -342,6 +346,12 @@
   background: rgba(156, 163, 175, 0.1);
   color: #9ca3af;
   border: 1px solid #9ca3af;
+}
+
+.status-badge.deleted {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid #ef4444;
 }
 
 .text-muted {

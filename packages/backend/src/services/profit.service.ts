@@ -1,6 +1,5 @@
-import { PrismaClient, InvestmentClass } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { InvestmentClass } from '@prisma/client';
+import prisma from '../config/database.js';
 
 interface DailyRateInput {
   date: string; // ISO Date string (YYYY-MM-DD)
@@ -12,7 +11,7 @@ interface DailyRateInput {
 
 export const setDailyRates = async (data: DailyRateInput) => {
   const date = new Date(data.date);
-  
+
   // Create or update rates for each class
   const results = await Promise.all(
     data.rates.map(async (item) => {
@@ -88,6 +87,7 @@ export const processDailyProfits = async (dateStr?: string) => {
   }
 
   let totalProcessed = 0;
+  let skippedCompleted = 0;
 
   for (const rateRecord of rates) {
     // Find users with this investment class and positive capital
@@ -100,38 +100,52 @@ export const processDailyProfits = async (dateStr?: string) => {
 
     // Process each user
     for (const user of users) {
-        if (!user.capitalUSDT) continue;
+      if (!user.capitalUSDT) continue;
 
-        const profitAmount = user.capitalUSDT * (rateRecord.rate / 100);
+      // SPEC 3: Check if user can generate profit (200% validation)
+      const { canGenerateProfit } = await import('../utils/contract-calculations.js');
+      const canGenerate = await canGenerateProfit(user.id);
 
-        // Update user balance
-        await prisma.user.update({
-            where: { id: user.id },
-            data: {
-                currentBalanceUSDT: (user.currentBalanceUSDT || 0) + profitAmount
-            }
-        });
+      if (!canGenerate) {
+        skippedCompleted++;
+        console.log(`Usuario ${user.id} ha completado su ciclo (200%). Profit detenido.`);
+        continue;
+      }
 
-        // Create transaction record
-        await prisma.transaction.create({
-            data: {
-                userId: user.id,
-                type: 'PROFIT',
-                amountUSDT: profitAmount,
-                reference: `Rendimiento día ${targetDate.toISOString().split('T')[0]} - ${rateRecord.rate}%`,
-                status: 'COMPLETED'
-            }
-        });
-        
-        totalProcessed++;
+      const profitAmount = user.capitalUSDT * (rateRecord.rate / 100);
+
+      // Update user balance
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          currentBalanceUSDT: (user.currentBalanceUSDT || 0) + profitAmount
+        }
+      });
+
+      // Create transaction record
+      await prisma.transaction.create({
+        data: {
+          userId: user.id,
+          type: 'PROFIT',
+          amountUSDT: profitAmount,
+          reference: `Rendimiento día ${targetDate.toISOString().split('T')[0]} - ${rateRecord.rate}%`,
+          status: 'COMPLETED'
+        }
+      });
+
+      totalProcessed++;
     }
 
     // Mark rate as processed
     await prisma.dailyProfitRate.update({
-        where: { id: rateRecord.id },
-        data: { processed: true }
+      where: { id: rateRecord.id },
+      data: { processed: true }
     });
   }
 
-  return { processed: totalProcessed, message: `Profits procesados con éxito para ${rates.length} planes.` };
+  return {
+    processed: totalProcessed,
+    skippedCompleted,
+    message: `Profits procesados: ${totalProcessed} usuarios. ${skippedCompleted} usuarios completaron su ciclo (200%).`
+  };
 };

@@ -46,6 +46,7 @@ enum BtcAddressStatus {
   AVAILABLE  // Disponible para asignar
   RESERVED   // Reservada para un depósito pendiente
   USED       // Ya recibió fondos, archivada
+  DELETED    // Eliminada (soft delete)
 }
 
 enum AuditAction {
@@ -87,6 +88,16 @@ model User {
   isBlocked          Boolean          @default(false)  // Cuenta bloqueada tras liquidación
   blockedAt          DateTime?                          // Fecha de bloqueo
   blockedReason      String?                            // Razón del bloqueo
+  
+  // Contract Lifecycle Management (Spec 2, 3, 4, 5)
+  contractStatus     String           @default("ACTIVE") // ACTIVE, COMPLETED, PENDING_PLAN_SELECTION, AWAITING_ACTION
+  cycleCompleted     Boolean          @default(false)    // Si alcanzó el 200% (2x depósitos)
+  cycleCompletedAt   DateTime?                           // Fecha cuando completó el ciclo
+  
+  // Plan Subscription Tracking (Spec 1)
+  currentPlanStartDate   DateTime?                       // Fecha de suscripción al plan actual
+  currentPlanExpiryDate  DateTime?                       // Fecha de expiración del plan (30 días)
+  lastCommissionChargeDate DateTime?                     // Última vez que se cobró comisión del plan
   
   // Contact Information (for landing page)
   contactEmail       String?                   // Email de contacto público
@@ -265,7 +276,11 @@ model BtcAddressPool {
   
   // Monto solicitado y notas
   requestedAmount   Decimal?         @db.Decimal(18, 2)
+  receivedAmount    Decimal?         @db.Decimal(18, 2)  // Monto realmente recibido en la dirección
   adminNotes        String?          @db.Text
+  
+  // Soft delete
+  deletedAt         DateTime?
   
   // Auditoría de carga
   uploadedBy        String

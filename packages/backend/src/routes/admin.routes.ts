@@ -80,4 +80,11 @@ router.put('/banks/:id', bankController.updateBank);
 // DELETE /api/admin/banks/:id
 router.delete('/banks/:id', bankController.deleteBank);
 
+// FASE 1: New routes for commission management
+// POST /api/admin/charge-commissions
+router.post('/charge-commissions', adminController.chargeAllCommissions);
+
+// POST /api/admin/charge-commission/:userId
+router.post('/charge-commission/:userId', adminController.chargeUserCommission);
+
 export default router;

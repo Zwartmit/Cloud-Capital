@@ -51,6 +51,9 @@ export const CollaboratorsManager: React.FC = () => {
     const [isBankInfoModalOpen, setIsBankInfoModalOpen] = useState(false);
     const [selectedCollabForBanks, setSelectedCollabForBanks] = useState<UserDTO | null>(null);
     const [collabBankAccounts, setCollabBankAccounts] = useState<CollaboratorBankAccount[]>([]);
+    const [editingBtcAddress, setEditingBtcAddress] = useState(false);
+    const [tempBtcAddress, setTempBtcAddress] = useState('');
+    const [btcAddressMessage, setBtcAddressMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     // Referrals modal state
     const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
@@ -84,7 +87,7 @@ export const CollaboratorsManager: React.FC = () => {
             setMinAmount(config.minAmount ?? 10);
             setMaxAmount(config.maxAmount ?? 10000);
             setIsActive(config.isActive ?? true);
-            setWalletAddress(config.walletAddress || '');
+            setWalletAddress((user as any).btcWithdrawAddress || '');
             setWhatsappNumber((user as any).whatsappNumber || '');
         } else {
             // Defaults
@@ -93,7 +96,7 @@ export const CollaboratorsManager: React.FC = () => {
             setMinAmount(10);
             setMaxAmount(10000);
             setIsActive(true);
-            setWalletAddress('');
+            setWalletAddress((user as any).btcWithdrawAddress || '');
             setWhatsappNumber((user as any).whatsappNumber || '');
         }
 
@@ -104,6 +107,9 @@ export const CollaboratorsManager: React.FC = () => {
 
     const handleOpenBankInfo = async (user: UserDTO) => {
         setSelectedCollabForBanks(user);
+        setTempBtcAddress((user as any).btcWithdrawAddress || '');
+        setEditingBtcAddress(false);
+        setBtcAddressMessage(null);
         setIsBankInfoModalOpen(true);
         try {
             const accounts = await collaboratorBankService.getBankAccounts({ collaboratorId: user.id });
@@ -642,35 +648,6 @@ export const CollaboratorsManager: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* New Fields: Wallet & WhatsApp */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm text-gray-400 mb-1 flex items-center">
-                                        <Wallet className="w-3 h-3 mr-1" /> Wallet de cobro
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={walletAddress}
-                                        onChange={(e) => setWalletAddress(e.target.value)}
-                                        className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-accent focus:border-accent"
-                                        placeholder="Dirección USDT/BTC"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm text-gray-400 mb-1 flex items-center">
-                                        <Phone className="w-3 h-3 mr-1" /> WhatsApp de órdenes
-                                    </label>
-                                    <PhoneInput
-                                        value={whatsappNumber}
-                                        onChange={(phone) => setWhatsappNumber(phone)}
-                                        defaultCountry=""
-                                        placeholder="Selecciona país y escribe número"
-                                        className="w-full"
-                                        inputClassName="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-accent focus:border-accent"
-                                    />
-                                </div>
-                            </div>
-
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-1">Monto mínimo ($)</label>
@@ -715,6 +692,21 @@ export const CollaboratorsManager: React.FC = () => {
                                         </div>
                                     </label>
                                 </div>
+                            </div>
+
+                            {/* WhatsApp Field */}
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-1 flex items-center">
+                                    <Phone className="w-3 h-3 mr-1" /> WhatsApp de órdenes
+                                </label>
+                                <PhoneInput
+                                    value={whatsappNumber}
+                                    onChange={(phone) => setWhatsappNumber(phone)}
+                                    defaultCountry="us"
+                                    placeholder="Selecciona país y escribe número"
+                                    className="w-full"
+                                    inputClassName="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-accent focus:border-accent"
+                                />
                             </div>
 
                             <div className="pt-4 flex gap-3">
@@ -823,7 +815,7 @@ export const CollaboratorsManager: React.FC = () => {
                                 <PhoneInput
                                     value={createForm.whatsappNumber}
                                     onChange={(phone) => setCreateForm({ ...createForm, whatsappNumber: phone })}
-                                    defaultCountry=""
+                                    defaultCountry="us"
                                     placeholder="Selecciona país y escribe número"
                                     className="w-full"
                                     inputClassName="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
@@ -865,43 +857,81 @@ export const CollaboratorsManager: React.FC = () => {
                         <div className="p-4 sm:p-6 space-y-6">
                             {/* Wallets Section */}
                             <div>
-                                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Billeteras Crypto</h4>
-                                <div className="grid grid-cols-1 gap-4">
-                                    {/* Personal BTC Address */}
-                                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                                        <div className="flex items-start justify-between mb-2">
-                                            <div className="flex items-center">
-                                                <div className="bg-orange-500/10 p-1.5 rounded mr-3">
-                                                    <Wallet className="w-5 h-5 text-orange-500" />
-                                                </div>
-                                                <div>
-                                                    <h5 className="font-bold text-white text-sm">Wallet Personal (Retiros)</h5>
-                                                    <p className="text-xs text-gray-400">Dirección para enviar pagos al colaborador</p>
-                                                </div>
+                                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Dirección BTC Personal</h4>
+                                <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center">
+                                            <div className="bg-orange-500/10 p-1.5 rounded mr-3">
+                                                <Wallet className="w-5 h-5 text-orange-500" />
+                                            </div>
+                                            <div>
+                                                <h5 className="font-bold text-white text-sm">Dirección BTC Personal</h5>
+                                                <p className="text-xs text-gray-400">Dirección para enviar pagos al colaborador</p>
                                             </div>
                                         </div>
-                                        <div className="bg-gray-800 p-2.5 rounded border border-gray-700 font-mono text-sm text-gray-300 break-all">
-                                            {(selectedCollabForBanks as any).btcWithdrawAddress || 'No configurada'}
-                                        </div>
+                                        <button
+                                            onClick={() => setEditingBtcAddress(!editingBtcAddress)}
+                                            className="text-xs px-3 py-1 bg-accent hover:bg-blue-500 text-white rounded transition"
+                                        >
+                                            {editingBtcAddress ? 'Cancelar' : 'Editar'}
+                                        </button>
                                     </div>
 
-                                    {/* Operational Wallet */}
-                                    <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                                        <div className="flex items-start justify-between mb-2">
-                                            <div className="flex items-center">
-                                                <div className="bg-purple-500/10 p-1.5 rounded mr-3">
-                                                    <Wallet className="w-5 h-5 text-purple-500" />
-                                                </div>
-                                                <div>
-                                                    <h5 className="font-bold text-white text-sm">Wallet Operativa (Cobros)</h5>
-                                                    <p className="text-xs text-gray-400">Dirección configurada para recibir depósitos</p>
-                                                </div>
-                                            </div>
+                                    {editingBtcAddress ? (
+                                        <div className="space-y-3">
+                                            <input
+                                                type="text"
+                                                value={tempBtcAddress}
+                                                onChange={(e) => setTempBtcAddress(e.target.value)}
+                                                placeholder="bc1q... o 1... o 3..."
+                                                className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded text-white font-mono text-sm focus:ring-accent focus:border-accent focus:outline-none"
+                                            />
+                                            <button
+                                                onClick={async () => {
+                                                    if (!selectedCollabForBanks) return;
+
+                                                    // Validate BTC address format
+                                                    const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
+                                                    if (tempBtcAddress && !btcAddressRegex.test(tempBtcAddress)) {
+                                                        setBtcAddressMessage({ type: 'error', text: 'Formato de dirección BTC inválido' });
+                                                        return;
+                                                    }
+
+                                                    try {
+                                                        await adminService.updateCollaboratorConfig(selectedCollabForBanks.id, {
+                                                            ...(selectedCollabForBanks as any).collaboratorConfig,
+                                                            walletAddress: tempBtcAddress || null
+                                                        });
+
+                                                        // Update local state
+                                                        (selectedCollabForBanks as any).btcWithdrawAddress = tempBtcAddress;
+                                                        setEditingBtcAddress(false);
+                                                        setBtcAddressMessage({ type: 'success', text: 'Dirección BTC actualizada exitosamente' });
+                                                        setTimeout(() => setBtcAddressMessage(null), 3000);
+                                                        fetchStaff();
+                                                    } catch (error: any) {
+                                                        setBtcAddressMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar dirección' });
+                                                    }
+                                                }}
+                                                className="w-full px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded font-medium transition text-sm"
+                                            >
+                                                Guardar dirección
+                                            </button>
                                         </div>
+                                    ) : (
                                         <div className="bg-gray-800 p-2.5 rounded border border-gray-700 font-mono text-sm text-gray-300 break-all">
-                                            {((selectedCollabForBanks as any).collaboratorConfig as CollaboratorConfig | undefined)?.walletAddress || 'No configurada'}
+                                            {tempBtcAddress || 'No configurada'}
                                         </div>
-                                    </div>
+                                    )}
+
+                                    {btcAddressMessage && (
+                                        <div className={`mt-3 p-2 rounded text-xs ${btcAddressMessage.type === 'success'
+                                            ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                                            : 'bg-red-500/10 border border-red-500/20 text-red-500'
+                                            }`}>
+                                            {btcAddressMessage.text}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

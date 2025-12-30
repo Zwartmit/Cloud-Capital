@@ -106,8 +106,8 @@ export const adminService = {
     return response.data;
   },
 
-  async approveTask(taskId: string): Promise<{ message: string; task: TaskDTO }> {
-    const response = await apiClient.put(`/admin/tasks/${taskId}/approve`);
+  async approveTask(taskId: string, receivedAmount?: number): Promise<{ message: string; task: TaskDTO }> {
+    const response = await apiClient.put(`/admin/tasks/${taskId}/approve`, { receivedAmount });
     return response.data;
   },
 

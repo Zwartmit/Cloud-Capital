@@ -1,8 +1,7 @@
-import { PrismaClient, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import { hashPassword, comparePassword } from '../utils/bcrypt.util.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.util.js';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database.js';
 
 export interface RegisterData {
   email: string;

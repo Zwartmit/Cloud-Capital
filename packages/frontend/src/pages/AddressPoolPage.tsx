@@ -9,18 +9,21 @@ interface PoolStats {
     available: number;
     reserved: number;
     used: number;
+    deleted: number;
     percentageAvailable: number;
 }
 
 interface Address {
     id: string;
     address: string;
-    status: 'AVAILABLE' | 'RESERVED' | 'USED';
+    status: 'AVAILABLE' | 'RESERVED' | 'USED' | 'DELETED';
     reservedAt?: string;
     usedAt?: string;
     uploadedAt: string;
     requestedAmount?: number;
+    receivedAmount?: number;
     adminNotes?: string;
+    deletedAt?: string;
     uploadedByUser: {
         name: string;
         email: string;
@@ -38,7 +41,7 @@ export default function AddressPoolPage() {
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [bulkText, setBulkText] = useState('');
-    const [filter, setFilter] = useState<'ALL' | 'AVAILABLE' | 'RESERVED' | 'USED'>('ALL');
+    const [filter, setFilter] = useState<'ALL' | 'AVAILABLE' | 'RESERVED' | 'USED' | 'DELETED'>('ALL');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [showNotesModal, setShowNotesModal] = useState(false);
@@ -226,6 +229,10 @@ export default function AddressPoolPage() {
                                 <div className="stat-value">{stats.used}</div>
                                 <div className="stat-label">Usadas</div>
                             </div>
+                            <div className="stat-card deleted">
+                                <div className="stat-value">{stats.deleted || 0}</div>
+                                <div className="stat-label">Eliminadas</div>
+                            </div>
                         </div>
                     )}
 
@@ -285,6 +292,15 @@ export default function AddressPoolPage() {
                         >
                             Usadas
                         </button>
+                        <button
+                            className={filter === 'DELETED' ? 'filter-btn bg-red-500 text-white' : 'filter-btn'}
+                            onClick={() => {
+                                setFilter('DELETED');
+                                setCurrentPage(1);
+                            }}
+                        >
+                            Eliminadas
+                        </button>
                     </div>
 
                     {/* Address List */}
@@ -299,6 +315,7 @@ export default function AddressPoolPage() {
                                             <th>Dirección</th>
                                             <th>Estado</th>
                                             <th>Monto Solicitado</th>
+                                            <th>Monto Recibido</th>
                                             <th>Fecha de carga</th>
                                             <th>Usado por</th>
                                             <th>Notas</th>
@@ -319,6 +336,13 @@ export default function AddressPoolPage() {
                                                 <td>
                                                     {addr.requestedAmount ? (
                                                         <span className="text-accent font-semibold">${Number(addr.requestedAmount).toFixed(2)}</span>
+                                                    ) : (
+                                                        <span className="text-gray-500">-</span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    {addr.receivedAmount ? (
+                                                        <span className="text-profit font-semibold">${Number(addr.receivedAmount).toFixed(2)}</span>
                                                     ) : (
                                                         <span className="text-gray-500">-</span>
                                                     )}

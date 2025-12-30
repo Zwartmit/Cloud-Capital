@@ -179,7 +179,7 @@ export const RegisterPage: React.FC = () => {
                                 <PhoneInput
                                     value={formData.whatsappNumber}
                                     onChange={(phone) => setFormData({ ...formData, whatsappNumber: phone })}
-                                    defaultCountry=""
+                                    defaultCountry="us"
                                     placeholder="Selecciona país y escribe número"
                                     disabled={loading}
                                     className="w-full"

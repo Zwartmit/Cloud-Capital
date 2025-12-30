@@ -1,6 +1,5 @@
-import { PrismaClient, BtcAddressStatus, BtcAddressPool } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../config/database.js';
+import { BtcAddressStatus } from '@prisma/client';
 
 /**
  * Validar formato de dirección Bitcoin
@@ -104,7 +103,7 @@ export async function assignAddressToDeposit(taskId: string): Promise<string> {
  * Para mostrar al usuario la dirección antes de que envíe la solicitud
  */
 export async function reserveAddressTemporarily(
-    userId: string,
+    _userId: string,
     amountUSDT: number
 ): Promise<{ address: string; reservationId: string }> {
     // Buscar primera dirección disponible
@@ -194,10 +193,11 @@ export async function releaseExpiredReservations(): Promise<number> {
  * Obtener estadísticas del pool
  */
 export async function getPoolStats() {
-    const [available, reserved, used, total] = await Promise.all([
+    const [available, reserved, used, deleted, total] = await Promise.all([
         prisma.btcAddressPool.count({ where: { status: BtcAddressStatus.AVAILABLE } }),
         prisma.btcAddressPool.count({ where: { status: BtcAddressStatus.RESERVED } }),
         prisma.btcAddressPool.count({ where: { status: BtcAddressStatus.USED } }),
+        prisma.btcAddressPool.count({ where: { status: BtcAddressStatus.DELETED } }),
         prisma.btcAddressPool.count(),
     ]);
 
@@ -206,6 +206,7 @@ export async function getPoolStats() {
         available,
         reserved,
         used,
+        deleted,
         percentageAvailable: total > 0 ? (available / total) * 100 : 0,
     };
 }
@@ -249,6 +250,7 @@ export async function getAddresses(params: {
                 usedAt: true,
                 uploadedAt: true,
                 requestedAmount: true,
+                receivedAmount: true,
                 adminNotes: true,
                 uploadedByUser: {
                     select: {
@@ -280,7 +282,7 @@ export async function getAddresses(params: {
 }
 
 /**
- * Eliminar dirección no usada (solo AVAILABLE o RESERVED)
+ * Eliminar dirección no usada (solo AVAILABLE o RESERVED) - SOFT DELETE
  */
 export async function deleteAddress(addressId: string): Promise<{ deletedAddress: boolean; rejectedTask: boolean; taskId?: string }> {
     const address = await prisma.btcAddressPool.findUnique({
@@ -293,6 +295,10 @@ export async function deleteAddress(addressId: string): Promise<{ deletedAddress
 
     if (address.status === BtcAddressStatus.USED) {
         throw new Error('No se puede eliminar una dirección ya utilizada');
+    }
+
+    if (address.status === BtcAddressStatus.DELETED) {
+        throw new Error('Esta dirección ya está eliminada');
     }
 
     // Si tiene una tarea asociada, rechazarla automáticamente
@@ -321,8 +327,13 @@ export async function deleteAddress(addressId: string): Promise<{ deletedAddress
         }
     }
 
-    await prisma.btcAddressPool.delete({
+    // Soft delete: cambiar estado a DELETED y registrar fecha
+    await prisma.btcAddressPool.update({
         where: { id: addressId },
+        data: {
+            status: BtcAddressStatus.DELETED,
+            deletedAt: new Date(),
+        },
     });
 
     return {

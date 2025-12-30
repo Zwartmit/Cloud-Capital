@@ -345,12 +345,228 @@ async function main() {
   });
   console.log('✅ Seeded 6 BTC addresses to the pool');
 
-  console.log('🎉 Seeding completed!');
+  // ========================================
+  // FASE 4: TEST USERS FOR CYCLE TESTING
+  // ========================================
+  console.log('\n🧪 Creating test users for cycle testing...');
+
+  const testPassword = await bcrypt.hash('test123', 10);
+
+  // Test User 1: Normal user with 50% progress
+  const testUser1 = await prisma.user.upsert({
+    where: { email: 'test1@example.com' },
+    update: {},
+    create: {
+      email: 'test1@example.com',
+      password: testPassword,
+      name: 'Test User - 50% Progress',
+      username: 'testuser1',
+      role: 'USER',
+      capitalUSDT: 100,
+      currentBalanceUSDT: 150, // $50 profit = 50% progress
+      investmentClass: 'BASIC',
+      contractStatus: 'ACTIVE',
+      cycleCompleted: false,
+      currentPlanStartDate: new Date(),
+      currentPlanExpiryDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000), // 25 days from now
+      referralCode: 'TEST1',
+      hasFirstDeposit: true,
+    },
+  });
+
+  // Create transactions for test user 1
+  await prisma.transaction.createMany({
+    data: [
+      {
+        userId: testUser1.id,
+        type: 'DEPOSIT',
+        amountUSDT: 100,
+        status: 'COMPLETED',
+        reference: 'Initial deposit',
+        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+      },
+      {
+        userId: testUser1.id,
+        type: 'PROFIT',
+        amountUSDT: 50,
+        status: 'COMPLETED',
+        reference: 'Accumulated profit',
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+      },
+    ],
+  });
+  console.log('✅ Created Test User 1 (50% progress):', testUser1.email);
+
+  // Test User 2: User at 150% progress (close to completion)
+  const testUser2 = await prisma.user.upsert({
+    where: { email: 'test2@example.com' },
+    update: {},
+    create: {
+      email: 'test2@example.com',
+      password: testPassword,
+      name: 'Test User - 150% Progress',
+      username: 'testuser2',
+      role: 'USER',
+      capitalUSDT: 200,
+      currentBalanceUSDT: 500, // $300 profit = 150% progress
+      investmentClass: 'GOLD',
+      contractStatus: 'ACTIVE',
+      cycleCompleted: false,
+      currentPlanStartDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+      currentPlanExpiryDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days remaining
+      referralCode: 'TEST2',
+      hasFirstDeposit: true,
+    },
+  });
+
+  await prisma.transaction.createMany({
+    data: [
+      {
+        userId: testUser2.id,
+        type: 'DEPOSIT',
+        amountUSDT: 200,
+        status: 'COMPLETED',
+        reference: 'Initial deposit',
+        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      },
+      {
+        userId: testUser2.id,
+        type: 'PROFIT',
+        amountUSDT: 300,
+        status: 'COMPLETED',
+        reference: 'Accumulated profit',
+        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      },
+    ],
+  });
+  console.log('✅ Created Test User 2 (150% progress):', testUser2.email);
+
+  // Test User 3: User with COMPLETED cycle (200% reached) ⭐ IMPORTANT FOR MODAL TESTING
+  const testUser3 = await prisma.user.upsert({
+    where: { email: 'test3@example.com' },
+    update: {},
+    create: {
+      email: 'test3@example.com',
+      password: testPassword,
+      name: 'Test User - Cycle Completed',
+      username: 'testuser3',
+      role: 'USER',
+      capitalUSDT: 100,
+      currentBalanceUSDT: 300, // $200 profit = 200% (COMPLETED!)
+      investmentClass: 'SILVER',
+      contractStatus: 'COMPLETED', // ⭐ This will trigger the modal!
+      cycleCompleted: true,
+      cycleCompletedAt: new Date(),
+      currentPlanStartDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+      currentPlanExpiryDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Expired
+      referralCode: 'TEST3',
+      hasFirstDeposit: true,
+    },
+  });
+
+  await prisma.transaction.createMany({
+    data: [
+      {
+        userId: testUser3.id,
+        type: 'DEPOSIT',
+        amountUSDT: 100,
+        status: 'COMPLETED',
+        reference: 'Initial deposit',
+        createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+      },
+      {
+        userId: testUser3.id,
+        type: 'PROFIT',
+        amountUSDT: 200,
+        status: 'COMPLETED',
+        reference: 'Profit to reach 200%',
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      },
+    ],
+  });
+  console.log('✅ Created Test User 3 (CYCLE COMPLETED - 200%):', testUser3.email);
+
+  // Test User 4: User pending plan selection (after reinvestment)
+  const testUser4 = await prisma.user.upsert({
+    where: { email: 'test4@example.com' },
+    update: {},
+    create: {
+      email: 'test4@example.com',
+      password: testPassword,
+      name: 'Test User - Pending Plan',
+      username: 'testuser4',
+      role: 'USER',
+      capitalUSDT: 75,
+      currentBalanceUSDT: 75,
+      investmentClass: null, // No plan selected
+      contractStatus: 'PENDING_PLAN_SELECTION',
+      cycleCompleted: false,
+      currentPlanStartDate: null,
+      currentPlanExpiryDate: null,
+      referralCode: 'TEST4',
+      hasFirstDeposit: true,
+    },
+  });
+
+  await prisma.transaction.create({
+    data: {
+      userId: testUser4.id,
+      type: 'REINVEST',
+      amountUSDT: 75,
+      status: 'COMPLETED',
+      reference: 'Reinvestment - Nuevo ciclo iniciado',
+      createdAt: new Date(),
+    },
+  });
+  console.log('✅ Created Test User 4 (Pending plan selection):', testUser4.email);
+
+  // Test User 5: User with plan about to expire (for commission testing)
+  const testUser5 = await prisma.user.upsert({
+    where: { email: 'test5@example.com' },
+    update: {},
+    create: {
+      email: 'test5@example.com',
+      password: testPassword,
+      name: 'Test User - Plan Expiring',
+      username: 'testuser5',
+      role: 'USER',
+      capitalUSDT: 500,
+      currentBalanceUSDT: 650,
+      investmentClass: 'PLATINUM',
+      contractStatus: 'ACTIVE',
+      cycleCompleted: false,
+      currentPlanStartDate: new Date(Date.now() - 27 * 24 * 60 * 60 * 1000), // 27 days ago
+      currentPlanExpiryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // Expires in 3 days
+      lastCommissionChargeDate: new Date(Date.now() - 27 * 24 * 60 * 60 * 1000),
+      referralCode: 'TEST5',
+      hasFirstDeposit: true,
+    },
+  });
+
+  await prisma.transaction.create({
+    data: {
+      userId: testUser5.id,
+      type: 'DEPOSIT',
+      amountUSDT: 500,
+      status: 'COMPLETED',
+      reference: 'Initial deposit',
+      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    },
+  });
+  console.log('✅ Created Test User 5 (Plan expiring in 3 days):', testUser5.email);
+
+  console.log('\n🎉 Seeding completed!');
   console.log('\n📝 Test credentials:');
   console.log('Admin: admin@cloudcapital.com / admin123');
   console.log('Subadmin: subadmin@cloudcapital.com / subadmin123');
   console.log('User: user@example.com / user123');
   console.log('Referred User: referred@example.com / referred123');
+  console.log('\n🧪 Cycle Testing Users (password: test123):');
+  console.log('Test 1 (50% progress): test1@example.com');
+  console.log('Test 2 (150% progress): test2@example.com');
+  console.log('Test 3 (COMPLETED - 200%): test3@example.com ⭐ USE THIS TO SEE MODAL');
+  console.log('Test 4 (Pending plan): test4@example.com');
+  console.log('Test 5 (Plan expiring): test5@example.com');
 }
 
 main()

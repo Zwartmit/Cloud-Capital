@@ -1,6 +1,5 @@
-import { PrismaClient, User, Transaction } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { User, Transaction } from '@prisma/client';
+import prisma from '../config/database.js';
 
 export const getUserProfile = async (userId: string): Promise<Omit<User, 'password'> & { referralsCount: number }> => {
   const user = await prisma.user.findUnique({
@@ -199,11 +198,25 @@ export const reinvestProfit = async (userId: string, amountUSD: number) => {
     throw new Error('El monto mínimo de reinversión es $50 USDT');
   }
 
-  // Update user capital and create transaction
+  // SPEC 5: Reinversión = Contrato Cero
+  // Reset EVERYTHING except history
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: {
-      capitalUSDT: capital + amountUSD,
+      // Reset capital to ONLY the reinvested amount (not add to existing)
+      capitalUSDT: amountUSD,
+      // Reset balance to match capital
+      currentBalanceUSDT: amountUSD,
+      // Clear investment plan - user must select new one
+      investmentClass: null,
+      // Reset contract status
+      contractStatus: 'PENDING_PLAN_SELECTION',
+      cycleCompleted: false,
+      cycleCompletedAt: null,
+      // Clear plan tracking
+      currentPlanStartDate: null,
+      currentPlanExpiryDate: null,
+      lastCommissionChargeDate: null
     }
   });
 
@@ -212,6 +225,7 @@ export const reinvestProfit = async (userId: string, amountUSD: number) => {
       userId,
       type: 'REINVEST',
       amountUSDT: amountUSD,
+      reference: 'Reinversión - Nuevo ciclo iniciado',
       status: 'COMPLETED',
     }
   });
@@ -590,8 +604,13 @@ export const changeInvestmentPlan = async (userId: string, planName: string) => 
     throw new Error('Ya tienes este plan de inversión');
   }
 
-  // Validate capital requirement
+  // SPEC 9: Validate minimum capital requirement
   const currentBalance = user.currentBalanceUSDT || 0;
+  if (currentBalance < 50) {
+    throw new Error('Se requiere un capital mínimo de $50 USD para seleccionar un plan');
+  }
+
+  // Validate capital requirement for specific plan
   if (currentBalance < plan.minCapital) {
     throw new Error(`Capital insuficiente. Se requieren $${plan.minCapital} USDT`);
   }
@@ -605,11 +624,21 @@ export const changeInvestmentPlan = async (userId: string, planName: string) => 
     }
   }
 
-  // Update user's investment class
+  // SPEC 1: Set plan subscription dates
+  const now = new Date();
+  const expiryDate = new Date(now);
+  expiryDate.setDate(expiryDate.getDate() + 30); // 30 days from now
+
+  // Update user's investment class and plan tracking
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: {
       investmentClass: planName as any,
+      // Set plan subscription tracking
+      currentPlanStartDate: now,
+      currentPlanExpiryDate: expiryDate,
+      // Activate contract if it was pending plan selection
+      contractStatus: user.contractStatus === 'PENDING_PLAN_SELECTION' ? 'ACTIVE' : user.contractStatus,
     },
     include: {
       _count: {

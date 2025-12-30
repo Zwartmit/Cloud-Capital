@@ -77,4 +77,11 @@ router.get('/recent-activity', userController.getRecentActivity);
 // GET /api/user/banks
 router.get('/banks', bankController.getActiveBanks);
 
+// FASE 1: New routes for cycle management
+// GET /api/user/cycle-progress
+router.get('/cycle-progress', userController.getCycleProgress);
+
+// GET /api/user/contract-status
+router.get('/contract-status', userController.getContractStatus);
+
 export default router;

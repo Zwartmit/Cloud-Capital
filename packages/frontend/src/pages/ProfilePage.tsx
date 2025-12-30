@@ -324,7 +324,7 @@ export const ProfilePage: React.FC = () => {
                                             <PhoneInput
                                                 value={whatsappNum}
                                                 onChange={(phone) => setWhatsappNum(phone)}
-                                                defaultCountry=""
+                                                defaultCountry="us"
                                                 placeholder="Selecciona país y escribe número"
                                                 className="w-full"
                                                 inputClassName="p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white font-mono focus:ring-accent focus:border-accent focus:outline-none"

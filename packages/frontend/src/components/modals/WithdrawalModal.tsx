@@ -3,6 +3,7 @@ import { Modal } from '../common/Modal';
 import { Wallet, Users, AlertCircle, CheckCircle2, Building2 } from 'lucide-react';
 import { investmentService, Bank } from '../../services/investmentService';
 import collaboratorBankService, { CollaboratorBankAccount } from '../../services/collaboratorBankService';
+import { useAuthStore } from '../../store/authStore';
 
 interface WithdrawalModalProps {
     isOpen: boolean;
@@ -22,7 +23,8 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
     btcPrice,
     onSuccess,
 }) => {
-    const [activeTab, setActiveTab] = useState<'direct' | 'collaborator'>('direct');
+    const { user } = useAuthStore();
+    const [selectedMethod, setSelectedMethod] = useState<null | 'direct' | 'collaborator'>(null);
     const [amount, setAmount] = useState('');
     const [btcAddress, setBtcAddress] = useState('');
     const [collaboratorId, setCollaboratorId] = useState('');
@@ -39,6 +41,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         id: string;
         name: string;
         btcDepositAddress?: string;
+        whatsappNumber?: string;
         collaboratorConfig?: { commission: number; processingTime: string; minAmount: number; maxAmount: number };
     }>>([]);
     const [banks, setBanks] = useState<Bank[]>([]);
@@ -113,7 +116,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
 
     const platformFee = amount ? parseFloat(amount) * 0.045 : 0;
     const collaboratorCommissionRate = selectedCollaborator?.collaboratorConfig?.commission || 0;
-    const collaboratorFee = (activeTab === 'collaborator' && amount) ? parseFloat(amount) * (collaboratorCommissionRate / 100) : 0;
+    const collaboratorFee = (selectedMethod === 'collaborator' && amount) ? parseFloat(amount) * (collaboratorCommissionRate / 100) : 0;
 
     const totalFee = platformFee + collaboratorFee;
     const netAmount = amount ? parseFloat(amount) - totalFee : 0;
@@ -136,7 +139,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         setAccountNumber('');
         setOwnerName('');
         setOwnerId('');
-        setActiveTab('direct');
+        setSelectedMethod(null);
         setCollaboratorBanks([]);
         setSelectedCollaboratorBank(null);
         setBankSelectionError('');
@@ -166,7 +169,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             return;
         }
 
-        if (activeTab === 'collaborator') {
+        if (selectedMethod === 'collaborator') {
             if (!collaboratorId) {
                 alert('Selecciona un colaborador');
                 return;
@@ -188,12 +191,12 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
 
         setLoading(true);
         try {
-            const destinationType = activeTab === 'direct' ? 'PERSONAL' : 'COLLABORATOR';
-            const finalBtcAddress = activeTab === 'direct'
+            const destinationType = selectedMethod === 'direct' ? 'PERSONAL' : 'COLLABORATOR';
+            const finalBtcAddress = selectedMethod === 'direct'
                 ? btcAddress
                 : selectedCollaborator?.btcDepositAddress || '';
 
-            const bankDetails = activeTab === 'collaborator' ? {
+            const bankDetails = selectedMethod === 'collaborator' ? {
                 bankName,
                 accountType,
                 accountNumber,
@@ -201,7 +204,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                 ownerId
             } : undefined;
 
-            if (activeTab === 'collaborator') {
+            if (selectedMethod === 'collaborator') {
                 if (!bankName || !accountNumber || !ownerName || !ownerId) {
                     alert('Por favor completa todos los datos bancarios');
                     setLoading(false);
@@ -213,9 +216,26 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                 amountUSDT: amountNum,
                 btcAddress: finalBtcAddress,
                 destinationType,
-                destinationUserId: activeTab === 'collaborator' ? collaboratorId : undefined,
+                destinationUserId: selectedMethod === 'collaborator' ? collaboratorId : undefined,
                 bankDetails
             });
+
+            if (selectedMethod === 'collaborator' && selectedCollaborator?.whatsappNumber) {
+                const message = `Hola, Soy ${user?.name} (@${user?.username}).
+Solicito un retiro de $${amount} ($${netAmount.toFixed(2)} USD netos a recibir, luego de descontar el costo operativo y la comisión de colaborador) a mi cuenta bancaria:
+
+Banco: ${bankName}
+Tipo: ${accountType}
+Cuenta: ${accountNumber}
+Titular: ${ownerName}
+C.I.: ${ownerId}
+
+Quedo atento a la gestión. Gracias.`;
+
+                const encodedMessage = encodeURIComponent(message);
+                const whatsappUrl = `https://wa.me/${selectedCollaborator.whatsappNumber}?text=${encodedMessage}`;
+                window.open(whatsappUrl, '_blank');
+            }
 
             alert('Solicitud de retiro enviada. Pendiente de aprobación.');
             resetForm(); // Clear form after successful submission
@@ -249,53 +269,59 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Retiro de ganancias" maxWidth="xl">
-            {/* Friday Processing Notice */}
-            <div className="bg-blue-900/20 border border-blue-600 p-3 rounded-lg mb-4">
-                <div className="flex items-start gap-2">
-                    <span className="text-blue-400 text-lg">📅</span>
-                    <div className="flex-1">
-                        <p className="text-xs text-gray-300 leading-relaxed">
-                            Puedes solicitar tu retiro cualquier día de la semana, pero <strong className="text-blue-400">todos los retiros se procesan únicamente los viernes</strong>.
-                        </p>
-                        <p className="text-xs text-blue-300 mt-2">
-                            📌 Próximo procesamiento: <strong>{getNextFriday()}</strong>
-                        </p>
-                    </div>
-                </div>
-            </div>
-
             {/* Balance Info */}
-            <div className="bg-profit/10 border border-profit p-3 rounded-lg mb-4 text-center">
+            <div className="p-3 rounded-lg text-center">
                 <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Profit Disponible para retiro</p>
                 <p className="text-2xl font-black text-profit">${availableProfit.toFixed(2)} USDT</p>
             </div>
 
-            {/* Tabs */}
-            <div className="flex flex-col sm:flex-row gap-2 mb-4">
-                <button
-                    onClick={() => setActiveTab('direct')}
-                    className={`flex-1 py-2 px-3 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2 ${activeTab === 'direct'
-                        ? 'bg-accent text-white'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                >
-                    <Wallet className="w-4 h-4" />
-                    Mi Wallet personal
-                </button>
-                <button
-                    onClick={() => setActiveTab('collaborator')}
-                    className={`flex-1 py-2 px-3 rounded-lg font-semibold text-sm transition flex items-center justify-center gap-2 ${activeTab === 'collaborator'
-                        ? 'bg-profit text-black'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                >
-                    <Users className="w-4 h-4" />
-                    Retiro con colaborador
-                </button>
-            </div>
+            {/* Selection Screen */}
+            {selectedMethod === null && (
+                <div className="space-y-2">
+                    <div className="p-2 rounded-lg">
+                        <p className="text-sm text-gray-300 text-center">
+                            Selecciona el método de retiro que prefieras:
+                        </p>
+                    </div>
 
-            {/* Direct Withdrawal Tab */}
-            {activeTab === 'direct' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Direct Withdrawal Button */}
+                        <button
+                            onClick={() => setSelectedMethod('direct')}
+                            className="group relative p-6 bg-gradient-to-br from-blue-900/40 to-blue-800/20 hover:from-blue-800/60 hover:to-blue-700/40 border-2 border-blue-700/50 hover:border-accent rounded-xl transition-all duration-300 text-left"
+                        >
+                            <div className="flex flex-col items-center text-center space-y-3">
+                                <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center group-hover:bg-accent/30 transition-colors">
+                                    <Wallet className="w-8 h-8 text-accent" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-white mb-1">Mi Wallet personal</h3>
+                                    <p className="text-xs text-gray-400">Retira BTC directamente a tu billetera</p>
+                                </div>
+                            </div>
+                        </button>
+
+                        {/* Collaborator Withdrawal Button */}
+                        <button
+                            onClick={() => setSelectedMethod('collaborator')}
+                            className="group relative p-6 bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 hover:from-emerald-800/60 hover:to-emerald-700/40 border-2 border-emerald-700/50 hover:border-profit rounded-xl transition-all duration-300 text-left"
+                        >
+                            <div className="flex flex-col items-center text-center space-y-3">
+                                <div className="w-16 h-16 rounded-full bg-profit/20 flex items-center justify-center group-hover:bg-profit/30 transition-colors">
+                                    <Users className="w-8 h-8 text-profit" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-white mb-1">Retiro con colaborador</h3>
+                                    <p className="text-xs text-gray-400">Recibe dinero local (FIAT) en tu banco</p>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Direct Withdrawal Form */}
+            {selectedMethod === 'direct' && (
                 <div className="space-y-3">
                     {/* Direct Withdrawal Instructions */}
                     <div className="bg-blue-900/20 border border-blue-700 p-3 rounded-lg">
@@ -343,18 +369,26 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                         </p>
                     </div>
 
-                    <button
-                        onClick={handleWithdrawal}
-                        disabled={loading}
-                        className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-accent/20 hover:shadow-accent/40 text-sm mt-1"
-                    >
-                        {loading ? 'Enviando...' : 'Solicitar retiro'}
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setSelectedMethod(null)}
+                            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2.5 rounded-lg transition text-sm"
+                        >
+                            Volver
+                        </button>
+                        <button
+                            onClick={handleWithdrawal}
+                            disabled={loading}
+                            className="flex-1 bg-accent hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-accent/20 hover:shadow-accent/40 text-sm mt-1"
+                        >
+                            {loading ? 'Enviando...' : 'Solicitar retiro'}
+                        </button>
+                    </div>
                 </div>
             )}
 
-            {/* Collaborator Withdrawal Tab */}
-            {activeTab === 'collaborator' && (
+            {/* Collaborator Withdrawal Form */}
+            {selectedMethod === 'collaborator' && (
                 <div className="space-y-3">
                     {collaborators.length === 0 ? (
                         <div className="text-center p-6 bg-gray-800 rounded-lg border border-gray-700">
@@ -579,24 +613,48 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                                 </div>
                             )}
 
-                            <button
-                                onClick={handleWithdrawal}
-                                disabled={loading}
-                                className="w-full bg-profit hover:bg-emerald-500 text-black font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-profit/20 hover:shadow-profit/40 text-sm mt-1"
-                            >
-                                {loading ? 'Enviando...' : 'Solicitar retiro con colaborador'}
-                            </button>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setSelectedMethod(null)}
+                                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2.5 rounded-lg transition text-sm"
+                                >
+                                    Volver
+                                </button>
+                                <button
+                                    onClick={handleWithdrawal}
+                                    disabled={loading}
+                                    className="flex-1 bg-profit hover:bg-emerald-500 text-black font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-profit/20 hover:shadow-profit/40 text-sm mt-1"
+                                >
+                                    {loading ? 'Enviando...' : 'Solicitar retiro con colaborador'}
+                                </button>
+                            </div>
                         </>
                     )}
                 </div>
             )}
 
-            {/* Warnings */}
-            <div className="mt-4 bg-yellow-900/20 border border-yellow-700 p-2.5 rounded-lg flex gap-2 items-center">
-                <span className="text-yellow-400 text-xs">⚠️</span>
-                <p className="text-[10px] text-yellow-400 leading-tight">
-                    <strong>NOTA IMPORTANTE:</strong> Todos los retiros están sujetos a un costo operativo fijo del 4.5%, independientemente de si la orden es aceptada o rechazada. Este fee corresponde a los costos de procesamiento de red, verificación interna y gestión operativa.
-                </p>
+            {/* Important Notes */}
+            <div className="mt-4 bg-yellow-900/20 border border-yellow-700 p-3 rounded-lg space-y-3">
+                {/* Operational Fee Notice */}
+                <div className="flex gap-2 items-start">
+                    <span className="text-yellow-400 text-xs">⚠️</span>
+                    <p className="text-[10px] text-yellow-400 leading-tight">
+                        <strong>NOTA IMPORTANTE:</strong> Todos los retiros están sujetos a un costo operativo fijo del 4.5%, independientemente de si la orden es aceptada o rechazada. Este fee corresponde a los costos de procesamiento de red, verificación interna y gestión operativa.
+                    </p>
+                </div>
+
+                {/* Friday Processing Notice */}
+                <div className="flex items-start gap-2 pt-2 border-t border-yellow-700/30">
+                    <span className="text-blue-400 text-xs">📅</span>
+                    <div className="flex-1">
+                        <p className="text-[10px] text-gray-300 leading-relaxed">
+                            Puedes solicitar tu retiro cualquier día de la semana, pero <strong className="text-blue-400">todos los retiros se procesan únicamente los viernes</strong>.
+                        </p>
+                        <p className="text-[10px] text-blue-300 mt-1.5">
+                            📌 Próximo procesamiento: <strong>{getNextFriday()}</strong>
+                        </p>
+                    </div>
+                </div>
             </div>
         </Modal >
     );

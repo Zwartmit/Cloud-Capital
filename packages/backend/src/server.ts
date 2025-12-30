@@ -1,6 +1,9 @@
 import dotenv from 'dotenv';
 import app from './app.js';
 import { startAddressRecyclingJob, startLowInventoryAlertJob } from './jobs/address-recycling.job.js';
+// FASE 3: Import new cron jobs
+import { startCommissionChargeJob } from './jobs/commission-charge.job.js';
+import { startPlanExpiryCheckJob } from './jobs/plan-expiry-check.job.js';
 
 // Load environment variables
 dotenv.config();
@@ -16,5 +19,10 @@ app.listen(PORT, () => {
   // Initialize cron jobs
   startAddressRecyclingJob();
   startLowInventoryAlertJob();
+
+  // FASE 3: Initialize new business logic cron jobs
+  startCommissionChargeJob();
+  startPlanExpiryCheckJob();
+
   console.log('⏰ Cron jobs initialized');
 });

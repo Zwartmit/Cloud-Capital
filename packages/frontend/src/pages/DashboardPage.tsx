@@ -8,12 +8,18 @@ import { DepositModal } from '../components/modals/DepositModal';
 import { WithdrawalModal } from '../components/modals/WithdrawalModal';
 import { ReinvestModal } from '../components/modals/ReinvestModal';
 import { ProjectionsModal } from '../components/modals/ProjectionsModal';
+// FASE 2: New components for cycle management
+import { CycleProgressCard } from '../components/dashboard/CycleProgressCard';
+import { CycleCompletedModal } from '../components/modals/CycleCompletedModal';
+import { CycleCompletionModal } from '../components/modals/CycleCompletionModal';
+
 
 import { useAuthStore } from '../store/authStore';
 import { getPlanColor } from '../utils/planStyles';
 import { userService } from '../services/userService';
 import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
 import { cryptoService } from '../services/cryptoService';
+import { contractService, ContractStatus } from '../services/contractService';
 import { TransactionDTO } from '@cloud-capital/shared';
 
 export const DashboardPage: React.FC = () => {
@@ -22,10 +28,14 @@ export const DashboardPage: React.FC = () => {
     const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
     const [isReinvestModalOpen, setIsReinvestModalOpen] = useState(false);
     const [isProjectionsModalOpen, setIsProjectionsModalOpen] = useState(false);
+    const [isCycleCompletionModalOpen, setIsCycleCompletionModalOpen] = useState(false);
     const [transactions, setTransactions] = useState<TransactionDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [btcPrice, setBtcPrice] = useState<number>(96500); // Default fallback price
     const [currentPlan, setCurrentPlan] = useState<InvestmentPlan | null>(null);
+    // FASE 2: Contract status state
+    const [contractStatus, setContractStatus] = useState<ContractStatus | null>(null);
+    const [hasDismissedCycleModal, setHasDismissedCycleModal] = useState(false);
 
     // Fetch BTC price from CoinGecko
     useEffect(() => {
@@ -82,6 +92,22 @@ export const DashboardPage: React.FC = () => {
         // Then refresh every 10 seconds
         const interval = setInterval(refreshUserData, 10000);
 
+        return () => clearInterval(interval);
+    }, []);
+
+    // FASE 2: Fetch contract status
+    useEffect(() => {
+        const fetchContractStatus = async () => {
+            try {
+                const data = await contractService.getContractStatus();
+                setContractStatus(data);
+            } catch (error) {
+                console.error('Error fetching contract status:', error);
+            }
+        };
+        fetchContractStatus();
+        // Refresh every 30 seconds
+        const interval = setInterval(fetchContractStatus, 30000);
         return () => clearInterval(interval);
     }, []);
 
@@ -172,6 +198,9 @@ export const DashboardPage: React.FC = () => {
                                 onDeposit={() => setIsDepositModalOpen(true)}
                                 onProjections={() => setIsProjectionsModalOpen(true)}
                             />
+
+                            {/* FASE 2: Cycle Progress Card */}
+                            <CycleProgressCard />
                         </section>
 
                         {/* Sidebar */}
@@ -275,6 +304,35 @@ export const DashboardPage: React.FC = () => {
             <ProjectionsModal
                 isOpen={isProjectionsModalOpen}
                 onClose={() => setIsProjectionsModalOpen(false)}
+            />
+
+            {/* FASE 2: Cycle Completed Modal */}
+            <CycleCompletedModal
+                isOpen={contractStatus?.contractStatus === 'COMPLETED' && !hasDismissedCycleModal}
+                totalProfit={contractStatus?.availableProfit || 0}
+                onClose={() => setHasDismissedCycleModal(true)}
+                onWithdrawProfit={() => setIsCycleCompletionModalOpen(true)}
+                onReinvest={() => setIsReinvestModalOpen(true)}
+                onLogout={() => {
+                    const { logout } = useAuthStore.getState();
+                    logout();
+                }}
+            />
+
+            {/* FASE 2: Cycle Completion Modal (for profit withdrawal) */}
+            <CycleCompletionModal
+                isOpen={isCycleCompletionModalOpen}
+                onClose={() => setIsCycleCompletionModalOpen(false)}
+                totalProfit={contractStatus?.availableProfit || 0}
+                onSuccess={async () => {
+                    const { updateUser } = useAuthStore.getState();
+                    // Refresh user data immediately to update balance/capital/profit
+                    const userData = await userService.getProfile();
+                    updateUser(userData);
+                    // Also refresh transactions
+                    const data = await userService.getTransactions();
+                    setTransactions(data);
+                }}
             />
 
         </div>

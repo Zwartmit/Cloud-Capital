@@ -21,7 +21,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     onSuccess,
     userData,
 }) => {
-    const [activeTab, setActiveTab] = useState<'direct' | 'collaborator'>('direct');
+    const [selectedMethod, setSelectedMethod] = useState<null | 'direct' | 'collaborator'>(null);
     const [amount, setAmount] = useState('');
     const [txid, setTxid] = useState('');
     const [proof, setProof] = useState<File | null>(null);
@@ -55,7 +55,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         setAssignedAddress(null);
         setAddressExpiration(null);
         setReservedAddressId(null);
-        setActiveTab('direct');
+        setSelectedMethod(null);
     };
 
     // Reset form when modal closes
@@ -223,30 +223,57 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Realizar aporte" maxWidth="xl">
-            {/* Tabs */}
-            <div className="flex flex-col sm:flex-row gap-2 mb-4">
-                <button
-                    onClick={() => setActiveTab('direct')}
-                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition ${activeTab === 'direct'
-                        ? 'bg-accent text-white'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                >
-                    Aporte directo (BTC)
-                </button>
-                <button
-                    onClick={() => setActiveTab('collaborator')}
-                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition ${activeTab === 'collaborator'
-                        ? 'bg-profit text-black'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                >
-                    Con colaborador (FIAT)
-                </button>
-            </div>
+            {/* Selection Screen */}
+            {selectedMethod === null && (
+                <div className="space-y-4">
+                    <div className="p-2 rounded-lg">
+                        <p className="text-sm text-gray-300 text-center">
+                            Selecciona el método de aporte que prefieras:
+                        </p>
+                    </div>
 
-            {/* Direct Deposit Tab */}
-            {activeTab === 'direct' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Direct Deposit Button */}
+                        <button
+                            onClick={() => setSelectedMethod('direct')}
+                            className="group relative p-6 bg-gradient-to-br from-blue-900/40 to-blue-800/20 hover:from-blue-800/60 hover:to-blue-700/40 border-2 border-blue-700/50 hover:border-accent rounded-xl transition-all duration-300 text-left"
+                        >
+                            <div className="flex flex-col items-center text-center space-y-3">
+                                <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center group-hover:bg-accent/30 transition-colors">
+                                    <svg className="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-white mb-1">Aporte directo (BTC)</h3>
+                                    <p className="text-xs text-gray-400">Envía Bitcoin directamente desde tu wallet</p>
+                                </div>
+                            </div>
+                        </button>
+
+                        {/* Collaborator Deposit Button */}
+                        <button
+                            onClick={() => setSelectedMethod('collaborator')}
+                            className="group relative p-6 bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 hover:from-emerald-800/60 hover:to-emerald-700/40 border-2 border-emerald-700/50 hover:border-profit rounded-xl transition-all duration-300 text-left"
+                        >
+                            <div className="flex flex-col items-center text-center space-y-3">
+                                <div className="w-16 h-16 rounded-full bg-profit/20 flex items-center justify-center group-hover:bg-profit/30 transition-colors">
+                                    <svg className="w-8 h-8 text-profit" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-white mb-1">Con colaborador (FIAT)</h3>
+                                    <p className="text-xs text-gray-400">Deposita en moneda local a través de un colaborador</p>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Direct Deposit Form */}
+            {selectedMethod === 'direct' && (
                 <div className="space-y-3">
                     <div className="bg-blue-900/20 border border-blue-700 p-3 rounded-lg">
                         <h4 className="font-bold text-blue-400 mb-2 text-sm">Instrucciones:</h4>
@@ -381,20 +408,28 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleDirectDeposit}
-                        disabled={loading || !assignedAddress}
-                        className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-accent/20 hover:shadow-accent/40 text-sm"
-                    >
-                        {loading ? 'Enviando...' : 'Enviar solicitud'}
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setSelectedMethod(null)}
+                            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2.5 rounded-lg transition text-sm"
+                        >
+                            Volver
+                        </button>
+                        <button
+                            onClick={handleDirectDeposit}
+                            disabled={loading || !assignedAddress}
+                            className="flex-1 bg-accent hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg transition disabled:opacity-50 shadow-lg shadow-accent/20 hover:shadow-accent/40 text-sm"
+                        >
+                            {loading ? 'Enviando...' : 'Enviar solicitud'}
+                        </button>
+                    </div>
                 </div>
             )}
 
-            {/* Collaborator Tab */}
-            {activeTab === 'collaborator' && (
+            {/* Collaborator Form */}
+            {selectedMethod === 'collaborator' && (
                 <ManualOrderForm
-                    onBack={() => setActiveTab('direct')}
+                    onBack={() => setSelectedMethod(null)}
                     onSuccess={() => {
                         onSuccess();
                         onClose();
@@ -502,14 +537,13 @@ const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, co
             });
 
             // Build WhatsApp Message
-            let message = `Hola, Soy ${userData.name}. Mi username en la plataforma es @${userData.username}.
-Deseo realizar un aporte de $${amount} a una cuenta del banco ${bankName}, por favor regálame los datos para hacer la transacción.`;
+            const message = `Hola, Soy ${userData.name} (@${userData.username}).
+Deseo realizar un aporte de $${amount} a su cuenta en ${bankName}.
 
-            if (notes) {
-                message += `\n\nNota adicional: ${notes}`;
-            }
+Monto a aportar: $${amount}
+${notes ? `Nota adicional: ${notes}` : ''}
 
-            message += `\n\nGracias`;
+Quedo atento a los datos de la cuenta para realizar la transferencia. Gracias.`;
 
             const encodedMessage = encodeURIComponent(message);
             const whatsappUrl = `https://wa.me/${selectedCollaborator.whatsappNumber}?text=${encodedMessage}`;

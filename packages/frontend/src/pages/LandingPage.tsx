@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, X, Home, Layers, HelpCircle, Mail, TrendingUp } from 'lucide-react';
+import { Menu, X, Home, Layers, HelpCircle, Mail, BarChart3, Zap, Users } from 'lucide-react';
 import { BackgroundCanvas } from '../components/common/BackgroundCanvas';
 import { Hero } from '../components/landing/Hero';
 import { Features } from '../components/landing/Features';
@@ -131,42 +131,114 @@ export const LandingPage: React.FC = () => {
                     Estructura de inversión
                 </h2>
 
-                <ScrollReveal animation="scale-in">
-                    <div className="card text-center p-8 sm:p-12 shadow-2xl border-l-4 border-accent bg-slate-800/40 backdrop-blur-md border-t border-r border-b border-slate-700/50 hover-lift h-full transition-all duration-300 rounded-3xl relative overflow-hidden group">
-                        <div className="relative z-10 flex flex-col items-center">
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-900/80 flex items-center justify-center mb-6 shadow-xl border border-gray-700 group-hover:border-accent transition-colors duration-300">
-                                <TrendingUp className="w-10 h-10 sm:w-12 sm:h-12 text-accent" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Plan Estándar */}
+                    <ScrollReveal className="fade-in" delay={0}>
+                        <div className="card bg-slate-900/60 backdrop-blur-sm border border-slate-700/80 rounded-2xl p-8 hover:border-slate-600 transition-all duration-300 shadow-xl hover:shadow-2xl flex flex-col h-full hover-lift">
+                            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center mb-6 border border-slate-600">
+                                <BarChart3 className="w-8 h-8 text-slate-400" />
                             </div>
 
-                            <h3 className="text-2xl sm:text-4xl font-black text-white mb-4">
-                                Potencia tu capital
+                            <h3 className="text-xl font-bold text-slate-300 mb-4">
+                                Plan estándar
                             </h3>
 
-                            <p className="text-gray-400 text-base sm:text-lg max-w-4xl mb-4 leading-relaxed">
-                                Accede a una estructura de inversión transparente y rentable. Nuestros planes están diseñados para adaptarse a tus objetivos,
-                                ofreciéndote rendimientos competitivos desde el primer día. Con Cloud Capital, tu dinero trabaja para ti las 24 horas del día,
-                                respaldado por estrategias financieras sólidas y una plataforma tecnológica de vanguardia que garantiza seguridad y facilidad de uso en cada transacción.
+                            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+                                Inversión pasiva en infraestructura cloud con retornos conservadores.
+                            </p>
+
+                            <div className="mb-4">
+                                <p className="text-gray-400 text-sm mb-2">
+                                    Desde <span className="text-4xl font-bold text-white">0.75%</span> <span className="text-gray-400">Semanal</span>
+                                </p>
+                                <p className="text-gray-400 text-sm">
+                                    Hasta <span className="text-4xl font-bold text-white">6.0%</span> <span className="text-gray-400">Mensual</span>
+                                </p>
+                            </div>
+
+                            <p className="text-sm text-white mb-6">
+                                <strong>Mínimo:</strong> $50.00 USD
                             </p>
 
                             <button
                                 onClick={() => navigate('/register')}
-                                className="btn btn-primary py-4 px-10 text-base sm:text-lg font-bold shadow-xl shadow-accent/20 hover:shadow-accent/40 transform hover:scale-[1.02] transition-all duration-300"
+                                className="mt-auto w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-300"
                             >
-                                Regístrate ahora para descubrir la estrategia perfecta para ti
+                                Elegir plan
                             </button>
-
-                            <p className="mt-4 text-sm text-gray-500">
-                                ¿Ya tienes cuenta?{' '}
-                                <button
-                                    onClick={() => navigate('/login')}
-                                    className="text-accent hover:text-white font-medium hover:underline transition-colors"
-                                >
-                                    Inicia sesión
-                                </button>
-                            </p>
                         </div>
-                    </div>
-                </ScrollReveal>
+                    </ScrollReveal>
+
+                    {/* Crypto Minería - Popular */}
+                    <ScrollReveal animation="fade-in" delay={0.2}>
+                        <div className="card bg-slate-900/60 backdrop-blur-sm border-2 border-accent rounded-2xl p-8 transition-all duration-300 shadow-xl hover:shadow-2xl flex flex-col relative h-full hover-lift">
+                            <div className="absolute top-5 right-5 bg-accent text-slate-900 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wide">
+                                Popular
+                            </div>
+
+                            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-accent/20 to-accent/10 flex items-center justify-center mb-6 border border-accent/40">
+                                <Zap className="w-8 h-8 text-accent" />
+                            </div>
+
+                            <h3 className="text-xl font-bold text-accent mb-4">
+                                Crypto minería
+                            </h3>
+
+                            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+                                Rendimiento dinámico proveniente de la minería digital sostenible.
+                            </p>
+
+                            <div className="mb-6">
+                                <p className="text-4xl font-bold text-accent mb-2">
+                                    0.5% - 2.0%
+                                </p>
+                                <p className="text-sm text-gray-400">Diario</p>
+                            </div>
+
+                            <button
+                                onClick={() => navigate('/login')}
+                                className="mt-auto w-full bg-accent hover:bg-accent/90 text-slate-900 font-black py-3.5 px-6 rounded-xl transition-all duration-300"
+                            >
+                                Ver mi rendimiento
+                            </button>
+                        </div>
+                    </ScrollReveal>
+
+                    {/* Cloud Partnership */}
+                    <ScrollReveal animation="fade-in" delay={0.4}>
+                        <div className="card bg-slate-900/60 backdrop-blur-sm border border-cyan-500/60 rounded-2xl p-8 hover:border-cyan-500/80 transition-all duration-300 shadow-xl hover:shadow-2xl flex flex-col h-full hover-lift">
+                            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mb-6 border border-amber-500/40">
+                                <Users className="w-8 h-8 text-amber-400" />
+                            </div>
+
+                            <h3 className="text-xl font-bold text-cyan-400 mb-4">
+                                Cloud partnership
+                            </h3>
+
+                            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+                                Programa de afiliados corporativos con comisiones.
+                            </p>
+
+                            <div className="mb-4">
+                                <p className="text-4xl font-bold text-white mb-2">
+                                    Hasta 15%
+                                </p>
+                                <p className="text-sm text-gray-400">Comisión Directa</p>
+                            </div>
+
+                            <p className="text-sm text-gray-400 mb-6">
+                                Beneficios por referir nuevos inversores.
+                            </p>
+
+                            <button
+                                onClick={() => navigate('/register')}
+                                className="mt-auto w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-300"
+                            >
+                                Únete al programa
+                            </button>
+                        </div>
+                    </ScrollReveal>
+                </div>
             </section>
 
             {/* FAQ Section */}
@@ -205,6 +277,6 @@ export const LandingPage: React.FC = () => {
             <footer className="text-center text-lg text-gray-500 py-8 border-t border-gray-700/50 max-w-7xl mx-auto px-4 sm:px-6">
                 <p>© {new Date().getFullYear()} Cloud Capital</p>
             </footer>
-        </div>
+        </div >
     );
 };

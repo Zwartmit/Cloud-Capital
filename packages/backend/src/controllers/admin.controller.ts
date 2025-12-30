@@ -80,12 +80,13 @@ export const getTaskById = async (req: Request, res: Response): Promise<void> =>
 export const approveTask = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const { receivedAmount } = req.body;
     const user = req.user as any;
     const adminEmail = user.email;
     const adminRole = user.role;
     const adminId = user.userId;
 
-    const task = await adminService.approveTask(id, adminEmail, adminRole, adminId);
+    const task = await adminService.approveTask(id, adminEmail, adminRole, adminId, receivedAmount);
     res.status(200).json(task);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
@@ -252,5 +253,36 @@ export const blockUser = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json(result);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// FASE 1: New endpoints for commission management
+
+/**
+ * POST /api/admin/charge-commissions
+ * Charges commissions for all users with active plans
+ */
+export const chargeAllCommissions = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const { chargeAllPlanCommissions } = await import('../services/plan-commission.service.js');
+    const result = await chargeAllPlanCommissions();
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * POST /api/admin/charge-commission/:userId
+ * Charges commission for a specific user
+ */
+export const chargeUserCommission = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const { chargePlanCommission } = await import('../services/plan-commission.service.js');
+    const result = await chargePlanCommission(userId);
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
   }
 };

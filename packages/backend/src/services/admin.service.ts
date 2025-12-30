@@ -1,7 +1,6 @@
-import { PrismaClient, TaskStatus } from '@prisma/client';
+import { TaskStatus } from '@prisma/client';
+import prisma from '../config/database.js';
 import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
 
 // User Management
 export const getAllUsers = async (page: number = 1, limit: number = 20) => {
@@ -237,7 +236,12 @@ export const getAllTasks = async (adminUser: { id: string, role: string }, statu
     where = {
       ...where,
       OR: [
-        { collaboratorId: null }, // Direct tasks
+        {
+          AND: [
+            { collaboratorId: null },
+            { destinationUserId: null }
+          ]
+        }, // Direct tasks (No collaborator assigned on either side)
         { collaboratorId: adminUser.id }, // Assigned as depositor collaborator
         { destinationUserId: adminUser.id } // Assigned as withdrawal collaborator
       ]
@@ -302,7 +306,7 @@ export const getTaskById = async (id: string) => {
   return task;
 };
 
-export const approveTask = async (id: string, adminEmail: string, adminRole: string, adminId?: string) => {
+export const approveTask = async (id: string, adminEmail: string, adminRole: string, adminId?: string, receivedAmount?: number) => {
   const task = await prisma.task.findUnique({
     where: { id },
     include: {
@@ -370,7 +374,8 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
   let updatedTask;
 
   if (task.type === 'DEPOSIT_AUTO' || task.type === 'DEPOSIT_MANUAL') {
-    const amountToAdd = task.adjustedAmount || task.amountUSD;
+    // Use receivedAmount if provided, otherwise use adjustedAmount or amountUSD
+    const amountToAdd = receivedAmount || task.adjustedAmount || task.amountUSD;
     const newCapital = (task.user.capitalUSDT || 0) + amountToAdd;
     const newBalance = (task.user.currentBalanceUSDT || 0) + amountToAdd;
 
@@ -425,6 +430,7 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
             status: 'USED',
             usedAt: new Date(),
             usedByUserId: task.userId,
+            receivedAmount: receivedAmount || task.amountUSD, // Store the received amount
           },
         });
       }
@@ -488,6 +494,31 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
         updateData.isBlocked = true;
         updateData.blockedAt = new Date();
         updateData.blockedReason = 'LIQUIDATION_APPROVED';
+      }
+
+      // SPEC 4: Check if this is a full withdrawal after cycle completion
+      if (task.type === 'WITHDRAWAL') {
+        const capital = task.user.capitalUSDT || 0;
+        const currentBalance = task.user.currentBalanceUSDT || 0;
+        const availableProfit = currentBalance - capital;
+        const isFullWithdrawal = (availableProfit - amountToDeduct) <= 0.01; // Allow small rounding errors
+
+        // Import cycle completion check
+        const { hasCycleCompleted } = await import('../utils/contract-calculations.js');
+        const cycleCompleted = await hasCycleCompleted(task.userId);
+
+        if (isFullWithdrawal && cycleCompleted) {
+          // Reset contract - user withdrew all profit after completing cycle
+          updateData.capitalUSDT = 0;
+          updateData.currentBalanceUSDT = 0;
+          updateData.investmentClass = null;
+          updateData.contractStatus = 'PENDING_PLAN_SELECTION';
+          updateData.cycleCompleted = false;
+          updateData.cycleCompletedAt = null;
+          updateData.currentPlanStartDate = null;
+          updateData.currentPlanExpiryDate = null;
+          updateData.lastCommissionChargeDate = null;
+        }
       }
 
       await tx.user.update({
@@ -765,11 +796,15 @@ export const createCollaborator = async (data: {
 };
 
 export const updateCollaboratorConfig = async (id: string, config: any) => {
+  // Extract walletAddress to save as btcWithdrawAddress
+  const { walletAddress, ...collaboratorConfigData } = config;
+
   const user = await prisma.user.update({
     where: { id },
     data: {
-      collaboratorConfig: config,
-      whatsappNumber: config.whatsappNumber
+      collaboratorConfig: collaboratorConfigData,
+      whatsappNumber: config.whatsappNumber,
+      btcWithdrawAddress: walletAddress || null
     },
     select: {
       id: true,
@@ -778,6 +813,7 @@ export const updateCollaboratorConfig = async (id: string, config: any) => {
       username: true,
       role: true,
       whatsappNumber: true,
+      btcWithdrawAddress: true,
       collaboratorConfig: true
     }
   });

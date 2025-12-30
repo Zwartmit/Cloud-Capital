@@ -39,6 +39,11 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     const [blockchainData, setBlockchainData] = useState<any>(null);
     const [verifying, setVerifying] = useState(false);
 
+    // Received Amount Modal state
+    const [showReceivedAmountModal, setShowReceivedAmountModal] = useState(false);
+    const [taskToApprove, setTaskToApprove] = useState<string | null>(null);
+    const [receivedAmount, setReceivedAmount] = useState('');
+
     // History filters
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'REJECTED'>('ALL');
@@ -108,12 +113,14 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
 
     const getFilteredTasks = () => {
         return tasks.filter(task => {
-            // Search filter (User name, email, or Reference)
+            // Search filter (User name, email, Reference, or BTC addresses)
             const searchLower = searchTerm.toLowerCase();
             const matchesSearch = !searchTerm ||
                 task.user?.name.toLowerCase().includes(searchLower) ||
                 task.user?.email.toLowerCase().includes(searchLower) ||
-                (task.reference && task.reference.toLowerCase().includes(searchLower));
+                (task.reference && task.reference.toLowerCase().includes(searchLower)) ||
+                (task.assignedAddress && task.assignedAddress.toLowerCase().includes(searchLower)) ||
+                (task.btcAddress && task.btcAddress.toLowerCase().includes(searchLower));
 
             // Status filter (only for history tab)
             const matchesStatus = activeTab === 'history'
@@ -152,6 +159,17 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
         const isPreApproval = user?.role === 'SUBADMIN' && !task?.collaboratorId && !task?.destinationUserId;
         const isFinalApproval = task?.status === 'PRE_APPROVED';
 
+        // Check if this is a direct deposit with assigned address
+        const isDirectDepositWithAddress = task?.type === 'DEPOSIT_AUTO' && task?.assignedAddress;
+
+        if (isDirectDepositWithAddress) {
+            // Show modal to ask for received amount
+            setTaskToApprove(taskId);
+            setReceivedAmount(task?.amountUSD?.toString() || '');
+            setShowReceivedAmountModal(true);
+            return;
+        }
+
         const actionText = isPreApproval ? 'PRE-APROBAR' : isFinalApproval ? 'APROBAR FINALMENTE' : 'aprobar';
 
         if (!confirm(`¿Deseas ${actionText} esta transacción?`)) return;
@@ -186,6 +204,59 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                 return newState;
             });
             setDisintegratingTaskId(null);
+        }
+    };
+
+    const handleApproveWithReceivedAmount = async () => {
+        if (!taskToApprove) return;
+
+        const receivedAmountNum = parseFloat(receivedAmount);
+        if (isNaN(receivedAmountNum) || receivedAmountNum <= 0) {
+            alert('Por favor ingresa un monto válido');
+            return;
+        }
+
+        const task = tasks.find(t => t.id === taskToApprove);
+        const isPreApproval = user?.role === 'SUBADMIN' && !task?.collaboratorId && !task?.destinationUserId;
+        const isFinalApproval = task?.status === 'PRE_APPROVED';
+        const actionText = isPreApproval ? 'PRE-APROBAR' : isFinalApproval ? 'APROBAR FINALMENTE' : 'aprobar';
+
+        if (!confirm(`¿Deseas ${actionText} esta transacción con un monto recibido de $${receivedAmountNum}?`)) return;
+
+        setShowReceivedAmountModal(false);
+        setProcessingId(taskToApprove);
+        try {
+            await adminService.approveTask(taskToApprove, receivedAmountNum);
+
+            // UX Sequence
+            setActionStatus(prev => ({ ...prev, [taskToApprove]: 'APPROVED' }));
+
+            // Wait 1s for user to read message
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Trigger disintegration
+            setDisintegratingTaskId(taskToApprove);
+
+            // Wait 600ms for animation
+            await new Promise(resolve => setTimeout(resolve, 600));
+
+            // Refresh list
+            loadTasks();
+            if (onTaskProcessed) onTaskProcessed();
+        } catch (err: any) {
+            alert(err.response?.data?.error || 'Error al aprobar la tarea');
+        } finally {
+            setProcessingId(null);
+            if (taskToApprove) {
+                setActionStatus(prev => {
+                    const newState = { ...prev };
+                    delete newState[taskToApprove];
+                    return newState;
+                });
+            }
+            setDisintegratingTaskId(null);
+            setTaskToApprove(null);
+            setReceivedAmount('');
         }
     };
 
@@ -418,7 +489,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                         <div className="md:col-span-1">
                             <input
                                 type="text"
-                                placeholder="Buscar por nombre, email o referencia..."
+                                placeholder="Buscar por nombre, email, referencia o dirección BTC..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-accent"
@@ -899,6 +970,71 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                     ) : (
                         <p className="text-gray-400 text-center py-4">No hay datos disponibles</p>
                     )}
+                </div>
+            </Modal>
+
+            {/* Received Amount Modal */}
+            <Modal isOpen={showReceivedAmountModal} onClose={() => setShowReceivedAmountModal(false)} title="Monto recibido">
+                <div className="space-y-4">
+                    {taskToApprove && (() => {
+                        const task = tasks.find(t => t.id === taskToApprove);
+                        return (
+                            <>
+                                <div className="bg-blue-900/20 border border-blue-700 p-3 rounded-lg">
+                                    <p className="text-sm text-gray-300">
+                                        El usuario solicitó un aporte de <span className="text-accent font-bold">${task?.amountUSD}</span>.
+                                    </p>
+                                    <p className="text-sm text-gray-300 mt-2">
+                                        Por favor verifica la dirección BTC asignada e ingresa el monto realmente recibido:
+                                    </p>
+                                    {task?.assignedAddress && (
+                                        <p className="text-xs text-gray-400 mt-2 font-mono break-all">
+                                            {task.assignedAddress}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Monto recibido (USDT)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={receivedAmount}
+                                        onChange={(e) => setReceivedAmount(e.target.value)}
+                                        placeholder="Ej: 45.50"
+                                        step="0.01"
+                                        min="0"
+                                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-accent focus:outline-none"
+                                        autoFocus
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Este será el monto asignado al capital del usuario
+                                    </p>
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4">
+                                    <button
+                                        onClick={() => {
+                                            setShowReceivedAmountModal(false);
+                                            setTaskToApprove(null);
+                                            setReceivedAmount('');
+                                        }}
+                                        className="px-4 py-2 text-gray-400 hover:text-white transition"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={handleApproveWithReceivedAmount}
+                                        disabled={!receivedAmount || parseFloat(receivedAmount) <= 0}
+                                        className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold rounded-lg transition"
+                                    >
+                                        Aprobar con monto recibido
+                                    </button>
+                                </div>
+                            </>
+                        );
+                    })()}
                 </div>
             </Modal>
         </div>

@@ -28,7 +28,6 @@ export const AdminPage: React.FC = () => {
     const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [userListMessage, setUserListMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [btcAddressMessage, setBtcAddressMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-    const [btcDepositAddr, setBtcDepositAddr] = useState(user?.btcDepositAddress || '');
     const [btcWithdrawAddr, setBtcWithdrawAddr] = useState(user?.btcWithdrawAddress || '');
     const [whatsappNum, setWhatsappNum] = useState(user?.whatsappNumber || '');
     const [contactMessage, setContactMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -896,7 +895,7 @@ export const AdminPage: React.FC = () => {
                                                             <PhoneInput
                                                                 value={whatsappNum}
                                                                 onChange={(phone) => setWhatsappNum(phone)}
-                                                                defaultCountry=""
+                                                                defaultCountry="us"
                                                                 placeholder="Selecciona país y escribe número"
                                                                 className="flex-grow w-full"
                                                                 inputClassName="w-full p-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:ring-accent focus:border-accent focus:outline-none"
@@ -946,39 +945,90 @@ export const AdminPage: React.FC = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Referral Link Section for SUBADMIN */}
+                                                {/* Referral Link and BTC Address Section for SUBADMIN - Two Columns */}
                                                 <div className="lg:col-span-4 mt-6 pt-6 border-t border-gray-700">
-                                                    <label className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">
-                                                        Link de invitación
-                                                    </label>
-                                                    <div className="flex flex-col sm:flex-row gap-2">
-                                                        <input
-                                                            type="text"
-                                                            value={invitationLink}
-                                                            readOnly
-                                                            className="w-full sm:flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-300 font-mono focus:outline-none focus:border-accent"
-                                                        />
-                                                        <button
-                                                            onClick={handleCopyLink}
-                                                            className="w-full sm:w-auto px-4 py-2 bg-accent hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
-                                                            title="Copiar link"
-                                                        >
-                                                            {copiedLink ? (
-                                                                <>
-                                                                    <Check className="w-4 h-4" />
-                                                                    <span className="hidden sm:inline">Copiado</span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Copy className="w-4 h-4" />
-                                                                    <span className="hidden sm:inline">Copiar</span>
-                                                                </>
+                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                        {/* Link de invitación - Left Column */}
+                                                        <div>
+                                                            <label className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">
+                                                                Link de invitación
+                                                            </label>
+                                                            <div className="flex flex-col sm:flex-row gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={invitationLink}
+                                                                    readOnly
+                                                                    className="w-full sm:flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-300 font-mono focus:outline-none focus:border-accent"
+                                                                />
+                                                                <button
+                                                                    onClick={handleCopyLink}
+                                                                    className="px-4 py-2 bg-accent hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+                                                                    title="Copiar link"
+                                                                >
+                                                                    {copiedLink ? (
+                                                                        <>
+                                                                            <Check className="w-4 h-4" />
+                                                                            <span className="hidden sm:inline">Copiado</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Copy className="w-4 h-4" />
+                                                                            <span className="hidden sm:inline">Copiar</span>
+                                                                        </>
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                            <p className="text-xs text-gray-500 mt-2">
+                                                                Comparte este link para invitar a nuevos usuarios.
+                                                            </p>
+                                                        </div>
+
+                                                        {/* Dirección BTC personal - Right Column */}
+                                                        <div>
+                                                            <label className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">
+                                                                Dirección BTC personal
+                                                            </label>
+                                                            <form onSubmit={async (e) => {
+                                                                e.preventDefault();
+                                                                // Validate BTC address format
+                                                                const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
+                                                                if (btcWithdrawAddr && !btcAddressRegex.test(btcWithdrawAddr)) {
+                                                                    setBtcAddressMessage({ type: 'error', text: 'Formato de dirección BTC inválido' });
+                                                                    return;
+                                                                }
+
+                                                                try {
+                                                                    const updatedUser = await userService.updateProfile({
+                                                                        btcWithdrawAddress: btcWithdrawAddr || undefined
+                                                                    });
+                                                                    updateUser(updatedUser);
+                                                                    setBtcAddressMessage({ type: 'success', text: 'Dirección BTC actualizada' });
+                                                                    setTimeout(() => setBtcAddressMessage(null), 3000);
+                                                                } catch (error: any) {
+                                                                    setBtcAddressMessage({ type: 'error', text: error.response?.data?.error || 'Error' });
+                                                                }
+                                                            }} className="flex flex-col sm:flex-row gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={btcWithdrawAddr}
+                                                                    onChange={(e) => setBtcWithdrawAddr(e.target.value)}
+                                                                    placeholder="bc1q... o 1... o 3..."
+                                                                    className="w-full sm:flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono text-sm focus:ring-accent focus:border-accent focus:outline-none"
+                                                                />
+                                                                <button
+                                                                    type="submit"
+                                                                    className="px-4 py-2 bg-accent hover:bg-blue-500 text-white font-bold rounded-lg transition text-sm"
+                                                                >
+                                                                    Guardar
+                                                                </button>
+                                                            </form>
+                                                            {btcAddressMessage && (
+                                                                <p className={`text-xs mt-2 ${btcAddressMessage.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
+                                                                    {btcAddressMessage.text}
+                                                                </p>
                                                             )}
-                                                        </button>
+                                                        </div>
                                                     </div>
-                                                    <p className="text-xs text-gray-500 mt-2">
-                                                        Comparte este link para invitar a nuevos usuarios.
-                                                    </p>
                                                 </div>
                                             </div>
                                         ) : (
@@ -1013,7 +1063,7 @@ export const AdminPage: React.FC = () => {
                                                             <PhoneInput
                                                                 value={whatsappNum}
                                                                 onChange={(phone) => setWhatsappNum(phone)}
-                                                                defaultCountry=""
+                                                                defaultCountry="us"
                                                                 placeholder="Selecciona país y escribe número"
                                                                 className="flex-grow w-full"
                                                                 inputClassName="w-full p-1.5 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:ring-accent focus:border-accent focus:outline-none"
@@ -1131,149 +1181,41 @@ export const AdminPage: React.FC = () => {
                                     )}
                                 </div>
 
-                                {/* Password & BTC Address Section - Two Column Layout */}
+                                {/* Password Section - Full Width */}
                                 <div className="mt-8 pt-6 border-t border-gray-700">
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                        {/* BTC Address Section - Left Column (Only for Collaborators/Admins) */}
-                                        {(user?.role === 'SUBADMIN' || user?.role === 'SUPERADMIN') && (
-                                            <div className="space-y-8">
-                                                {/* Withdrawal Address Section */}
-                                                <div>
-                                                    <h3 className="text-xl font-bold text-white mb-6">Dirección BTC para retiros</h3>
-                                                    <form onSubmit={async (e) => {
-                                                        e.preventDefault();
-                                                        // Validate BTC address format
-                                                        const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
-                                                        if (btcWithdrawAddr && !btcAddressRegex.test(btcWithdrawAddr)) {
-                                                            setBtcAddressMessage({ type: 'error', text: 'Formato de dirección BTC inválido' });
-                                                            return;
-                                                        }
 
-                                                        try {
-                                                            const updatedUser = await userService.updateProfile({
-                                                                btcWithdrawAddress: btcWithdrawAddr || undefined
-                                                            });
-                                                            updateUser(updatedUser);
-                                                            setBtcAddressMessage({ type: 'success', text: 'Dirección de retiro actualizada exitosamente' });
-                                                            setTimeout(() => setBtcAddressMessage(null), 5000);
-                                                        } catch (error: any) {
-                                                            setBtcAddressMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar dirección' });
-                                                        }
-                                                    }} className="space-y-4">
-                                                        <div>
-                                                            <label className="block text-sm text-gray-400 mb-2">Dirección de retiro (Tu Billetera)</label>
-                                                            <input
-                                                                type="text"
-                                                                value={btcWithdrawAddr}
-                                                                onChange={(e) => setBtcWithdrawAddr(e.target.value)}
-                                                                placeholder="bc1q... o 1... o 3..."
-                                                                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono focus:ring-accent focus:border-accent focus:outline-none"
-                                                            />
-                                                            <p className="text-xs text-gray-500 mt-2 italic">
-                                                                Esta dirección es tu billetera personal para recibir tus retiros
-                                                            </p>
-                                                        </div>
-                                                        <div className="pt-2">
-                                                            <button
-                                                                type="submit"
-                                                                className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
-                                                            >
-                                                                Guardar dirección de retiro
-                                                            </button>
-                                                        </div>
-                                                    </form>
-                                                </div>
 
-                                                <hr className="border-gray-700" />
+                                    {/* Change Password Section - Right Column */}
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white mb-6">Cambiar contraseña</h3>
+                                        <form onSubmit={async (e) => {
+                                            e.preventDefault();
+                                            const form = e.currentTarget;
+                                            const formData = new FormData(form);
+                                            const currentPassword = formData.get('currentPassword') as string;
+                                            const newPassword = formData.get('newPassword') as string;
+                                            const confirmPassword = formData.get('confirmPassword') as string;
 
-                                                {/* Deposit Address Section */}
-                                                <div>
-                                                    <h3 className="text-xl font-bold text-white mb-6">Dirección BTC para depósitos</h3>
-                                                    <form onSubmit={async (e) => {
-                                                        e.preventDefault();
-                                                        // Validate BTC address format
-                                                        const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
-                                                        if (btcDepositAddr && !btcAddressRegex.test(btcDepositAddr)) {
-                                                            setBtcAddressMessage({ type: 'error', text: 'Formato de dirección BTC inválido' });
-                                                            return;
-                                                        }
+                                            if (newPassword !== confirmPassword) {
+                                                setPasswordMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
+                                                return;
+                                            }
 
-                                                        try {
-                                                            const updatedUser = await userService.updateProfile({
-                                                                btcDepositAddress: btcDepositAddr || undefined
-                                                            });
-                                                            updateUser(updatedUser);
-                                                            setBtcAddressMessage({ type: 'success', text: 'Dirección de depósito actualizada exitosamente' });
-                                                            setTimeout(() => setBtcAddressMessage(null), 5000);
-                                                        } catch (error: any) {
-                                                            setBtcAddressMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar dirección' });
-                                                        }
-                                                    }} className="space-y-4">
-                                                        <div>
-                                                            <label className="block text-sm text-gray-400 mb-2">Dirección de depósito (Para recibir fondos)</label>
-                                                            <input
-                                                                type="text"
-                                                                value={btcDepositAddr}
-                                                                onChange={(e) => setBtcDepositAddr(e.target.value)}
-                                                                placeholder="bc1q... o 1... o 3..."
-                                                                className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono focus:ring-accent focus:border-accent focus:outline-none"
-                                                            />
-                                                            <p className="text-xs text-gray-500 mt-2 italic">
-                                                                Esta dirección se mostrará a los usuarios para que te envíen BTC
-                                                            </p>
-                                                        </div>
-                                                        <div className="pt-2">
-                                                            <button
-                                                                type="submit"
-                                                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
-                                                            >
-                                                                Guardar dirección de depósito
-                                                            </button>
-                                                        </div>
-                                                    </form>
-                                                </div>
+                                            if (newPassword.length < 6) {
+                                                setPasswordMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
+                                                return;
+                                            }
 
-                                                {btcAddressMessage && (
-                                                    <div className={`mt-4 p-3 rounded-lg text-sm ${btcAddressMessage.type === 'success'
-                                                        ? 'bg-green-500/10 border border-green-500/20 text-green-500'
-                                                        : 'bg-red-500/10 border border-red-500/20 text-red-500'
-                                                        }`}>
-                                                        {btcAddressMessage.text}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Change Password Section - Right Column */}
-                                        <div>
-                                            <h3 className="text-xl font-bold text-white mb-6">Cambiar contraseña</h3>
-                                            <form onSubmit={async (e) => {
-                                                e.preventDefault();
-                                                const form = e.currentTarget;
-                                                const formData = new FormData(form);
-                                                const currentPassword = formData.get('currentPassword') as string;
-                                                const newPassword = formData.get('newPassword') as string;
-                                                const confirmPassword = formData.get('confirmPassword') as string;
-
-                                                if (newPassword !== confirmPassword) {
-                                                    setPasswordMessage({ type: 'error', text: 'Las contraseñas no coinciden' });
-                                                    return;
-                                                }
-
-                                                if (newPassword.length < 6) {
-                                                    setPasswordMessage({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres' });
-                                                    return;
-                                                }
-
-                                                try {
-                                                    await userService.changePassword(currentPassword, newPassword);
-                                                    setPasswordMessage({ type: 'success', text: 'Contraseña cambiada exitosamente' });
-                                                    form.reset();
-                                                    setTimeout(() => setPasswordMessage(null), 5000);
-                                                } catch (error: any) {
-                                                    setPasswordMessage({ type: 'error', text: error.response?.data?.error || 'Error al cambiar la contraseña' });
-                                                }
-                                            }} className="space-y-4">
+                                            try {
+                                                await userService.changePassword(currentPassword, newPassword);
+                                                setPasswordMessage({ type: 'success', text: 'Contraseña cambiada exitosamente' });
+                                                form.reset();
+                                                setTimeout(() => setPasswordMessage(null), 5000);
+                                            } catch (error: any) {
+                                                setPasswordMessage({ type: 'error', text: error.response?.data?.error || 'Error al cambiar la contraseña' });
+                                            }
+                                        }} className="space-y-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 <div>
                                                     <label className="block text-sm text-gray-400 mb-2">Contraseña actual</label>
                                                     <PasswordInput
@@ -1301,35 +1243,35 @@ export const AdminPage: React.FC = () => {
                                                         className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-accent focus:border-accent focus:outline-none"
                                                     />
                                                 </div>
-                                                <div className="pt-2">
-                                                    <button
-                                                        type="submit"
-                                                        className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
-                                                    >
-                                                        Cambiar contraseña
-                                                    </button>
-                                                </div>
-                                            </form>
-                                            {passwordMessage && (
-                                                <div className={`mt-4 p-3 rounded-lg text-sm ${passwordMessage.type === 'success'
-                                                    ? 'bg-green-500/10 border border-green-500/20 text-green-500'
-                                                    : 'bg-red-500/10 border border-red-500/20 text-red-500'
-                                                    }`}>
-                                                    {passwordMessage.text}
-                                                </div>
-                                            )}
-                                        </div>
+                                            </div>
+                                            <div className="pt-2">
+                                                <button
+                                                    type="submit"
+                                                    className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                                                >
+                                                    Cambiar contraseña
+                                                </button>
+                                            </div>
+                                        </form>
+                                        {passwordMessage && (
+                                            <div className={`mt-4 p-3 rounded-lg text-sm ${passwordMessage.type === 'success'
+                                                ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                                                : 'bg-red-500/10 border border-red-500/20 text-red-500'
+                                                }`}>
+                                                {passwordMessage.text}
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
 
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
-            </main>
+            </main >
 
             {/* Delete Confirmation Modal */}
-            <ConfirmModal
+            < ConfirmModal
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={confirmDeleteUser}
@@ -1353,6 +1295,6 @@ export const AdminPage: React.FC = () => {
                     />
                 )
             }
-        </div>
+        </div >
     );
 };

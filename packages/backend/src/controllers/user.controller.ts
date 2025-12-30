@@ -381,3 +381,71 @@ export const getPublicContactInfo = async (_req: Request, res: Response): Promis
     res.status(500).json({ error: error.message });
   }
 };
+
+// FASE 1: New endpoints for cycle management and contract status
+
+/**
+ * GET /api/user/cycle-progress
+ * Returns user's progress towards 200% goal
+ */
+export const getCycleProgress = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { getCycleProgress } = await import('../utils/contract-calculations.js');
+    const progress = await getCycleProgress(userId);
+    res.status(200).json(progress);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * GET /api/user/contract-status
+ * Returns user's contract status and related information
+ */
+export const getContractStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const { default: prisma } = await import('../config/database.js');
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        contractStatus: true,
+        cycleCompleted: true,
+        cycleCompletedAt: true,
+        investmentClass: true,
+        currentPlanStartDate: true,
+        currentPlanExpiryDate: true,
+        capitalUSDT: true,
+        currentBalanceUSDT: true
+      }
+    });
+
+    if (!user) {
+      res.status(404).json({ error: 'Usuario no encontrado' });
+      return;
+    }
+
+    // Calculate days remaining for plan
+    let daysRemaining = 0;
+    if (user.currentPlanExpiryDate) {
+      const now = new Date();
+      const expiry = new Date(user.currentPlanExpiryDate);
+      daysRemaining = Math.max(0, Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    }
+
+    // Calculate available profit
+    const capital = user.capitalUSDT || 0;
+    const balance = user.currentBalanceUSDT || 0;
+    const availableProfit = Math.max(0, balance - capital);
+
+    res.status(200).json({
+      ...user,
+      daysRemaining,
+      availableProfit
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

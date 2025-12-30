@@ -1,6 +1,5 @@
-import { PrismaClient, InvestmentPlan } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { InvestmentPlan } from '@prisma/client';
+import prisma from '../config/database.js';
 
 export const investmentPlanService = {
   async getAllPlans(): Promise<InvestmentPlan[]> {

@@ -60,7 +60,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
                     <section>
                         <div className="flex items-center gap-2 mb-2">
                             <Shield className="text-profit w-5 h-5" />
-                            <h3 className="font-bold text-white text-lg">1. Naturaleza del servicio y objeto contractual</h3>
+                            <h3 className="font-bold text-white text-lg">1. Naturaleza del Servicio y Objeto Contractual</h3>
                         </div>
                         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 my-2 text-yellow-100/90 text-sm">
                             <div className="flex items-start gap-2">
@@ -74,21 +74,21 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
                             Cloud Capital opera como una plataforma tecnológica privada que facilita acuerdos contractuales privados de naturaleza civil y mercantil entre la plataforma y el usuario. Estos acuerdos proporcionan acceso a planes operativos con retorno previamente pactado.
                         </p>
                         <p className="mb-2">
-                            Los planes disponibles establecen condiciones definidas de monto, plazo y retorno, visibles antes de su activación. Dichos planes no constituyen productos financieros regulados, no representan valores negociables, ni implican oferta pública de inversión.
+                            Los planes disponibles establecen condiciones definidas de monto, plazo y retorno, visibles antes de su activación. Dichos planes no constituyen productos financieros regulados, no representan valores negociables, ni implican oferta pública de inversión bajo ninguna jurisdicción específica.
                         </p>
                         <p className="mb-2">
-                            <strong>Activos Digitales:</strong> El Bitcoin (BTC) y otros activos digitales transferidos por el usuario son considerados, para efectos de este contrato, como bienes patrimoniales (commodities) y no como dinero, moneda de curso legal, saldo monetario o equivalente a divisas en la República del Ecuador.
+                            <strong>Activos Digitales:</strong> El Bitcoin (BTC) y otros activos digitales transferidos por el usuario son considerados, para efectos de este contrato, como bienes patrimoniales (commodities) y no como dinero, moneda de curso legal, saldo monetario o equivalente a divisas. Cloud Capital no actúa como banco, entidad financiera, fiduciaria, custodio regulado ni presta servicios de asesoría financiera o de inversión.
                         </p>
 
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-white mb-2">2. Aporte de activos digitales y uso de la plataforma</h3>
+                        <h3 className="font-bold text-white mb-2">2. Aporte de Activos Digitales y Uso de la Plataforma</h3>
                         <p className="mb-2">
                             Para acceder a los planes, el usuario debe realizar una transferencia de propiedad del activo digital Bitcoin (BTC) a la dirección operativa proporcionada por Cloud Capital.
                         </p>
                         <p className="mb-2">
-                            <strong>Precisiones de la transferencia:</strong> La transferencia de propiedad del activo digital se realiza con obligación contractual de restitución del valor nominal, conforme a las condiciones del plan y lo establecido en la Cláusula 3.
+                            <strong>Precisiones de la Transferencia:</strong> La transferencia de propiedad del activo digital se realiza con obligación contractual de restitución del valor nominal, conforme a las condiciones del plan y lo establecido en la Cláusula 3.
                         </p>
                         <p className="mb-2">
                             <strong>Finalidad Operativa:</strong> Este aporte tiene una finalidad estrictamente operativa y contractual, constituyendo el capital necesario para la ejecución del plan seleccionado por el usuario, bajo la modalidad de un acuerdo mercantil de riesgo. El BTC transferido deja de estar bajo la disposición directa o custodia del usuario para ser integrado en la operación de la plataforma.
@@ -101,12 +101,12 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-white mb-2">3. Planes de retorno pactado y reglas de liquidación</h3>
+                        <h3 className="font-bold text-white mb-2">3. Planes de Retorno Pactado y Reglas de Liquidación</h3>
                         <p className="mb-2">
                             Los planes ofrecidos contemplan un retorno previamente definido, sujeto al cumplimiento del plazo y condiciones establecidas en cada plan.
                         </p>
                         <p className="mb-2">
-                            <strong>Obligación de restitución del aporte (incumplimiento de cloud capital):</strong><br />
+                            <strong>Obligación de Restitución del Aporte (Incumplimiento de Cloud Capital):</strong><br />
                             Cloud Capital asume contractualmente la obligación de restitución del valor nominal del Aporte de Activos Digitales (BTC) inicial, el cual será devuelto al usuario únicamente en caso de incumplimiento de las condiciones esenciales del plan atribuible a la plataforma. Esta obligación no se extiende a la materialización del Retorno Pactado o de cualquier ganancia potencial.
                         </p>
                         <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 my-2">
@@ -114,7 +114,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
                                 Liquidación Anticipada (Incumplimiento del Usuario):
                             </p>
                             <p className="text-red-100/90 text-sm">
-                                Si el usuario decide terminar o liquidar el plan antes del plazo contractual sujeto, dicha acción se considerará un incumplimiento unilateral del acuerdo. En este caso, se aplicará una penalidad operativa equivalente al 38% del Aporte total transferido. Las partes reconocen que esta penalidad guarda proporcionalidad con los costos operativos, compromisos asumidos y la desestructuración anticipada del plan.
+                                Si el usuario decide terminar o liquidar el plan antes del plazo contractual sujeto (duplicar el capital inical), dicha acción se considerará un incumplimiento unilateral del acuerdo. En este caso, se aplicará una penalidad operativa equivalente al 38% del Aporte total transferido. Las partes reconocen que esta penalidad guarda proporcionalidad con los costos operativos, compromisos asumidos y la desestructuración anticipada del plan.
                             </p>
                         </div>
                         <p>
@@ -125,11 +125,11 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
                     <section>
                         <div className="flex items-center gap-2 mb-2">
                             <AlertTriangle className="text-profit w-5 h-5" />
-                            <h3 className="font-bold text-white text-lg">4. Aceptación de riesgos</h3>
+                            <h3 className="font-bold text-white text-lg">4. Aceptación de Riesgos</h3>
                         </div>
                         <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3 my-2">
                             <p className="mb-2 text-orange-200 text-sm font-semibold">
-                                El uso de la plataforma implica la aceptación expresa de los siguientes riesgos inherentes:
+                                El usuario reconoce que, aun cuando los planes establezcan retornos pactados, existen riesgos inherentes, incluyendo, sin limitarse a:
                             </p>
                             <ul className="list-disc pl-5 space-y-1 text-orange-100/80 text-sm">
                                 <li>Riesgos de activos digitales (volatilidad de precios).</li>
@@ -140,28 +140,29 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
                             </ul>
                         </div>
                         <p className="mb-2">
-                            El usuario reconoce que, aun cuando los planes establezcan retornos pactados, existen riesgos inherentes.
+                            El uso de la plataforma implica la aceptación expresa de dichos riesgos.
                         </p>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-white mb-2">5. Colaboradores independientes</h3>
+                        <h3 className="font-bold text-white mb-2">5. Colaboradores Independientes</h3>
                         <p>
-                            Las operaciones de ingreso (aporte) y egreso (liquidación) pueden ser gestionadas por colaboradores independientes, quienes actúan bajo acuerdos privados y no mantienen relación laboral, societaria ni de representación legal con Cloud Capital. Cloud Capital provee la infraestructura tecnológica para la interacción, sin asumir responsabilidad por actos u omisiones individuales de los colaboradores, salvo lo expresamente indicado en estos términos.
+                            Las operaciones de ingreso (aporte) y egreso (liquidación) pueden ser gestionadas por colaboradores independientes, quienes actúan bajo acuerdos privados y no mantienen relación laboral, societaria ni de representación legal con Cloud Capital.
+                            Cloud Capital provee la infraestructura tecnológica para la interacción, sin asumir responsabilidad por actos u omisiones individuales de los colaboradores, salvo lo expresamente indicado en estos términos.
                         </p>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-white mb-2">6. Liquidación de retorno y costos operativos</h3>
+                        <h3 className="font-bold text-white mb-2">6. Retiros de Retorno y Costos Operativos</h3>
                         <ul className="list-disc pl-5 space-y-1">
-                            <li>Toda solicitud de liquidación del retorno pactado (egreso) está sujeta a un costo operativo fijo, visible antes de la confirmación de la solicitud.</li>
+                            <li>Toda solicitud de retiro del retorno pactado (egreso) está sujeta a un costo operativo fijo, visible antes de la confirmación de la solicitud.</li>
                             <li>Los costos operativos aplicados no son reembolsables, independientemente de la aceptación o rechazo de la orden.</li>
                             <li>Los tiempos de procesamiento son estimados y pueden variar por validaciones operativas o de red.</li>
                         </ul>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-white mb-2">7. Limitación de responsabilidad</h3>
+                        <h3 className="font-bold text-white mb-2">7. Limitación de Responsabilidad</h3>
                         <p className="mb-2">En ningún caso Cloud Capital será responsable por:</p>
                         <ul className="list-disc pl-5 space-y-1">
                             <li>Pérdidas indirectas o consecuenciales.</li>
@@ -176,21 +177,24 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-white mb-2">8. Cumplimiento legal del usuario</h3>
+                        <h3 className="font-bold text-white mb-2">8. Cumplimiento Legal del Usuario</h3>
                         <p>
-                            El usuario es único responsable de cumplir con las leyes y obligaciones tributarias de su jurisdicción. Cloud Capital no verifica ni garantiza el cumplimiento normativo individual del usuario.
+                            El usuario es único responsable de cumplir con las leyes y obligaciones tributarias de su jurisdicción.
+                            Cloud Capital no verifica ni garantiza el cumplimiento normativo individual del usuario.
                         </p>
                     </section>
 
                     <section>
                         <h3 className="font-bold text-white mb-2">9. Modificaciones</h3>
                         <p>
-                            Cloud Capital podrá modificar estos Términos y Condiciones en cualquier momento. Las modificaciones entrarán en vigor desde su publicación. El uso continuado de la plataforma implica aceptación automática de los cambios.
+                            Cloud Capital podrá modificar estos Términos y Condiciones en cualquier momento.
+                            Las modificaciones entrarán en vigor desde su publicación.
+                            El uso continuado de la plataforma implica aceptación automática de los cambios.
                         </p>
                     </section>
 
                     <section>
-                        <h3 className="font-bold text-white mb-2">10. Aceptación expresa</h3>
+                        <h3 className="font-bold text-white mb-2">10. Aceptación Expresa</h3>
                         <p>
                             Al registrarse, realizar un aporte o activar un plan, el usuario declara haber leído, comprendido y aceptado íntegramente los presentes Términos y Condiciones, incluyendo expresamente la Cláusula 3 relativa a la penalidad del 38% por liquidación anticipada, constituyendo un contrato privado por adhesión válido y vinculante.
                         </p>

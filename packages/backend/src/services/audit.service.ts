@@ -1,6 +1,5 @@
-import { PrismaClient, AuditAction, UserRole } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { AuditAction, UserRole } from '@prisma/client';
+import prisma from '../config/database.js';
 
 export interface CreateAuditLogDTO {
     adminId: string;
