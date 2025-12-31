@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Search, Users } from 'lucide-react';
-import { adminService, Bank } from '../../services/adminService';
+import { Plus, Edit2, Trash2, Search, CreditCard } from 'lucide-react';
+import { adminService } from '../../services/adminService';
 import collaboratorBankService, { CollaboratorBankAccount, CollaboratorBankAccountData } from '../../services/collaboratorBankService';
 import { ConfirmModal } from '../modals/ConfirmModal';
 import { useAuthStore } from '../../store/authStore';
@@ -10,14 +10,6 @@ export const BankManager: React.FC = () => {
     const { user } = useAuthStore();
     const isAdmin = user?.role === 'SUPERADMIN';
     const isSubadmin = user?.role === ('SUBADMIN' as const);
-
-    // Tab state
-    const [activeTab, setActiveTab] = useState<'system' | 'collaborator'>(
-        isSubadmin ? 'collaborator' : 'system'
-    );
-
-    // System banks state
-    const [banks, setBanks] = useState<Bank[]>([]);
 
     // Collaborator banks state
     const [collaboratorBanks, setCollaboratorBanks] = useState<CollaboratorBankAccount[]>([]);
@@ -32,12 +24,7 @@ export const BankManager: React.FC = () => {
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-    const [currentBank, setCurrentBank] = useState<Bank | null>(null);
     const [currentCollabBank, setCurrentCollabBank] = useState<CollaboratorBankAccount | null>(null);
-
-    // Form state for system banks
-    const [bankName, setBankName] = useState('');
-    const [bankIsActive, setBankIsActive] = useState(true);
 
     // Form state for collaborator banks
     const [collabBankName, setCollabBankName] = useState('');
@@ -52,32 +39,14 @@ export const BankManager: React.FC = () => {
 
     // Confirmation state
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [bankToDelete, setBankToDelete] = useState<Bank | CollaboratorBankAccount | null>(null);
+    const [bankToDelete, setBankToDelete] = useState<CollaboratorBankAccount | null>(null);
 
     useEffect(() => {
-        if (activeTab === 'system') {
-            fetchBanks();
-        } else {
-            fetchCollaboratorBanks();
-            if (isAdmin) {
-                fetchCollaborators();
-            }
+        fetchCollaboratorBanks();
+        if (isAdmin) {
+            fetchCollaborators();
         }
-    }, [activeTab]);
-
-    const fetchBanks = async () => {
-        setLoading(true);
-        try {
-            const data = await adminService.getAllBanks();
-            setBanks(data);
-            setError('');
-        } catch (err: any) {
-            setError('Error al cargar bancos');
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, []);
 
     const fetchCollaboratorBanks = async () => {
         setLoading(true);
@@ -107,47 +76,6 @@ export const BankManager: React.FC = () => {
             })));
         } catch (err) {
             console.error('Error fetching collaborators:', err);
-        }
-    };
-
-    // System bank handlers
-    const handleOpenCreateSystemBank = () => {
-        setModalMode('create');
-        setBankName('');
-        setBankIsActive(true);
-        setCurrentBank(null);
-        setIsModalOpen(true);
-    };
-
-    const handleOpenEditSystemBank = (bank: Bank) => {
-        setModalMode('edit');
-        setBankName(bank.name);
-        setBankIsActive(bank.isActive);
-        setCurrentBank(bank);
-        setIsModalOpen(true);
-    };
-
-    const handleSubmitSystemBank = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
-
-        try {
-            if (modalMode === 'create') {
-                await adminService.createBank(bankName);
-                setSuccessMessage('Banco creado exitosamente');
-            } else {
-                if (!currentBank) return;
-                await adminService.updateBank(currentBank.id, bankName, bankIsActive);
-                setSuccessMessage('Banco actualizado exitosamente');
-            }
-            setIsModalOpen(false);
-            fetchBanks();
-            setTimeout(() => setSuccessMessage(''), 3000);
-        } catch (err: any) {
-            setError(err.response?.data?.error || 'Error al guardar banco');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -221,7 +149,7 @@ export const BankManager: React.FC = () => {
         }
     };
 
-    const handleDelete = (bank: Bank | CollaboratorBankAccount) => {
+    const handleDelete = (bank: CollaboratorBankAccount) => {
         setBankToDelete(bank);
         setShowDeleteModal(true);
     };
@@ -230,15 +158,9 @@ export const BankManager: React.FC = () => {
         if (!bankToDelete) return;
 
         try {
-            if (activeTab === 'system') {
-                await adminService.deleteBank(bankToDelete.id);
-                setSuccessMessage('Banco eliminado exitosamente');
-                fetchBanks();
-            } else {
-                await collaboratorBankService.deleteBankAccount(bankToDelete.id);
-                setSuccessMessage('Cuenta bancaria eliminada exitosamente');
-                fetchCollaboratorBanks();
-            }
+            await collaboratorBankService.deleteBankAccount(bankToDelete.id);
+            setSuccessMessage('Cuenta bancaria eliminada exitosamente');
+            fetchCollaboratorBanks();
             setTimeout(() => setSuccessMessage(''), 3000);
         } catch (err: any) {
             setError(err.response?.data?.error || 'Error al eliminar');
@@ -250,34 +172,17 @@ export const BankManager: React.FC = () => {
 
     return (
         <div className="card p-6 rounded-xl border-t-4 border-blue-500">
+            <div className="mb-6 border-b border-secondary pb-4">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-accent mb-2">
+                    Cuentas Bancarias de Colaboradores
+                </h2>
+                <p className="text-gray-400 text-sm">
+                    {isAdmin ? 'Gestiona las cuentas bancarias de todos los colaboradores' : 'Gestiona tus cuentas bancarias para recibir pagos'}
+                </p>
+            </div>
 
-            {/* Tabs - Only show if user has access to both */}
+            {/* Filters (ADMIN only) */}
             {isAdmin && (
-                <div className="mb-6 flex gap-2">
-                    <button
-                        onClick={() => setActiveTab('system')}
-                        className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${activeTab === 'system'
-                            ? 'bg-accent text-white'
-                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                            }`}
-                    >
-                        Bancos del Sistema
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('collaborator')}
-                        className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${activeTab === 'collaborator'
-                            ? 'bg-accent text-white'
-                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                            }`}
-                    >
-                        <Users className="w-4 h-4 inline mr-2" />
-                        Cuentas de Colaboradores
-                    </button>
-                </div>
-            )}
-
-            {/* Filters for collaborator banks (ADMIN only) */}
-            {activeTab === 'collaborator' && isAdmin && (
                 <div className="mb-6 flex flex-col sm:flex-row gap-3">
                     <select
                         value={selectedCollaborator}
@@ -311,14 +216,14 @@ export const BankManager: React.FC = () => {
             )}
 
             {/* Add button */}
-            {((activeTab === 'system' && isAdmin) || (activeTab === 'collaborator' && isSubadmin)) && (
+            {isSubadmin && (
                 <div className="mb-6 flex justify-end">
                     <button
-                        onClick={activeTab === 'system' ? handleOpenCreateSystemBank : handleOpenCreateCollabBank}
+                        onClick={handleOpenCreateCollabBank}
                         className="bg-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center transition"
                     >
                         <Plus className="w-5 h-5 mr-2" />
-                        {activeTab === 'system' ? 'Agregar banco' : 'Agregar cuenta bancaria'}
+                        Agregar cuenta bancaria
                     </button>
                 </div>
             )}
@@ -335,23 +240,14 @@ export const BankManager: React.FC = () => {
                 </div>
             )}
 
-            {/* Content based on active tab */}
-            {activeTab === 'system' ? (
-                <SystemBanksTable
-                    banks={banks}
-                    loading={loading}
-                    onEdit={handleOpenEditSystemBank}
-                    onDelete={handleDelete}
-                />
-            ) : (
-                <CollaboratorBanksTable
-                    banks={collaboratorBanks}
-                    loading={loading}
-                    isAdmin={isAdmin}
-                    onEdit={isSubadmin ? handleOpenEditCollabBank : undefined}
-                    onDelete={isSubadmin ? handleDelete : undefined}
-                />
-            )}
+            {/* Collaborator Banks Table */}
+            <CollaboratorBanksTable
+                banks={collaboratorBanks}
+                loading={loading}
+                isAdmin={isAdmin}
+                onEdit={isSubadmin ? handleOpenEditCollabBank : undefined}
+                onDelete={isSubadmin ? handleDelete : undefined}
+            />
 
             {/* Modal */}
             {isModalOpen && createPortal(
@@ -362,56 +258,40 @@ export const BankManager: React.FC = () => {
                     >
                         <div className="p-4 sm:p-6 border-b border-gray-700 flex justify-between items-center">
                             <h3 className="text-lg sm:text-xl font-bold text-white">
-                                {activeTab === 'system'
-                                    ? (modalMode === 'create' ? 'Agregar banco' : 'Editar banco')
-                                    : (modalMode === 'create' ? 'Agregar cuenta bancaria' : 'Editar cuenta bancaria')
-                                }
+                                {modalMode === 'create' ? 'Agregar cuenta bancaria' : 'Editar cuenta bancaria'}
                             </h3>
                             <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="text-gray-400 hover:text-white transition"
                             >
-                                <XCircle className="w-6 h-6" />
+                                ✕
                             </button>
                         </div>
 
-                        {activeTab === 'system' ? (
-                            <SystemBankForm
-                                bankName={bankName}
-                                setBankName={setBankName}
-                                bankIsActive={bankIsActive}
-                                setBankIsActive={setBankIsActive}
-                                modalMode={modalMode}
-                                loading={loading}
-                                onSubmit={handleSubmitSystemBank}
-                                onCancel={() => setIsModalOpen(false)}
-                            />
-                        ) : (
-                            <CollaboratorBankForm
-                                bankName={collabBankName}
-                                setBankName={setCollabBankName}
-                                accountType={accountType}
-                                setAccountType={setAccountType}
-                                customAccountType={customAccountType}
-                                setCustomAccountType={setCustomAccountType}
-                                accountNumber={accountNumber}
-                                setAccountNumber={setAccountNumber}
-                                accountHolder={accountHolder}
-                                setAccountHolder={setAccountHolder}
-                                documentType={documentType}
-                                setDocumentType={setDocumentType}
-                                customDocumentType={customDocumentType}
-                                setCustomDocumentType={setCustomDocumentType}
-                                documentNumber={documentNumber}
-                                setDocumentNumber={setDocumentNumber}
-                                isActive={collabBankIsActive}
-                                setIsActive={setCollabBankIsActive}
-                                modalMode={modalMode}
-                                loading={loading}
-                                onSubmit={handleSubmitCollabBank}
-                                onCancel={() => setIsModalOpen(false)}
-                            />
-                        )}
+                        <CollaboratorBankForm
+                            bankName={collabBankName}
+                            setBankName={setCollabBankName}
+                            accountType={accountType}
+                            setAccountType={setAccountType}
+                            customAccountType={customAccountType}
+                            setCustomAccountType={setCustomAccountType}
+                            accountNumber={accountNumber}
+                            setAccountNumber={setAccountNumber}
+                            accountHolder={accountHolder}
+                            setAccountHolder={setAccountHolder}
+                            documentType={documentType}
+                            setDocumentType={setDocumentType}
+                            customDocumentType={customDocumentType}
+                            setCustomDocumentType={setCustomDocumentType}
+                            documentNumber={documentNumber}
+                            setDocumentNumber={setDocumentNumber}
+                            isActive={collabBankIsActive}
+                            setIsActive={setCollabBankIsActive}
+                            modalMode={modalMode}
+                            loading={loading}
+                            onSubmit={handleSubmitCollabBank}
+                            onCancel={() => setIsModalOpen(false)}
+                        />
                     </div>
                 </div>,
                 document.body
@@ -421,11 +301,8 @@ export const BankManager: React.FC = () => {
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={confirmDelete}
-                title={activeTab === 'system' ? 'Eliminar banco' : 'Eliminar cuenta bancaria'}
-                message={`¿Estás seguro de que deseas eliminar ${activeTab === 'system'
-                    ? `el banco "${(bankToDelete as Bank)?.name}"`
-                    : `la cuenta bancaria "${(bankToDelete as CollaboratorBankAccount)?.bankName}"`
-                    }?`}
+                title="Eliminar cuenta bancaria"
+                message={`¿Estás seguro de que deseas eliminar la cuenta bancaria "${bankToDelete?.bankName}"?`}
                 confirmText="Eliminar"
                 cancelText="Cancelar"
                 confirmButtonClass="bg-red-600 hover:bg-red-500"
@@ -433,74 +310,6 @@ export const BankManager: React.FC = () => {
         </div>
     );
 };
-
-// System Banks Table Component
-const SystemBanksTable: React.FC<{
-    banks: Bank[];
-    loading: boolean;
-    onEdit: (bank: Bank) => void;
-    onDelete: (bank: Bank) => void;
-}> = ({ banks, loading, onEdit, onDelete }) => (
-    <div className="overflow-x-auto">
-        <table className="w-full text-left">
-            <thead className="text-gray-400 border-b border-gray-700">
-                <tr>
-                    <th className="p-4">Nombre del banco</th>
-                    <th className="p-4 text-center">Estado</th>
-                    <th className="p-4 text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-700">
-                {loading && banks.length === 0 ? (
-                    <tr>
-                        <td colSpan={3} className="p-8 text-center text-gray-400">Cargando...</td>
-                    </tr>
-                ) : banks.length === 0 ? (
-                    <tr>
-                        <td colSpan={3} className="p-8 text-center text-gray-400">No hay bancos registrados</td>
-                    </tr>
-                ) : (
-                    banks.map(bank => (
-                        <tr key={bank.id} className="hover:bg-gray-800/50 transition">
-                            <td className="p-4 font-medium text-white">{bank.name}</td>
-                            <td className="p-4 text-center">
-                                <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${bank.isActive ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                                    {bank.isActive ? (
-                                        <>
-                                            <CheckCircle className="w-3 h-3 mr-1" /> Activo
-                                        </>
-                                    ) : (
-                                        <>
-                                            <XCircle className="w-3 h-3 mr-1" /> Inactivo
-                                        </>
-                                    )}
-                                </div>
-                            </td>
-                            <td className="p-4">
-                                <div className="flex justify-center gap-2">
-                                    <button
-                                        onClick={() => onEdit(bank)}
-                                        className="p-2 hover:bg-gray-700 rounded-lg text-blue-400 transition"
-                                        title="Editar"
-                                    >
-                                        <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => onDelete(bank)}
-                                        className="p-2 hover:bg-gray-700 rounded-lg text-red-400 transition"
-                                        title="Eliminar"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    ))
-                )}
-            </tbody>
-        </table>
-    </div>
-);
 
 // Collaborator Banks Table Component
 const CollaboratorBanksTable: React.FC<{
@@ -531,7 +340,10 @@ const CollaboratorBanksTable: React.FC<{
                     </tr>
                 ) : banks.length === 0 ? (
                     <tr>
-                        <td colSpan={isAdmin ? 8 : 7} className="p-8 text-center text-gray-400">No hay cuentas bancarias registradas</td>
+                        <td colSpan={isAdmin ? 8 : 7} className="p-8 text-center text-gray-400">
+                            <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                            <p>No hay cuentas bancarias registradas</p>
+                        </td>
                     </tr>
                 ) : (
                     banks.map(bank => (
@@ -546,7 +358,7 @@ const CollaboratorBanksTable: React.FC<{
                             )}
                             <td className="p-4 font-medium text-white">{bank.bankName}</td>
                             <td className="p-4 text-gray-300">{bank.accountType}</td>
-                            <td className="p-4 text-gray-300">{bank.accountNumber}</td>
+                            <td className="p-4 text-gray-300 font-mono text-sm">{bank.accountNumber}</td>
                             <td className="p-4 text-gray-300">{bank.accountHolder}</td>
                             <td className="p-4 text-gray-300 text-sm">
                                 {bank.documentType}: {bank.documentNumber}
@@ -582,65 +394,6 @@ const CollaboratorBanksTable: React.FC<{
             </tbody>
         </table>
     </div>
-);
-
-// System Bank Form Component
-const SystemBankForm: React.FC<{
-    bankName: string;
-    setBankName: (value: string) => void;
-    bankIsActive: boolean;
-    setBankIsActive: (value: boolean) => void;
-    modalMode: 'create' | 'edit';
-    loading: boolean;
-    onSubmit: (e: React.FormEvent) => void;
-    onCancel: () => void;
-}> = ({ bankName, setBankName, bankIsActive, setBankIsActive, modalMode, loading, onSubmit, onCancel }) => (
-    <form onSubmit={onSubmit} className="p-4 sm:p-6 space-y-4">
-        <div>
-            <label className="block text-sm text-gray-400 mb-1">Nombre del banco</label>
-            <input
-                type="text"
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-accent focus:border-accent"
-                placeholder="Ej: Banco Pichincha"
-                required
-                autoFocus
-            />
-        </div>
-
-        {modalMode === 'edit' && (
-            <div className="flex items-center">
-                <input
-                    type="checkbox"
-                    id="bankActive"
-                    checked={bankIsActive}
-                    onChange={(e) => setBankIsActive(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-accent focus:ring-accent"
-                />
-                <label htmlFor="bankActive" className="ml-2 text-sm text-gray-300">
-                    Banco activo (visible para usuarios)
-                </label>
-            </div>
-        )}
-
-        <div className="pt-4 flex gap-3">
-            <button
-                type="button"
-                onClick={onCancel}
-                className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition"
-            >
-                Cancelar
-            </button>
-            <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-4 py-2 bg-accent text-white rounded-lg hover:bg-blue-600 font-bold transition disabled:opacity-50"
-            >
-                {loading ? 'Guardando...' : 'Guardar'}
-            </button>
-        </div>
-    </form>
 );
 
 // Collaborator Bank Form Component
@@ -801,7 +554,7 @@ const CollaboratorBankForm: React.FC<{
                         className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-accent focus:ring-accent"
                     />
                     <label htmlFor="collabBankActive" className="ml-2 text-sm text-gray-300">
-                        Cuenta activa
+                        Cuenta activa (visible para usuarios)
                     </label>
                 </div>
             )}

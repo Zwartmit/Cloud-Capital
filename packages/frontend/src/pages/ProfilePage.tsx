@@ -3,7 +3,7 @@ import { Sidebar } from '../components/layout/Sidebar';
 import { useAuthStore } from '../store/authStore';
 import { userService } from '../services/userService';
 import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
-import { User, Mail, Calendar, Copy, Check, Search, Phone } from 'lucide-react';
+import { User, Mail, Calendar, Copy, Check, Search, Phone, TrendingUp } from 'lucide-react';
 import { PasswordInput } from '../components/common/PasswordInput';
 import { ReferralsModal } from '../components/modals/ReferralsModal';
 import { EarlyLiquidationModal } from '../components/modals/EarlyLiquidationModal';
@@ -22,6 +22,13 @@ export const ProfilePage: React.FC = () => {
     const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
     const [isLiquidationModalOpen, setIsLiquidationModalOpen] = useState(false);
     const [hasPendingLiquidation, setHasPendingLiquidation] = useState(false);
+    const [passiveIncomeInfo, setPassiveIncomeInfo] = useState<{
+        currentRate: number;
+        dailyRate: number;
+        hasFirstDeposit: boolean;
+        hasSuccessfulReferral: boolean;
+        isEligible: boolean;
+    } | null>(null);
 
     // Generate invitation link
     const invitationLink = `${window.location.origin}/register?ref=${user?.referralCode || ''}`;
@@ -61,6 +68,14 @@ export const ProfilePage: React.FC = () => {
                     (task: any) => task.type === 'LIQUIDATION' && task.status === 'PENDING'
                 );
                 setHasPendingLiquidation(!!pendingLiquidation);
+
+                // Fetch passive income info
+                try {
+                    const passiveInfo = await userService.getPassiveIncomeInfo();
+                    setPassiveIncomeInfo(passiveInfo);
+                } catch (error) {
+                    console.error('Error fetching passive income info:', error);
+                }
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -132,6 +147,49 @@ export const ProfilePage: React.FC = () => {
                                                 <span className="text-gray-300 font-medium">
                                                     Miembro desde {new Date(user.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
                                                 </span>
+                                            </div>
+
+                                            {/* WhatsApp Section - Moved here */}
+                                            <div className="w-full mt-4 pt-4 border-t border-gray-700/50">
+                                                <h3 className="text-xs text-gray-500 mb-3 text-center sm:text-left">NÚMERO DE WHATSAPP</h3>
+                                                <form onSubmit={async (e) => {
+                                                    e.preventDefault();
+                                                    try {
+                                                        const updatedUser = await userService.updateProfile({
+                                                            whatsappNumber: whatsappNum || undefined
+                                                        });
+                                                        updateUser(updatedUser);
+                                                        setWhatsappMessage({ type: 'success', text: 'WhatsApp actualizado exitosamente' });
+                                                        setTimeout(() => setWhatsappMessage(null), 5000);
+                                                    } catch (error: any) {
+                                                        setWhatsappMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar WhatsApp' });
+                                                    }
+                                                }} className="space-y-3">
+                                                    <div>
+                                                        <PhoneInput
+                                                            value={whatsappNum}
+                                                            onChange={(phone) => setWhatsappNum(phone)}
+                                                            defaultCountry="us"
+                                                            placeholder="Selecciona país y escribe número"
+                                                            className="w-full"
+                                                            inputClassName="p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white font-mono focus:ring-accent focus:border-accent focus:outline-none w-full"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="submit"
+                                                        className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition duration-200 text-sm"
+                                                    >
+                                                        Guardar WhatsApp
+                                                    </button>
+                                                </form>
+                                                {whatsappMessage && (
+                                                    <div className={`mt-3 p-3 rounded-lg text-sm ${whatsappMessage.type === 'success'
+                                                        ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                                                        : 'bg-red-500/10 border border-red-500/20 text-red-500'
+                                                        }`}>
+                                                        {whatsappMessage.text}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
@@ -304,48 +362,6 @@ export const ProfilePage: React.FC = () => {
                                     )}
                                 </div>
 
-                                {/* WhatsApp Section - For all users */}
-                                <div className="pt-4 sm:pt-3 border-t border-secondary">
-                                    <h3 className="text-xs text-gray-500 mb-3">NÚMERO DE WHATSAPP</h3>
-                                    <form onSubmit={async (e) => {
-                                        e.preventDefault();
-                                        try {
-                                            const updatedUser = await userService.updateProfile({
-                                                whatsappNumber: whatsappNum || undefined
-                                            });
-                                            updateUser(updatedUser);
-                                            setWhatsappMessage({ type: 'success', text: 'WhatsApp actualizado exitosamente' });
-                                            setTimeout(() => setWhatsappMessage(null), 5000);
-                                        } catch (error: any) {
-                                            setWhatsappMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar WhatsApp' });
-                                        }
-                                    }} className="space-y-3">
-                                        <div>
-                                            <PhoneInput
-                                                value={whatsappNum}
-                                                onChange={(phone) => setWhatsappNum(phone)}
-                                                defaultCountry="us"
-                                                placeholder="Selecciona país y escribe número"
-                                                className="w-full"
-                                                inputClassName="p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white font-mono focus:ring-accent focus:border-accent focus:outline-none"
-                                            />
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition duration-200 text-sm"
-                                        >
-                                            Guardar WhatsApp
-                                        </button>
-                                    </form>
-                                    {whatsappMessage && (
-                                        <div className={`mt-3 p-3 rounded-lg text-sm ${whatsappMessage.type === 'success'
-                                            ? 'bg-green-500/10 border border-green-500/20 text-green-500'
-                                            : 'bg-red-500/10 border border-red-500/20 text-red-500'
-                                            }`}>
-                                            {whatsappMessage.text}
-                                        </div>
-                                    )}
-                                </div>
                             </div>
                         </div>
 

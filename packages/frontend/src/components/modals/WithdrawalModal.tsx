@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Wallet, Users, AlertCircle, CheckCircle2, Building2 } from 'lucide-react';
-import { investmentService, Bank } from '../../services/investmentService';
+import investmentService from '../../services/investmentService';
 import collaboratorBankService, { CollaboratorBankAccount } from '../../services/collaboratorBankService';
 import { useAuthStore } from '../../store/authStore';
 
@@ -44,24 +44,18 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         whatsappNumber?: string;
         collaboratorConfig?: { commission: number; processingTime: string; minAmount: number; maxAmount: number };
     }>>([]);
-    const [banks, setBanks] = useState<Bank[]>([]);
-
     // New state for collaborator banks logic
     const [collaboratorBanks, setCollaboratorBanks] = useState<CollaboratorBankAccount[]>([]);
     const [loadingBanks, setLoadingBanks] = useState(false);
     const [selectedCollaboratorBank, setSelectedCollaboratorBank] = useState<CollaboratorBankAccount | null>(null);
     const [bankSelectionError, setBankSelectionError] = useState('');
 
-    // Fetch collaborators and banks on mount
+    // Fetch collaborators on mount
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [collabData, bankData] = await Promise.all([
-                    investmentService.getCollaborators(),
-                    investmentService.getBanks()
-                ]);
+                const collabData = await investmentService.getCollaborators();
                 setCollaborators(collabData);
-                setBanks(bankData);
             } catch (error) {
                 console.error('Error fetching data:', error);
             }

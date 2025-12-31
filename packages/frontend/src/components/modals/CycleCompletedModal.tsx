@@ -102,7 +102,7 @@ export const CycleCompletedModal = ({ isOpen, totalProfit, onWithdrawProfit, onR
                         <button
                             onClick={onLogout}
                             disabled={loading}
-                            className="w-full py-3 px-6 text-sm font-medium text-gray-400 transition-colors bg-transparent border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white disabled:opacity-50"
+                            className="w-full py-3 px-6 text-sm font-medium text-white transition-colors bg-red-600 border border-gray-700 rounded-xl hover:bg-red-700 hover:text-white disabled:opacity-50"
                         >
                             Decidir después (Cerrar sesión)
                         </button>

@@ -1,12 +1,6 @@
 import { apiClient } from './api';
 import { TaskDTO, UserDTO } from '@cloud-capital/shared';
 
-export interface Bank {
-  id: string;
-  name: string;
-  isActive: boolean;
-}
-
 export interface CollaboratorConfig {
   commission: number;
   processingTime: string;
@@ -106,7 +100,18 @@ export const adminService = {
     return response.data;
   },
 
-  async approveTask(taskId: string, receivedAmount?: number): Promise<{ message: string; task: TaskDTO }> {
+  async approveTask(taskId: string, receivedAmount?: number, proof?: File, reference?: string): Promise<{ message: string; task: TaskDTO }> {
+    if (proof) {
+      const formData = new FormData();
+      if (receivedAmount !== undefined) formData.append('receivedAmount', receivedAmount.toString());
+      if (reference) formData.append('reference', reference);
+      formData.append('proof', proof);
+
+      const response = await apiClient.put(`/admin/tasks/${taskId}/approve`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    }
     const response = await apiClient.put(`/admin/tasks/${taskId}/approve`, { receivedAmount });
     return response.data;
   },
@@ -156,27 +161,6 @@ export const adminService = {
 
   async createCollaborator(data: any): Promise<UserDTO> {
     const response = await apiClient.post<UserDTO>('/admin/staff', data);
-    return response.data;
-  },
-
-  // Bank Management
-  async getAllBanks(): Promise<Bank[]> {
-    const response = await apiClient.get<Bank[]>('/admin/banks');
-    return response.data;
-  },
-
-  async createBank(name: string): Promise<Bank> {
-    const response = await apiClient.post<Bank>('/admin/banks', { name });
-    return response.data;
-  },
-
-  async updateBank(id: string, name: string, isActive: boolean): Promise<Bank> {
-    const response = await apiClient.put<Bank>(`/admin/banks/${id}`, { name, isActive });
-    return response.data;
-  },
-
-  async deleteBank(id: string): Promise<{ message: string }> {
-    const response = await apiClient.delete(`/admin/banks/${id}`);
     return response.data;
   }
 };

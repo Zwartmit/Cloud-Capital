@@ -6,40 +6,12 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Seed Banks
-  const banks = [
-    { name: 'Banco Pichincha' },
-    { name: 'Banco Guayaquil' },
-    { name: 'Produbanco' },
-    { name: 'Banco del Pacífico' },
-    { name: 'Banco Bolivariano' },
-    { name: 'Banco Internacional' },
-    { name: 'Cooperativa JEP' },
-  ];
-
-  for (const bank of banks) {
-    await prisma.bank.upsert({
-      where: { name: bank.name },
-      update: {},
-      create: { name: bank.name, isActive: true },
-    });
-  }
-  console.log('✅ Seeded banks');
-
   // Create admin user
   const adminPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@cloudcapital.com' },
     update: {
       whatsappNumber: '+593999999999',
-      btcDepositAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-      btcWithdrawAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-      collaboratorConfig: {
-        commission: 2,
-        processingTime: '5-15 minutos',
-        minAmount: 10,
-        maxAmount: 50000
-      },
       contactEmail: 'soporte@cloudcapital.com',
       contactTelegram: '@cloudcapitalsupport'
     },
@@ -51,14 +23,6 @@ async function main() {
       role: 'SUPERADMIN',
       referralCode: 'ADMIN123',
       whatsappNumber: '+593999999999',
-      btcDepositAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-      btcWithdrawAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-      collaboratorConfig: {
-        commission: 2,
-        processingTime: '5-15 minutos',
-        minAmount: 10,
-        maxAmount: 50000
-      },
       contactEmail: 'soporte@cloudcapital.com',
       contactTelegram: '@cloudcapitalsupport'
     },
@@ -71,7 +35,6 @@ async function main() {
     where: { email: 'subadmin@cloudcapital.com' },
     update: {
       whatsappNumber: '+593988888888',
-      btcDepositAddress: 'bc1q5d7rjq7g6ratdwq2n0yrf2493p83kkfj923kjs',
       btcWithdrawAddress: 'bc1q5d7rjq7g6ratdwq2n0yrf2493p83kkfj923kjs',
       collaboratorConfig: {
         commission: 3.5,
@@ -88,7 +51,6 @@ async function main() {
       role: 'SUBADMIN',
       referralCode: 'SUBADMIN123',
       whatsappNumber: '+593988888888',
-      btcDepositAddress: 'bc1q5d7rjq7g6ratdwq2n0yrf2493p83kkfj923kjs',
       btcWithdrawAddress: 'bc1q5d7rjq7g6ratdwq2n0yrf2493p83kkfj923kjs',
       collaboratorConfig: {
         commission: 3.5,
@@ -115,6 +77,10 @@ async function main() {
       currentBalanceUSDT: 1150,
       investmentClass: 'GOLD',
       referralCode: 'USER123',
+      hasFirstDeposit: true,
+      passiveIncomeRate: 0.03,
+      hasSeenWelcomeModal: true,
+      hasSuccessfulReferral: false,
     },
   });
   console.log('✅ Created test user:', user.email);
@@ -175,9 +141,6 @@ async function main() {
       // ... default config
     },
   });
-  console.log('✅ Created collaborator user:', collaborator.email);
-
-
   console.log('✅ Created collaborator user:', collaborator.email);
 
 
@@ -272,6 +235,10 @@ async function main() {
       currentBalanceUSDT: 0,
       referralCode: 'REF456',
       referrerId: user.id, // Referred by Test User
+      hasFirstDeposit: false,
+      passiveIncomeRate: 0.00,
+      hasSeenWelcomeModal: false,
+      hasSuccessfulReferral: false,
     },
   });
   console.log('✅ Created referred user:', referredUser.email, '(Referred by Test User)');
@@ -371,6 +338,9 @@ async function main() {
       currentPlanExpiryDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000), // 25 days from now
       referralCode: 'TEST1',
       hasFirstDeposit: true,
+      passiveIncomeRate: 0.00, // Has plan, so passive income is 0
+      hasSeenWelcomeModal: true,
+      hasSuccessfulReferral: false,
     },
   });
 
@@ -416,6 +386,9 @@ async function main() {
       currentPlanExpiryDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days remaining
       referralCode: 'TEST2',
       hasFirstDeposit: true,
+      passiveIncomeRate: 0.00, // Has plan, so passive income is 0
+      hasSeenWelcomeModal: true,
+      hasSuccessfulReferral: false,
     },
   });
 
@@ -461,6 +434,9 @@ async function main() {
       currentPlanExpiryDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Expired
       referralCode: 'TEST3',
       hasFirstDeposit: true,
+      passiveIncomeRate: 0.00, // Had plan (now expired)
+      hasSeenWelcomeModal: true,
+      hasSuccessfulReferral: false,
     },
   });
 
@@ -505,6 +481,10 @@ async function main() {
       currentPlanExpiryDate: null,
       referralCode: 'TEST4',
       hasFirstDeposit: true,
+      passiveIncomeRate: 0.03, // No plan, should receive passive income
+      lastDailyProfitDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // Last profit yesterday
+      hasSeenWelcomeModal: true,
+      hasSuccessfulReferral: false,
     },
   });
 
@@ -540,6 +520,9 @@ async function main() {
       lastCommissionChargeDate: new Date(Date.now() - 27 * 24 * 60 * 60 * 1000),
       referralCode: 'TEST5',
       hasFirstDeposit: true,
+      passiveIncomeRate: 0.00, // Has plan
+      hasSeenWelcomeModal: true,
+      hasSuccessfulReferral: false,
     },
   });
 

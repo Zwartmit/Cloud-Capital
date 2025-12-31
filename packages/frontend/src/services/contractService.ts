@@ -19,6 +19,7 @@ export interface ContractStatus {
     currentBalanceUSDT: number;
     daysRemaining: number;
     availableProfit: number;
+    passiveIncomeRate: number;
 }
 
 export const contractService = {

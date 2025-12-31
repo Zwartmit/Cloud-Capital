@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller.js';
-import * as bankController from '../controllers/bank.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requireAdmin } from '../middleware/role.middleware.js';
+import { upload } from '../config/multer.js';
 
 const router = Router();
 
@@ -32,7 +32,7 @@ router.get('/tasks', adminController.getTasks);
 router.get('/tasks/:id', adminController.getTaskById);
 
 // PUT /api/admin/tasks/:id/approve
-router.put('/tasks/:id/approve', adminController.approveTask);
+router.put('/tasks/:id/approve', upload.single('proof'), adminController.approveTask);
 
 // PUT /api/admin/tasks/:id/reject
 router.put('/tasks/:id/reject', adminController.rejectTask);
@@ -66,19 +66,6 @@ router.post('/staff', adminController.createCollaborator);
 
 // PUT /api/admin/staff/:id/config
 router.put('/staff/:id/config', adminController.updateCollaboratorConfig);
-
-// Bank Management Routes
-// GET /api/admin/banks
-router.get('/banks', bankController.getBanks);
-
-// POST /api/admin/banks
-router.post('/banks', bankController.createBank);
-
-// PUT /api/admin/banks/:id
-router.put('/banks/:id', bankController.updateBank);
-
-// DELETE /api/admin/banks/:id
-router.delete('/banks/:id', bankController.deleteBank);
 
 // FASE 1: New routes for commission management
 // POST /api/admin/charge-commissions

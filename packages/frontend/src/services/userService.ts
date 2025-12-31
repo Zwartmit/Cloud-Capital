@@ -71,5 +71,23 @@ export const userService = {
   async getUserTasks(): Promise<any[]> {
     const response = await apiClient.get<any[]>('/user/tasks');
     return response.data;
+  },
+
+  // Passive Income Functions
+  async markWelcomeModalSeen(): Promise<{ success: boolean }> {
+    const response = await apiClient.post('/user/welcome-modal-seen');
+    return response.data;
+  },
+
+  async getPassiveIncomeInfo(): Promise<{
+    currentRate: number;
+    dailyRate: number;
+    hasFirstDeposit: boolean;
+    hasSuccessfulReferral: boolean;
+    isEligible: boolean;
+    lastProfitDate: Date | null;
+  }> {
+    const response = await apiClient.get('/user/passive-income-info');
+    return response.data;
   }
 };

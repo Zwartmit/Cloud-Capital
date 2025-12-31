@@ -5,6 +5,7 @@ import { TaskDTO, UserDTO } from '@cloud-capital/shared';
 import { Check, X, Eye, Clock, ListChecks, Download, ExternalLink, ChevronLeft, ChevronRight, AlertCircle, Shield } from 'lucide-react';
 import { formatUSDT } from '../../utils/formatters';
 import { Modal } from '../common/Modal';
+import { CollaboratorProofModal } from './CollaboratorProofModal';
 import { useAuthStore } from '../../store/authStore';
 
 interface TaskManagerProps {
@@ -32,6 +33,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     // Proof Modal state
     const [showProofModal, setShowProofModal] = useState(false);
     const [selectedProof, setSelectedProof] = useState<string | null>(null);
+    const [selectedProofReference, setSelectedProofReference] = useState<string | null>(null);
 
     // Blockchain Verification Modal state
     const [showBlockchainModal, setShowBlockchainModal] = useState(false);
@@ -43,6 +45,10 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     const [showReceivedAmountModal, setShowReceivedAmountModal] = useState(false);
     const [taskToApprove, setTaskToApprove] = useState<string | null>(null);
     const [receivedAmount, setReceivedAmount] = useState('');
+
+    // Collaborator Proof Modal state
+    const [showCollaboratorProofModal, setShowCollaboratorProofModal] = useState(false);
+    const [taskToApproveWithProof, setTaskToApproveWithProof] = useState<TaskDTO | null>(null);
 
     // History filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -158,6 +164,16 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
         const task = tasks.find(t => t.id === taskId);
         const isPreApproval = user?.role === 'SUBADMIN' && !task?.collaboratorId && !task?.destinationUserId;
         const isFinalApproval = task?.status === 'PRE_APPROVED';
+
+        // Check if current user is the assigned collaborator
+        const isAssignedCollaborator = (task?.collaboratorId === user?.id) || (task?.destinationUserId === user?.id);
+
+        // If assigned collaborator, show proof modal
+        if (isAssignedCollaborator && task) {
+            setTaskToApproveWithProof(task);
+            setShowCollaboratorProofModal(true);
+            return;
+        }
 
         // Check if this is a direct deposit with assigned address
         const isDirectDepositWithAddress = task?.type === 'DEPOSIT_AUTO' && task?.assignedAddress;
@@ -301,6 +317,41 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
             }
             setDisintegratingTaskId(null);
             setTaskToReject(null);
+        }
+    };
+
+    const handleCollaboratorProofSubmit = async (proof: File, reference: string) => {
+        if (!taskToApproveWithProof) return;
+
+        setProcessingId(taskToApproveWithProof.id);
+        try {
+            await adminService.approveTask(taskToApproveWithProof.id, undefined, proof, reference);
+
+            // UX Sequence
+            setActionStatus(prev => ({ ...prev, [taskToApproveWithProof.id]: 'APPROVED' }));
+
+            // Wait 1s for user to read message
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Trigger disintegration
+            setDisintegratingTaskId(taskToApproveWithProof.id);
+
+            // Wait 600ms for animation
+            await new Promise(resolve => setTimeout(resolve, 600));
+
+            loadTasks();
+            if (onTaskProcessed) onTaskProcessed();
+        } catch (err: any) {
+            alert(err.response?.data?.error || 'Error al aprobar la tarea');
+        } finally {
+            setProcessingId(null);
+            setActionStatus(prev => {
+                const newState = { ...prev };
+                delete newState[taskToApproveWithProof.id];
+                return newState;
+            });
+            setDisintegratingTaskId(null);
+            setTaskToApproveWithProof(null);
         }
     };
 
@@ -722,12 +773,28 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                         <button
                                             onClick={() => {
                                                 setSelectedProof(task.proof || null);
+                                                setSelectedProofReference(task.reference || null);
                                                 setShowProofModal(true);
                                             }}
                                             className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white flex justify-center items-center"
-                                            title="Ver comprobante"
+                                            title="Ver comprobante del usuario"
                                         >
                                             <Eye className="w-5 h-5" />
+                                        </button>
+                                    )}
+
+                                    {task.collaboratorProof && (
+                                        <button
+                                            onClick={() => {
+                                                setSelectedProof(task.collaboratorProof || null);
+                                                setSelectedProofReference(task.reference || null);
+                                                setShowProofModal(true);
+                                            }}
+                                            className="p-2 bg-blue-700 hover:bg-blue-600 rounded-lg text-white flex justify-center items-center gap-1"
+                                            title="Ver comprobante del colaborador"
+                                        >
+                                            <Shield className="w-4 h-4" />
+                                            <Eye className="w-4 h-4" />
                                         </button>
                                     )}
 
@@ -848,6 +915,13 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                             />
                         )}
                     </div>
+
+                    {selectedProofReference && (
+                        <div className="bg-gray-800 p-3 rounded-lg border border-gray-700">
+                            <p className="text-sm text-gray-400">Número de referencia:</p>
+                            <p className="text-lg font-mono text-white select-all">{selectedProofReference}</p>
+                        </div>
+                    )}
 
                     {selectedProof && (
                         <div className="flex justify-center gap-3">
@@ -1037,6 +1111,20 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                     })()}
                 </div>
             </Modal>
+
+            {/* Collaborator Proof Modal */}
+            {taskToApproveWithProof && (
+                <CollaboratorProofModal
+                    isOpen={showCollaboratorProofModal}
+                    onClose={() => {
+                        setShowCollaboratorProofModal(false);
+                        setTaskToApproveWithProof(null);
+                    }}
+                    onSubmit={handleCollaboratorProofSubmit}
+                    taskType={taskToApproveWithProof.type}
+                    taskAmount={taskToApproveWithProof.amountUSD}
+                />
+            )}
         </div>
     );
 };

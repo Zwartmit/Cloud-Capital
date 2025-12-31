@@ -50,19 +50,86 @@ export const CycleProgressCard = () => {
         );
     }
 
-    // Fix: Users with capital but 'PENDING_PLAN_SELECTION' should see the "No Active Plan" state.
+    // Fix: Users with capital but 'PENDING_PLAN_SELECTION' should see the passive income state.
     // We check if investmentClass is present to confirm they are subscribed to a plan.
     const hasActivePlan = contractStatus?.investmentClass;
+    const hasCapital = (contractStatus?.currentBalanceUSDT ?? 0) > 0;
+    const passiveIncomeRate = contractStatus?.passiveIncomeRate ?? 0;
 
-    // SCENARIO 1: New User / No Active Plan
-    if (!hasActivePlan) {
+    // SCENARIO 1: User with capital but no plan (Passive Income Mode)
+    if (!hasActivePlan && hasCapital) {
+        const monthlyRate = passiveIncomeRate * 100; // Convert 0.03 to 3, 0.06 to 6
+        const dailyRate = ((passiveIncomeRate * 100) / 30).toFixed(3); // Convert to percentage then divide by 30
+        const isUpgraded = passiveIncomeRate >= 0.06; // Compare with decimal
+
+        return (
+            <div className={`card p-6 rounded-2xl border-l-4 ${isUpgraded ? 'border-purple-500' : 'border-green-500'} bg-gray-800 shadow-xl relative overflow-hidden group hover:border-l-[6px] transition-all duration-300`}>
+                <div className="relative z-10">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">Inversión Pasiva Activa</h3>
+                            <p className={`text-2xl font-bold ${isUpgraded ? 'text-purple-400' : 'text-green-400'} mb-1`}>
+                                {monthlyRate}% Mensual
+                            </p>
+                            <p className="text-sm text-gray-400">
+                                {isUpgraded ? '¡Tasa mejorada por referidos!' : 'Ganancias automáticas diarias'}
+                            </p>
+                        </div>
+                        <div className={`p-3 rounded-xl ${isUpgraded ? 'bg-purple-500/10' : 'bg-green-500/10'}`}>
+                            <TrendingUp className={`w-6 h-6 ${isUpgraded ? 'text-purple-400' : 'text-green-400'}`} />
+                        </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="p-3 rounded-xl bg-gray-700/30 border border-gray-600/30">
+                            <p className="text-xs text-gray-400 mb-1">Tasa Diaria</p>
+                            <p className={`text-xl font-bold ${isUpgraded ? 'text-purple-400' : 'text-green-400'}`}>
+                                {dailyRate}%
+                            </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-gray-700/30 border border-gray-600/30">
+                            <p className="text-xs text-gray-400 mb-1">Capital Actual</p>
+                            <p className="text-xl font-bold text-white">
+                                ${contractStatus?.currentBalanceUSDT?.toFixed(2)}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Info Message */}
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 mb-3">
+                        <p className="text-xs text-blue-400 font-semibold mb-1">💡 ¿Sabías que...?</p>
+                        <p className="text-xs text-gray-300">
+                            {isUpgraded
+                                ? 'Tienes la tasa mejorada del 6% por haber referido a alguien. Al suscribirte a un plan, obtendrás rendimientos aún mayores.'
+                                : 'Al suscribirte a un plan de inversión, puedes obtener rendimientos diarios de hasta 0.8% - 1.2% (mucho más que el 0.1% actual).'}
+                        </p>
+                    </div>
+
+                    {/* CTA */}
+                    <div className="text-center">
+                        <p className="text-xs text-gray-400">
+                            Suscríbete a un plan para maximizar tus ganancias →
+                        </p>
+                    </div>
+                </div>
+
+                {/* Decorative background blur */}
+                <div className={`absolute -bottom-10 -right-10 w-32 h-32 ${isUpgraded ? 'bg-purple-500/20' : 'bg-green-500/20'} rounded-full blur-3xl pointer-events-none`} />
+            </div>
+        );
+    }
+
+    // SCENARIO 2: New User / No Capital and No Plan
+    if (!hasActivePlan && !hasCapital) {
         return (
             <div className="card p-6 rounded-2xl border-l-4 border-gray-500 bg-gray-800 shadow-xl relative overflow-hidden group hover:border-l-[6px] transition-all duration-300">
                 <div className="flex items-start justify-between relative z-10">
                     <div>
-                        <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">Estado del Ciclo</h3>
-                        <p className="text-2xl font-bold text-gray-400 mb-1">Sin plan activo</p>
-                        <p className="text-sm text-gray-500">Realiza tu primer aporte o selecciona un plan para iniciar tu ciclo de inversión.</p>
+                        <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2">Estado del ciclo</h3>
+                        <p className="text-2xl font-bold text-gray-400 mb-1">Sin inversión activa</p>
+                        <p className="text-sm text-gray-500">Realiza tu primer aporte para comenzar a generar ingresos pasivos del 3% mensual.</p>
                     </div>
                     <div className="p-3 rounded-xl bg-gray-700/50">
                         <AlertCircle className="w-6 h-6 text-gray-400" />
@@ -74,7 +141,7 @@ export const CycleProgressCard = () => {
         );
     }
 
-    // SCENARIO 2: Active User with Plan
+    // SCENARIO 3: Active User with Plan
     const daysRemaining = contractStatus?.daysRemaining ?? 0;
     const progressPercentage = progress?.progressPercentage ?? 0;
     const startDate = contractStatus?.currentPlanStartDate
@@ -90,14 +157,23 @@ export const CycleProgressCard = () => {
                     <h3 className="text-xs sm:text-sm font-bold text-gray-300 uppercase tracking-wider mb-1">
                         Progreso del Ciclo
                     </h3>
-                    <p className="text-xs text-gray-500">
-                        Objetivo: 200% de retorno
-                    </p>
+                    <p className="text-[10px] sm:text-xs text-gray-400">Meta: 200% del capital inicial</p>
                 </div>
                 <div className="p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
                     <TrendingUp className="w-5 h-5 text-accent" />
                 </div>
             </div>
+
+            {/* Paused Profit Warning - Only show if plan expired AND cycle not completed */}
+            {daysRemaining <= 0 && !progress?.isCompleted && (
+                <div className="mb-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-center gap-3 relative z-10">
+                    <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                    <div>
+                        <p className="text-sm font-bold text-orange-400">Generación de ganancias pausada</p>
+                        <p className="text-xs text-gray-300">Tu plan ha expirado. Renueva para continuar generando profit.</p>
+                    </div>
+                </div>
+            )}
 
             {/* Main Progress Bar */}
             <div className="relative z-10 mb-6">
@@ -134,9 +210,24 @@ export const CycleProgressCard = () => {
                         <Clock className="w-3 h-3 text-orange-400" />
                         <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Tiempo Restante</span>
                     </div>
-                    <p className="text-xl font-bold text-white">
-                        {daysRemaining} <span className="text-xs font-normal text-gray-400">días</span>
-                    </p>
+                    {daysRemaining > 0 ? (
+                        <p className="text-xl font-bold text-white">
+                            {daysRemaining} <span className="text-xs font-normal text-gray-400">días</span>
+                        </p>
+                    ) : !progress?.isCompleted ? (
+                        <div className="space-y-2">
+                            <p className="text-xl font-bold text-red-400">
+                                Plan expirado
+                            </p>
+                            <p className="text-[10px] text-gray-300 leading-tight">
+                                Suscríbete a un nuevo plan o invierte más capital para seguir generando ganancias
+                            </p>
+                        </div>
+                    ) : (
+                        <p className="text-xl font-bold text-emerald-400">
+                            Ciclo completado
+                        </p>
+                    )}
                 </div>
 
                 {/* Target Amount */}

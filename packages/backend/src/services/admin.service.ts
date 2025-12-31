@@ -306,7 +306,7 @@ export const getTaskById = async (id: string) => {
   return task;
 };
 
-export const approveTask = async (id: string, adminEmail: string, adminRole: string, adminId?: string, receivedAmount?: number) => {
+export const approveTask = async (id: string, adminEmail: string, adminRole: string, adminId?: string, receivedAmount?: number, collaboratorProof?: string, reference?: string) => {
   const task = await prisma.task.findUnique({
     where: { id },
     include: {
@@ -380,13 +380,18 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
     const newBalance = (task.user.currentBalanceUSDT || 0) + amountToAdd;
 
     await prisma.$transaction(async (tx) => {
+      // Check if this is the first deposit
+      const isFirstDeposit = !task.user.hasFirstDeposit;
+
       // Update user balance
       await tx.user.update({
         where: { id: task.userId },
         data: {
           capitalUSDT: newCapital,
           currentBalanceUSDT: newBalance,
-          hasFirstDeposit: true
+          hasFirstDeposit: true,
+          // Set passive income rate to 3% if this is first deposit
+          ...(isFirstDeposit && { passiveIncomeRate: 0.03, lastDailyProfitDate: new Date() })
         }
       });
 
@@ -396,7 +401,7 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
           userId: task.userId,
           type: 'DEPOSIT',
           amountUSDT: amountToAdd,
-          reference: task.txid || task.reference,
+          reference: reference || task.txid || task.reference,
           status: 'COMPLETED'
         }
       });
@@ -406,7 +411,9 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
         where: { id },
         data: {
           status: 'COMPLETED',
-          approvedByAdmin: adminEmail
+          approvedByAdmin: adminEmail,
+          collaboratorProof: collaboratorProof || undefined,
+          reference: reference || undefined
         },
         include: {
           user: {
@@ -436,20 +443,30 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
       }
 
       // Handle referral commission if this is first deposit
-      if (!task.user.hasFirstDeposit && task.user.referrerId) {
+      if (isFirstDeposit && task.user.referrerId) {
         const referralCommissionRate = 0.10; // 10%
         const commissionAmount = amountToAdd * referralCommissionRate;
 
-        // Add commission to referrer's balance
+        // Get referrer info
         const referrer = await tx.user.findUnique({
           where: { id: task.user.referrerId }
         });
 
         if (referrer) {
+          // Determine where to add the bonus
+          // If referrer has capital, bonus goes to profit (currentBalance only)
+          // If referrer has no capital, bonus goes to capital (both capital and balance)
+          const hasCapital = (referrer.capitalUSDT || 0) > 0;
+
           await tx.user.update({
             where: { id: task.user.referrerId },
             data: {
-              currentBalanceUSDT: (referrer.currentBalanceUSDT || 0) + commissionAmount
+              // If no capital, add to capital. Otherwise just to balance
+              capitalUSDT: hasCapital ? undefined : { increment: commissionAmount },
+              currentBalanceUSDT: { increment: commissionAmount },
+              // Upgrade referrer to 6% passive income rate
+              passiveIncomeRate: 0.06,
+              hasSuccessfulReferral: true
             }
           });
 
@@ -471,7 +488,7 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
               userId: task.user.referrerId,
               type: 'PROFIT',
               amountUSDT: commissionAmount,
-              reference: `Comisión por referido: ${task.user.name}`,
+              reference: `Bono por referido: ${task.user.name} (10%)`,
               status: 'COMPLETED'
             }
           });
@@ -616,19 +633,50 @@ export const rejectTask = async (id: string, adminEmail: string, adminRole: stri
   });
 
   // Si la tarea tiene una dirección BTC asignada, liberarla automáticamente
+  // Si la tarea tiene una dirección BTC asignada, verificar si se debe liberar
   if (task.assignedAddress) {
-    await prisma.btcAddressPool.updateMany({
+    // 1. Verificar si hay OTRAS tareas pendientes para esta misma dirección
+    const otherPendingTasksCount = await prisma.task.count({
       where: {
-        address: task.assignedAddress,
-        status: 'RESERVED',
-      },
-      data: {
-        status: 'AVAILABLE',
-        reservedAt: null,
-        reservedForTaskId: null,
-        requestedAmount: null, // Clear amount when rejecting
-      },
+        assignedAddress: task.assignedAddress,
+        status: { in: ['PENDING', 'PRE_APPROVED'] },
+        id: { not: id } // Excluir la tarea actual que se está rechazando
+      }
     });
+
+    if (otherPendingTasksCount === 0) {
+      // Si no hay más tareas pendientes, liberar la dirección completamente
+      await prisma.btcAddressPool.updateMany({
+        where: {
+          address: task.assignedAddress,
+          status: 'RESERVED',
+        },
+        data: {
+          status: 'AVAILABLE',
+          reservedAt: null,
+          reservedForTaskId: null,
+          reservedByUserId: null,
+          requestedAmount: null, // Clear amount
+        },
+      });
+    } else {
+      // Si hay otras tareas, MANTENER reservada pero DESCONTAR el monto de esta tarea rechazadada
+      // Aseguramos no bajar de 0
+      // Nota: updateMany no soporta decremento directo seguro si no es unique, pero address es unique en el pool
+      // Usamos update con findUnique o updateMany cauto.
+      // Como 'address' es campo único en btcAddressPool (o debería serlo), usamos update con where unique si es posible,
+      // pero btcAddressPool key es ID. Podemos buscar el pool por address primero o usar updateMany.
+      // Usaremos updateMany con decremento, asumiendo que el monto no es null.
+
+      const poolEntry = await prisma.btcAddressPool.findUnique({ where: { address: task.assignedAddress } });
+      if (poolEntry && poolEntry.requestedAmount !== null) {
+        const newAmount = Math.max(0, Number(poolEntry.requestedAmount) - Number(task.amountUSD));
+        await prisma.btcAddressPool.update({
+          where: { id: poolEntry.id },
+          data: { requestedAmount: newAmount }
+        });
+      }
+    }
   }
 
   return rejectedTask;

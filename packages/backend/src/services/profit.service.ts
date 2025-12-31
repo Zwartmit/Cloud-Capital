@@ -112,6 +112,13 @@ export const processDailyProfits = async (dateStr?: string) => {
         continue;
       }
 
+      // Check if plan has expired (profit generates on expiry day, pauses day after)
+      if (user.currentPlanExpiryDate && new Date(user.currentPlanExpiryDate) < targetDate) {
+        skippedCompleted++;
+        console.log(`Usuario ${user.id} - plan expirado el ${user.currentPlanExpiryDate}. Profit pausado.`);
+        continue;
+      }
+
       const profitAmount = user.capitalUSDT * (rateRecord.rate / 100);
 
       // Update user balance
@@ -146,6 +153,6 @@ export const processDailyProfits = async (dateStr?: string) => {
   return {
     processed: totalProcessed,
     skippedCompleted,
-    message: `Profits procesados: ${totalProcessed} usuarios. ${skippedCompleted} usuarios completaron su ciclo (200%).`
+    message: `Profits procesados: ${totalProcessed} usuarios. ${skippedCompleted} usuarios saltados (ciclo completado o plan expirado).`
   };
 };

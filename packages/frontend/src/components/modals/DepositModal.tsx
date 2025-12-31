@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Countdown } from '../common/Countdown';
 import { Copy, Upload, Building2 } from 'lucide-react';
-import { investmentService, Bank } from '../../services/investmentService';
+import investmentService from '../../services/investmentService';
 import { collaboratorBankService, CollaboratorBankAccount } from '../../services/collaboratorBankService';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -32,6 +32,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     const [addressExpiration, setAddressExpiration] = useState<string | null>(null);
     const [addressLoading, setAddressLoading] = useState(false);
     const [reservedAddressId, setReservedAddressId] = useState<string | null>(null); // Store address ID
+    const [isReuseNotification, setIsReuseNotification] = useState(false);
 
     const [collaborators, setCollaborators] = useState<Array<{
         id: string;
@@ -56,37 +57,71 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         setAddressExpiration(null);
         setReservedAddressId(null);
         setSelectedMethod(null);
+        setIsReuseNotification(false);
     };
 
+    // Handle back button click with cleanup
+    const handleBack = () => {
+        // Save state before resetting
+        const addressToRelease = reservedAddressId;
+        const wasReused = isReuseNotification;
+
+        resetForm();
+
+        // Only release if it exists and wasn't a reused historical address
+        if (addressToRelease && !wasReused) {
+            investmentService.releaseReservedAddress(addressToRelease)
+                .catch(err => console.error('Error releasing address:', err));
+        }
+    };
+
+    // Reset form when modal closes
     // Reset form when modal closes
     useEffect(() => {
         if (!isOpen) {
             // Save the addressId BEFORE resetting
             const addressToRelease = reservedAddressId;
+            const wasReused = isReuseNotification;
 
-            // Reset the form first
             resetForm();
 
-            // Then release the address if it exists
-            if (addressToRelease) {
+            // Only release if it exists and wasn't a reused historical address
+            if (addressToRelease && !wasReused) {
                 investmentService.releaseReservedAddress(addressToRelease)
                     .catch(err => console.error('Error releasing address:', err));
             }
         }
-    }, [isOpen, reservedAddressId]);
+    }, [isOpen, reservedAddressId, isReuseNotification]);
 
-    const [banks, setBanks] = useState<Bank[]>([]);
+    // Check for active reservation when selecting 'direct' method
+    useEffect(() => {
+        if (selectedMethod === 'direct') {
+            const checkReservation = async () => {
+                setAddressLoading(true);
+                try {
+                    const reservation = await investmentService.getReservedAddress();
+                    if (reservation) {
+                        setAssignedAddress(reservation.address);
+                        setReservedAddressId(reservation.reservationId);
+                        setAddressExpiration(reservation.expiresAt);
+                        setIsReuseNotification(true);
+                    }
+                } catch (error) {
+                    console.error('Error checking reservation:', error);
+                } finally {
+                    setAddressLoading(false);
+                }
+            };
+            checkReservation();
+        }
+    }, [selectedMethod]);
 
-    // Fetch collaborators and banks on mount
+    // Fetch collaborators on mount
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [collabData, bankData] = await Promise.all([
-                    investmentService.getCollaborators(),
-                    investmentService.getBanks()
-                ]);
+                const collabData = await investmentService.getCollaborators();
                 setCollaborators(collabData);
-                setBanks(bankData);
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -103,6 +138,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         }
 
         setAddressLoading(true);
+        setIsReuseNotification(false);
 
         try {
             // Use NEW service that only reserves address (no task created)
@@ -193,11 +229,6 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
         setLoading(true);
         try {
-            // Update address amount if it changed after requesting
-            if (reservedAddressId) {
-                await investmentService.updateReservedAddressAmount(reservedAddressId, amountNum);
-            }
-
             // Create task with reserved address ID
             await investmentService.createAutoDeposit({
                 amountUSDT: amountNum,
@@ -297,6 +328,16 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                             </div>
                         ) : assignedAddress ? (
                             <>
+                                {/* Reused Address Message */}
+                                {isReuseNotification && (
+                                    <div className="bg-blue-900/30 border border-blue-500/50 p-3 rounded-lg text-center mb-4">
+                                        <p className="text-xs text-blue-200 leading-relaxed">
+                                            <span className="font-bold block mb-1">ℹ️ Dirección Vigente Encontrada</span>
+                                            Ya habías solicitado una dirección recientemente. Esta dirección aún está reservada para ti, por lo que puedes utilizarla para tu nuevo aporte.
+                                        </p>
+                                    </div>
+                                )}
+
                                 {/* QR Code */}
                                 <div className="flex justify-center mb-3">
                                     <div className="bg-white p-3 rounded-lg">
@@ -410,7 +451,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
 
                     <div className="flex gap-3">
                         <button
-                            onClick={() => setSelectedMethod(null)}
+                            onClick={handleBack}
                             className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2.5 rounded-lg transition text-sm"
                         >
                             Volver
@@ -435,7 +476,6 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                         onClose();
                     }}
                     collaborators={collaborators}
-                    banks={banks}
                     userData={userData}
                 />
             )}
@@ -453,11 +493,10 @@ interface ManualOrderFormProps {
         whatsappNumber?: string;
         collaboratorConfig?: { commission: number; processingTime: string; minAmount: number; maxAmount: number };
     }>;
-    banks: Bank[];
     userData: { name: string; username: string };
 }
 
-const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, collaborators, banks: _systemBanks, userData }) => {
+const ManualOrderForm: React.FC<ManualOrderFormProps> = ({ onBack, onSuccess, collaborators, userData }) => {
     const [amount, setAmount] = useState('');
     const [collaboratorId, setCollaboratorId] = useState('');
     const [bankName, setBankName] = useState('');

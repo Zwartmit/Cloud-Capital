@@ -42,14 +42,15 @@ interface Collaborator {
     };
 }
 
-export interface Bank {
-    id: string;
-    name: string;
-}
-
 // Reserve BTC address (NEW FLOW - doesn't create task)
 export const reserveBtcAddress = async (amountUSDT: number) => {
     const response = await apiClient.post('/user/deposit/reserve-address', { amountUSDT });
+    return response.data;
+};
+
+// Check for active reserved address
+export const getReservedAddress = async () => {
+    const response = await apiClient.get('/user/deposit/reserved-address');
     return response.data;
 };
 
@@ -99,12 +100,6 @@ export const getCollaborators = async (): Promise<Collaborator[]> => {
     return response.data;
 };
 
-// Get banks list
-export const getBanks = async (): Promise<Bank[]> => {
-    const response = await apiClient.get('/user/banks');
-    return response.data;
-};
-
 // Release reserved address (when user closes modal)
 export const releaseReservedAddress = async (addressId: string) => {
     const response = await apiClient.post('/user/deposit/release-address', { addressId });
@@ -118,6 +113,7 @@ export const updateReservedAddressAmount = async (addressId: string, amountUSDT:
 };
 
 export const investmentService = {
+    getReservedAddress,
     reserveBtcAddress,
     createAutoDeposit,
     createManualDepositOrder,
@@ -125,7 +121,6 @@ export const investmentService = {
     liquidateCapital,
     reinvestProfit,
     getCollaborators,
-    getBanks,
     releaseReservedAddress,
     updateReservedAddressAmount,
 };

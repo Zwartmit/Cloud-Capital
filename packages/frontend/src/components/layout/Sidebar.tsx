@@ -32,8 +32,12 @@ export const Sidebar: React.FC = () => {
     return (
         <aside className="bg-slate-900/80 backdrop-blur-md w-16 sm:w-20 flex flex-col items-center border-r border-slate-700/50 transition-all duration-300 fixed left-0 top-0 h-screen z-40">
             {/* Logo */}
-            <div className="mb-6 sm:mb-8 mt-2 pt-3 sm:pt-4 px-3 sm:px-4 flex-shrink-0 w-full flex justify-center">
+            <div className="mb-6 sm:mb-8 mt-2 pt-3 sm:pt-4 px-3 sm:px-4 flex-shrink-0 w-full flex flex-col items-center gap-2">
                 <img src="/logo.png" alt="Cloud Capital" className="w-8 sm:w-12 h-auto object-contain" />
+                <div className="flex flex-col items-center leading-none uppercase font-black">
+                    <span className="text-xs sm:text-sm bg-gradient-to-r from-[#43C7D3] to-blue-500 bg-clip-text text-transparent filter drop-shadow-sm">CLOUD</span>
+                    <span className="text-xs sm:text-sm text-white tracking-wide drop-shadow-sm">CAPITAL</span>
+                </div>
             </div>
 
             {/* Scrollable Navigation Area - Limited height to keep logout visible */}

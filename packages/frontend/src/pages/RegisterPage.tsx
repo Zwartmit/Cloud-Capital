@@ -104,10 +104,15 @@ export const RegisterPage: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center p-3 sm:p-4">
             <div className="w-full max-w-3xl card p-5 sm:p-8 rounded-2xl border-t-4 border-profit">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                    <img src="/logo.png" alt="Cloud Capital" className="size-28 object-contain" />
+                    <div className="flex flex-col items-start leading-none uppercase font-black">
+                        <span className="text-3xl bg-gradient-to-r from-[#43C7D3] to-blue-500 bg-clip-text text-transparent filter drop-shadow-sm">CLOUD</span>
+                        <span className="text-3xl text-white tracking-wide drop-shadow-sm">CAPITAL</span>
+                    </div>
+                </div>
+                <div className="w-full h-px bg-gray-800/50 my-3"></div>
                 <h1 className="text-4xl font-black text-center text-profit mb-3 sm:mb-4">Crear cuenta</h1>
-                <p className="text-center text-gray-400 text-lg mb-5">
-                    Únete a Cloud Capital y comienza a invertir
-                </p>
 
                 {error && (
                     <div className="text-center text-base font-semibold text-red-500 my-3 sm:my-4 p-2 sm:p-3 bg-red-500/10 rounded-lg border border-red-500/20">

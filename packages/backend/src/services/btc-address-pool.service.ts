@@ -1,5 +1,5 @@
 import prisma from '../config/database.js';
-import { BtcAddressStatus } from '@prisma/client';
+import { BtcAddressStatus, Prisma } from '@prisma/client';
 
 /**
  * Validar formato de dirección Bitcoin
@@ -98,31 +98,56 @@ export async function assignAddressToDeposit(taskId: string): Promise<string> {
     return availableAddress.address;
 }
 
+
 /**
  * Reservar dirección BTC temporalmente SIN crear tarea
  * Para mostrar al usuario la dirección antes de que envíe la solicitud
  */
 export async function reserveAddressTemporarily(
-    _userId: string,
+    userId: string,
     amountUSDT: number
 ): Promise<{ address: string; reservationId: string }> {
-    // Buscar primera dirección disponible
+    // 1. Check if user already has a valid reserved address
+    const timeout = parseInt(process.env.ADDRESS_RESERVATION_TIMEOUT_HOURS || '24');
+    const validThreshold = new Date();
+    validThreshold.setHours(validThreshold.getHours() - timeout);
+
+    // Check for existing valid reservation for this user
+    // Casting to any because reservedByUserId might not be in the generated client type yet
+    const existingReservation = await prisma.btcAddressPool.findFirst({
+        where: {
+            status: BtcAddressStatus.RESERVED,
+            reservedByUserId: userId,
+            reservedAt: { gt: validThreshold }
+        }
+    });
+
+    if (existingReservation) {
+        // Do not overwrite requestedAmount - we want to accumulate confirmed deposits
+        return {
+            address: existingReservation.address,
+            reservationId: existingReservation.id
+        };
+    }
+
+    // 2. If no existing reservation, find new available address
     const availableAddress = await prisma.btcAddressPool.findFirst({
         where: { status: BtcAddressStatus.AVAILABLE },
-        orderBy: { createdAt: 'asc' }, // FIFO: usar la más antigua primero
+        orderBy: { createdAt: 'asc' }, // FIFO
     });
 
     if (!availableAddress) {
         throw new Error('No hay direcciones BTC disponibles. Contacte al administrador.');
     }
 
-    // Marcar como RESERVED pero SIN taskId (temporal)
+    // Marcar como RESERVED y asignar al usuario
     const reserved = await prisma.btcAddressPool.update({
         where: { id: availableAddress.id },
         data: {
             status: BtcAddressStatus.RESERVED,
             reservedAt: new Date(),
-            requestedAmount: amountUSDT,
+            requestedAmount: 0, // Initialize to 0, will increment on confirmed deposit
+            reservedByUserId: userId,
             // NO asignar reservedForTaskId - se asignará cuando se cree la tarea
         },
     });
@@ -133,6 +158,53 @@ export async function reserveAddressTemporarily(
     };
 }
 
+/**
+ * Verificar si el usuario tiene una reserva activa
+ */
+export async function getActiveReservation(userId: string) {
+    const timeout = parseInt(process.env.ADDRESS_RESERVATION_TIMEOUT_HOURS || '24');
+    const validThreshold = new Date();
+    validThreshold.setHours(validThreshold.getHours() - timeout);
+
+    const existingReservation = await prisma.btcAddressPool.findFirst({
+        where: {
+            status: BtcAddressStatus.RESERVED,
+            reservedByUserId: userId,
+            reservedAt: { gt: validThreshold }
+        }
+    });
+
+    if (existingReservation) {
+        return {
+            address: existingReservation.address,
+            reservationId: existingReservation.id,
+            expiresAt: new Date((existingReservation.reservedAt || new Date()).getTime() + timeout * 60 * 60 * 1000).toISOString(),
+            amount: existingReservation.requestedAmount
+        };
+    }
+
+    // NEW: Check for recently submitted tasks (Reuse address from last 24h)
+    const recentTask = await prisma.task.findFirst({
+        where: {
+            userId: userId,
+            createdAt: { gt: validThreshold },
+            btcAddress: { not: null }
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { btcAddress: true, createdAt: true, amountUSD: true }
+    });
+
+    if (recentTask && recentTask.btcAddress) {
+        return {
+            address: recentTask.btcAddress,
+            reservationId: null, // No reservation ID because it's already 'used'/'submitted'
+            expiresAt: new Date(recentTask.createdAt.getTime() + timeout * 60 * 60 * 1000).toISOString(),
+            amount: recentTask.amountUSD ? new Prisma.Decimal(recentTask.amountUSD) : undefined
+        };
+    }
+
+    return null;
+}
 /**
  * Marcar dirección como usada tras aprobación de depósito
  */
@@ -346,7 +418,7 @@ export async function deleteAddress(addressId: string): Promise<{ deletedAddress
 /**
  * Liberar dirección RESERVED manualmente por ID (volver a AVAILABLE)
  */
-export async function releaseAddressById(addressId: string): Promise<{ releasedAddress: boolean; rejectedTask: boolean; taskId?: string }> {
+export async function releaseAddressById(addressId: string): Promise<{ releasedAddress: boolean; rejectedTask: boolean; rejectedTasksCount: number; taskId?: string }> {
     const address = await prisma.btcAddressPool.findUnique({
         where: { id: addressId },
     });
@@ -363,31 +435,25 @@ export async function releaseAddressById(addressId: string): Promise<{ releasedA
         throw new Error('La dirección ya está disponible');
     }
 
-    // Si tiene una tarea asociada, rechazarla automáticamente
-    let rejectedTask = false;
-    let taskId: string | undefined;
+    // Cancel ALL pending tasks associated with this address
+    // (Both linked via reservedForTaskId AND any others that might have been created via address reuse)
+    // We search by 'assignedAddress' or 'btcAddress' depending on how it's stored.
+    // In createAutoDepositRequest, we store 'assignedAddress' and 'btcAddress' might be null or same.
+    // We query by assignedAddress
 
-    if (address.reservedForTaskId) {
-        taskId = address.reservedForTaskId;
-
-        // Buscar la tarea
-        const task = await prisma.task.findUnique({
-            where: { id: address.reservedForTaskId },
-        });
-
-        // Solo rechazar si está pendiente o pre-aprobada
-        if (task && (task.status === 'PENDING' || task.status === 'PRE_APPROVED')) {
-            await prisma.task.update({
-                where: { id: address.reservedForTaskId },
-                data: {
-                    status: 'REJECTED',
-                    rejectionReason: 'La dirección BTC asignada fue liberada por un administrador. Por favor, solicita un nuevo depósito.',
-                    approvedByAdmin: 'SYSTEM',
-                },
-            });
-            rejectedTask = true;
+    const updateResult = await prisma.task.updateMany({
+        where: {
+            assignedAddress: address.address,
+            status: { in: ['PENDING', 'PRE_APPROVED'] }
+        },
+        data: {
+            status: 'REJECTED',
+            rejectionReason: 'La dirección BTC asignada fue liberada manualmente por un administrador.',
+            approvedByAdmin: 'SYSTEM'
         }
-    }
+    });
+
+    const rejectedTasksCount = updateResult.count;
 
     // Liberar la dirección: volver a AVAILABLE
     await prisma.btcAddressPool.update({
@@ -397,13 +463,15 @@ export async function releaseAddressById(addressId: string): Promise<{ releasedA
             reservedAt: null,
             reservedForTaskId: null,
             requestedAmount: null, // Clear amount when releasing
+            reservedByUserId: null, // Ensure user reservation is cleared
         },
     });
 
     return {
         releasedAddress: true,
-        rejectedTask,
-        taskId,
+        rejectedTask: rejectedTasksCount > 0,
+        rejectedTasksCount, // New return field
+        taskId: undefined // Deprecated but kept for type compat if needed, or remove if updating controller
     };
 }
 

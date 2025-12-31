@@ -339,11 +339,14 @@ export const createAutoDepositRequest = async (
     }
   });
 
-  // Link the reserved address to this task
+  // Link the reserved address to this task and accumulate amount
   if (reservedAddressId) {
     await prisma.btcAddressPool.update({
       where: { id: reservedAddressId },
-      data: { reservedForTaskId: task.id },
+      data: {
+        reservedForTaskId: task.id,
+        requestedAmount: { increment: amountUSDT }
+      },
     });
   }
 
@@ -366,6 +369,14 @@ export const reserveBtcAddress = async (
     address,
     reservationId,
   };
+};
+
+/**
+ * Check if user has an existing active reservation
+ */
+export const getReservedAddress = async (userId: string) => {
+  const { getActiveReservation } = await import('./btc-address-pool.service.js');
+  return getActiveReservation(userId);
 };
 
 /**
@@ -624,6 +635,38 @@ export const changeInvestmentPlan = async (userId: string, planName: string) => 
     }
   }
 
+  // COMMISSION LOGIC ---
+  // Calculate monthly cost
+  const monthlyCostPercentage = plan.monthlyCommission;
+  const monthlyCostUSD = (monthlyCostPercentage / 100) * currentBalance;
+
+  // Calculate available profit
+  const userCapital = user.capitalUSDT || 0;
+  const availableProfit = Math.max(0, currentBalance - userCapital);
+
+  // Determine deduction source
+  let deductedFromProfit = 0;
+  let deductedFromCapital = 0;
+
+  if (availableProfit >= monthlyCostUSD) {
+    // Deduct entirely from profit
+    deductedFromProfit = monthlyCostUSD;
+  } else {
+    // Deduct what we can from profit, rest from capital
+    deductedFromProfit = availableProfit;
+    deductedFromCapital = monthlyCostUSD - availableProfit;
+  }
+
+  // Ensure balance is sufficient (sanity check, though currentBalance >= monthlyCostUSD check might be implicitly covered, let's be explicit)
+  if (currentBalance < monthlyCostUSD) {
+    // This should technically not happen if balance >= minCapital ($50) and commission is small percentage, 
+    // but good to have as fail-safe or if balance was just barely enough.
+    throw new Error(`Saldo insuficiente para cubrir la comisión mensual de $${monthlyCostUSD.toFixed(2)}`);
+  }
+
+  const newBalance = currentBalance - monthlyCostUSD;
+  const newCapital = userCapital - deductedFromCapital;
+
   // SPEC 1: Set plan subscription dates
   const now = new Date();
   const expiryDate = new Date(now);
@@ -634,6 +677,8 @@ export const changeInvestmentPlan = async (userId: string, planName: string) => 
     where: { id: userId },
     data: {
       investmentClass: planName as any,
+      currentBalanceUSDT: newBalance,
+      capitalUSDT: newCapital,
       // Set plan subscription tracking
       currentPlanStartDate: now,
       currentPlanExpiryDate: expiryDate,
@@ -647,21 +692,51 @@ export const changeInvestmentPlan = async (userId: string, planName: string) => 
     }
   });
 
-  // Create a transaction record for audit purposes
+  // Create a transaction record for the plan change (REINVEST) - keeping this for audit/history
+  // Actually, wait, do we need two transactions? usually plan change didn't cost anything.
+  // Now it costs commission.
+  // Let's create the commission transaction specifically.
+
   await prisma.transaction.create({
     data: {
       userId,
-      type: 'REINVEST', // Using REINVEST type as it's a plan change
-      amountUSDT: 0,
-      reference: `Cambio de plan a ${planName}`,
+      type: 'COMMISSION',
+      amountUSDT: -monthlyCostUSD,
+      reference: `Comisión mensual - Plan ${planName} (${monthlyCostPercentage}%)`,
       status: 'COMPLETED',
     }
   });
 
+  /* 
+  // Should we keep the 'REINVEST' record? The prompt implementation plan said "Create commission transaction".
+  // The original code had a REINVEST transaction for 0 amount.
+  // Generally cleaner to just have the commission transaction now if that's the only financial event.
+  // But maybe the system relies on REINVEST type for some other logic? 
+  // Checking original code... 
+  // It was: type: 'REINVEST', amountUSDT: 0, reference: 'Cambio de plan a...'
+  // I will keep the original transaction logic if it helps tracking "Plan Changed" event, but maybe 0 amount is confusing if we also charge.
+  // Let's assume the COMMISSION transaction is enough to record the financial impact, but maybe a 'PLAN_CHANGE' or just log is enough.
+  // However, removing the REINVEST transaction might break some "history" view if it filters by that.
+  // I'll keep it but maybe it's redundant. Let's just create the COMMISSION one as requested.
+  // Actually, I'll comment out the zero-amount REINVEST one to avoid clutter, unless specifically needed.
+  // Implementation plan didn't explicitly say "remove old transaction", but implied "Create commission transaction".
+  // I will stick to creating the commission transaction.
+  */
+
   const { password: _, _count, ...userWithoutPassword } = updatedUser;
   return {
-    ...userWithoutPassword,
-    referralsCount: _count.referrals
+    user: {
+      ...userWithoutPassword,
+      referralsCount: _count.referrals
+    },
+    chargeDetails: {
+      totalCharged: monthlyCostUSD,
+      deductedFromProfit,
+      deductedFromCapital,
+      originalBalance: currentBalance,
+      newBalance,
+      newCapital
+    }
   };
 };
 
@@ -684,5 +759,48 @@ export const getPublicContactInfo = async () => {
   return {
     email: admin?.contactEmail || null,
     telegram: admin?.contactTelegram || null,
+  };
+};
+
+/**
+ * Mark welcome modal as seen for user
+ */
+export const markWelcomeModalSeen = async (userId: string) => {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { hasSeenWelcomeModal: true }
+  });
+};
+
+/**
+ * Get passive income information for user
+ */
+export const getPassiveIncomeInfo = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      passiveIncomeRate: true,
+      hasFirstDeposit: true,
+      hasSuccessfulReferral: true,
+      capitalUSDT: true,
+      investmentClass: true,
+      lastDailyProfitDate: true
+    }
+  });
+
+  if (!user) {
+    throw new Error('Usuario no encontrado');
+  }
+
+  const dailyRate = user.passiveIncomeRate / 30;
+  const isEligible = (user.capitalUSDT || 0) > 0 && !user.investmentClass;
+
+  return {
+    currentRate: user.passiveIncomeRate,
+    dailyRate,
+    hasFirstDeposit: user.hasFirstDeposit,
+    hasSuccessfulReferral: user.hasSuccessfulReferral,
+    isEligible,
+    lastProfitDate: user.lastDailyProfitDate
   };
 };

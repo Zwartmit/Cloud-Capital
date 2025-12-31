@@ -59,13 +59,18 @@ export const LoginPage: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center p-3 sm:p-4">
             <div className="w-full max-w-md card p-5 sm:p-8 rounded-2xl border-t-4 border-accent">
-                <div className="flex justify-center mb-4">
-                    <img src="/logo.png" alt="Cloud Capital" className="w-16 h-16 object-contain" />
+                <div className="flex items-center justify-center gap-2">
+                    <img src="/logo.png" alt="Cloud Capital" className="size-28 object-contain" />
+                    <div className="flex flex-col items-start leading-none uppercase font-black">
+                        <span className="text-3xl bg-gradient-to-r from-[#43C7D3] to-blue-500 bg-clip-text text-transparent filter drop-shadow-sm">CLOUD</span>
+                        <span className="text-3xl text-white tracking-wide drop-shadow-sm">CAPITAL</span>
+                    </div>
                 </div>
-                <h1 className="text-4xl font-black text-center text-accent mb-3 sm:mb-4">Cloud Capital</h1>
-                <p className="text-center text-gray-400 text-lg mb-5">
-                    Accede a tu panel de inversión y gestión
-                </p>
+
+                <div className="w-full h-px bg-gray-800/50 my-3"></div>
+                <h1 className="text-4xl font-black text-center text-blue-500 mb-3 sm:mb-4">
+                    Iniciar sesión
+                </h1>
 
                 {error && (
                     <div className="text-center text-sm font-semibold text-red-500 my-3 sm:my-4 p-2 sm:p-3 bg-red-500/10 rounded-lg border border-red-500/20">
@@ -73,7 +78,10 @@ export const LoginPage: React.FC = () => {
                     </div>
                 )}
 
-                <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-3 sm:space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-2">
+                    <label className="block text-base font-medium text-gray-300">
+                        Correo electrónico o usuario
+                    </label>
                     <input
                         type="text"
                         value={email}
@@ -83,6 +91,9 @@ export const LoginPage: React.FC = () => {
                         disabled={loading}
                         className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50"
                     />
+                    <label className="block text-base font-medium text-gray-300">
+                        Contraseña
+                    </label>
                     <PasswordInput
                         name="password"
                         placeholder="Contraseña"
@@ -92,7 +103,7 @@ export const LoginPage: React.FC = () => {
                         className="w-full p-2.5 sm:p-3 bg-gray-800 border border-gray-700 rounded-lg text-base text-white focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50"
                     />
 
-                    <p className="text-center text-sm text-gray-500 mt-2">
+                    {/* <p className="text-center text-sm text-gray-500 mt-2">
                         Usuarios de prueba:
                         <br />
                         (Super Admin) <code className="text-admin">admin@cloudcapital.com</code>,{' '}
@@ -103,7 +114,7 @@ export const LoginPage: React.FC = () => {
                         <br />
                         (Usuario) <code className="text-profit">user@example.com</code>,{' '}
                         <code className="text-profit">user123</code>
-                    </p>
+                    </p> */}
 
                     <button
                         type="submit"

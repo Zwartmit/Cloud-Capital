@@ -154,12 +154,13 @@ export const releaseAddress = async (req: Request, res: Response): Promise<void>
         });
 
         const message = result.rejectedTask
-            ? `Dirección liberada exitosamente. La solicitud de depósito asociada fue rechazada automáticamente.`
+            ? `Dirección liberada exitosamente. Se rechazaron automáticamente ${result.rejectedTasksCount} solicitudes de depósito asociadas.`
             : 'Dirección liberada exitosamente';
 
         res.status(200).json({
             message,
             rejectedTask: result.rejectedTask,
+            rejectedTasksCount: result.rejectedTasksCount,
             taskId: result.taskId,
         });
     } catch (error: any) {

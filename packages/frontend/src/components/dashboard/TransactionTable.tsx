@@ -21,6 +21,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
             case 'DEPOSIT':
                 return 'text-accent';
             case 'PROFIT':
+            case 'DAILY_PROFIT':
                 return 'text-profit';
             case 'REINVEST':
                 return 'text-sky-400';
@@ -43,6 +44,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 return 'Liquidación de Capital';
             case 'PROFIT':
                 return 'Ganancia';
+            case 'DAILY_PROFIT':
+                return 'Ganancia Pasiva';
             case 'REINVEST':
                 return 'Reinversión';
             case 'REFERRAL_COMMISSION':
@@ -134,6 +137,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                         <option value="DEPOSIT">Aporte</option>
                         <option value="WITHDRAWAL">Liquidación</option>
                         <option value="PROFIT">Ganancia</option>
+                        <option value="DAILY_PROFIT">Ganancia Pasiva</option>
                         <option value="REINVEST">Reinversión</option>
                         <option value="REFERRAL_COMMISSION">Comisión Referido</option>
                     </select>

@@ -77,10 +77,21 @@ export const startPlanExpiryCheckJob = () => {
                     console.log(`   - Plan: ${user.investmentClass}`);
                     console.log(`   - Expiró: ${user.currentPlanExpiryDate?.toISOString()}`);
 
-                    // TODO: Aquí se puede tomar acción automática
-                    // - Pausar generación de profit
-                    // - Enviar notificación urgente
-                    // - Cambiar contractStatus a 'AWAITING_ACTION'
+                    // New Logic: Automatically revert to passive income
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: {
+                            investmentClass: null,           // Revert to passive income
+                            currentPlanStartDate: null,
+                            currentPlanExpiryDate: null,
+                            // Contract remains ACTIVE so daily profit job picks it up for passive income
+                            contractStatus: 'ACTIVE'
+                        }
+                    });
+
+                    console.log(`✅ [CRON] Usuario ${user.email} revertido exitosamente a ingreso pasivo`);
+
+                    // Optional: Create notification/log if needed (omitted for brevity)
                 }
             }
 

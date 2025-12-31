@@ -51,9 +51,6 @@ export const CollaboratorsManager: React.FC = () => {
     const [isBankInfoModalOpen, setIsBankInfoModalOpen] = useState(false);
     const [selectedCollabForBanks, setSelectedCollabForBanks] = useState<UserDTO | null>(null);
     const [collabBankAccounts, setCollabBankAccounts] = useState<CollaboratorBankAccount[]>([]);
-    const [editingBtcAddress, setEditingBtcAddress] = useState(false);
-    const [tempBtcAddress, setTempBtcAddress] = useState('');
-    const [btcAddressMessage, setBtcAddressMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     // Referrals modal state
     const [isReferralsModalOpen, setIsReferralsModalOpen] = useState(false);
@@ -107,9 +104,6 @@ export const CollaboratorsManager: React.FC = () => {
 
     const handleOpenBankInfo = async (user: UserDTO) => {
         setSelectedCollabForBanks(user);
-        setTempBtcAddress((user as any).btcWithdrawAddress || '');
-        setEditingBtcAddress(false);
-        setBtcAddressMessage(null);
         setIsBankInfoModalOpen(true);
         try {
             const accounts = await collaboratorBankService.getBankAccounts({ collaboratorId: user.id });
@@ -859,79 +853,26 @@ export const CollaboratorsManager: React.FC = () => {
                             <div>
                                 <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Dirección BTC Personal</h4>
                                 <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center">
-                                            <div className="bg-orange-500/10 p-1.5 rounded mr-3">
-                                                <Wallet className="w-5 h-5 text-orange-500" />
-                                            </div>
-                                            <div>
-                                                <h5 className="font-bold text-white text-sm">Dirección BTC Personal</h5>
-                                                <p className="text-xs text-gray-400">Dirección para enviar pagos al colaborador</p>
-                                            </div>
+                                    <div className="flex items-start mb-3">
+                                        <div className="bg-orange-500/10 p-1.5 rounded mr-3">
+                                            <Wallet className="w-5 h-5 text-orange-500" />
                                         </div>
-                                        <button
-                                            onClick={() => setEditingBtcAddress(!editingBtcAddress)}
-                                            className="text-xs px-3 py-1 bg-accent hover:bg-blue-500 text-white rounded transition"
-                                        >
-                                            {editingBtcAddress ? 'Cancelar' : 'Editar'}
-                                        </button>
+                                        <div className="flex-1">
+                                            <h5 className="font-bold text-white text-sm">Dirección BTC Personal</h5>
+                                            <p className="text-xs text-gray-400 mb-2">Dirección para enviar pagos al colaborador</p>
+                                            {(selectedCollabForBanks as any).btcWithdrawAddress ? (
+                                                <div className="bg-gray-800 p-2.5 rounded border border-gray-700">
+                                                    <p className="text-white font-mono text-xs break-all">
+                                                        {(selectedCollabForBanks as any).btcWithdrawAddress}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="bg-yellow-500/10 border border-yellow-500/30 p-2.5 rounded">
+                                                    <p className="text-yellow-500 text-xs">No configurada</p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-
-                                    {editingBtcAddress ? (
-                                        <div className="space-y-3">
-                                            <input
-                                                type="text"
-                                                value={tempBtcAddress}
-                                                onChange={(e) => setTempBtcAddress(e.target.value)}
-                                                placeholder="bc1q... o 1... o 3..."
-                                                className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded text-white font-mono text-sm focus:ring-accent focus:border-accent focus:outline-none"
-                                            />
-                                            <button
-                                                onClick={async () => {
-                                                    if (!selectedCollabForBanks) return;
-
-                                                    // Validate BTC address format
-                                                    const btcAddressRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/;
-                                                    if (tempBtcAddress && !btcAddressRegex.test(tempBtcAddress)) {
-                                                        setBtcAddressMessage({ type: 'error', text: 'Formato de dirección BTC inválido' });
-                                                        return;
-                                                    }
-
-                                                    try {
-                                                        await adminService.updateCollaboratorConfig(selectedCollabForBanks.id, {
-                                                            ...(selectedCollabForBanks as any).collaboratorConfig,
-                                                            walletAddress: tempBtcAddress || null
-                                                        });
-
-                                                        // Update local state
-                                                        (selectedCollabForBanks as any).btcWithdrawAddress = tempBtcAddress;
-                                                        setEditingBtcAddress(false);
-                                                        setBtcAddressMessage({ type: 'success', text: 'Dirección BTC actualizada exitosamente' });
-                                                        setTimeout(() => setBtcAddressMessage(null), 3000);
-                                                        fetchStaff();
-                                                    } catch (error: any) {
-                                                        setBtcAddressMessage({ type: 'error', text: error.response?.data?.error || 'Error al actualizar dirección' });
-                                                    }
-                                                }}
-                                                className="w-full px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded font-medium transition text-sm"
-                                            >
-                                                Guardar dirección
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="bg-gray-800 p-2.5 rounded border border-gray-700 font-mono text-sm text-gray-300 break-all">
-                                            {tempBtcAddress || 'No configurada'}
-                                        </div>
-                                    )}
-
-                                    {btcAddressMessage && (
-                                        <div className={`mt-3 p-2 rounded text-xs ${btcAddressMessage.type === 'success'
-                                            ? 'bg-green-500/10 border border-green-500/20 text-green-500'
-                                            : 'bg-red-500/10 border border-red-500/20 text-red-500'
-                                            }`}>
-                                            {btcAddressMessage.text}
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 

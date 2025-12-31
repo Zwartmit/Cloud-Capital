@@ -61,6 +61,7 @@ export interface UserDTO {
   isBlocked?: boolean;
   blockedAt?: string;
   blockedReason?: string;
+  hasSeenWelcomeModal?: boolean;
   createdAt: string;
 }
 
@@ -104,6 +105,7 @@ export interface TaskDTO {
   btcPrice?: number;
   reference?: string;
   proof?: string;
+  collaboratorProof?: string;
   assignedAddress?: string;
   btcAddress?: string;
   txid?: string;

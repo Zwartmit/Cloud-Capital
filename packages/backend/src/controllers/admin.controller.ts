@@ -80,13 +80,20 @@ export const getTaskById = async (req: Request, res: Response): Promise<void> =>
 export const approveTask = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { receivedAmount } = req.body;
+    const { receivedAmount, reference } = req.body;
     const user = req.user as any;
     const adminEmail = user.email;
     const adminRole = user.role;
     const adminId = user.userId;
 
-    const task = await adminService.approveTask(id, adminEmail, adminRole, adminId, receivedAmount);
+    let collaboratorProof: string | undefined;
+
+    if (req.file) {
+      // If file was uploaded, use its path relative to server root
+      collaboratorProof = `/uploads/proofs/${req.file.filename}`;
+    }
+
+    const task = await adminService.approveTask(id, adminEmail, adminRole, adminId, receivedAmount, collaboratorProof, reference);
     res.status(200).json(task);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

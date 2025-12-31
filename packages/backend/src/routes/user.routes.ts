@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import * as userController from '../controllers/user.controller.js';
-import * as bankController from '../controllers/bank.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { upload } from '../config/multer.js';
 
@@ -43,6 +42,7 @@ router.get('/referrals', userController.getReferrals);
 router.get('/referral-commissions', userController.getReferralCommissions);
 
 // Enhanced deposit - Step 1: Reserve BTC address (NO task created yet)
+router.get('/deposit/reserved-address', userController.getReservedAddress);
 router.post('/deposit/reserve-address', userController.reserveBtcAddress);
 
 // Enhanced deposit - Step 2: Submit with proof (creates task with reserved address)
@@ -74,9 +74,6 @@ router.put('/investment-plan', userController.changeInvestmentPlan);
 // GET /api/user/recent-activity
 router.get('/recent-activity', userController.getRecentActivity);
 
-// GET /api/user/banks
-router.get('/banks', bankController.getActiveBanks);
-
 // FASE 1: New routes for cycle management
 // GET /api/user/cycle-progress
 router.get('/cycle-progress', userController.getCycleProgress);
@@ -84,4 +81,9 @@ router.get('/cycle-progress', userController.getCycleProgress);
 // GET /api/user/contract-status
 router.get('/contract-status', userController.getContractStatus);
 
+// Passive Income Routes
+router.post('/welcome-modal-seen', userController.markWelcomeModalSeen);
+router.get('/passive-income-info', userController.getPassiveIncomeInfo);
+
 export default router;
+

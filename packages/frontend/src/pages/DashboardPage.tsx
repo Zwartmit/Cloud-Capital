@@ -8,6 +8,7 @@ import { DepositModal } from '../components/modals/DepositModal';
 import { WithdrawalModal } from '../components/modals/WithdrawalModal';
 import { ReinvestModal } from '../components/modals/ReinvestModal';
 import { ProjectionsModal } from '../components/modals/ProjectionsModal';
+import { WelcomeModal } from '../components/modals/WelcomeModal';
 // FASE 2: New components for cycle management
 import { CycleProgressCard } from '../components/dashboard/CycleProgressCard';
 import { CycleCompletedModal } from '../components/modals/CycleCompletedModal';
@@ -29,6 +30,7 @@ export const DashboardPage: React.FC = () => {
     const [isReinvestModalOpen, setIsReinvestModalOpen] = useState(false);
     const [isProjectionsModalOpen, setIsProjectionsModalOpen] = useState(false);
     const [isCycleCompletionModalOpen, setIsCycleCompletionModalOpen] = useState(false);
+    const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
     const [transactions, setTransactions] = useState<TransactionDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [btcPrice, setBtcPrice] = useState<number>(96500); // Default fallback price
@@ -94,6 +96,13 @@ export const DashboardPage: React.FC = () => {
 
         return () => clearInterval(interval);
     }, []);
+
+    // Show welcome modal on first login
+    useEffect(() => {
+        if (user && !user.hasSeenWelcomeModal) {
+            setIsWelcomeModalOpen(true);
+        }
+    }, [user]);
 
     // FASE 2: Fetch contract status
     useEffect(() => {
@@ -333,6 +342,12 @@ export const DashboardPage: React.FC = () => {
                     const data = await userService.getTransactions();
                     setTransactions(data);
                 }}
+            />
+
+            {/* Welcome Modal - Shows on first login */}
+            <WelcomeModal
+                isOpen={isWelcomeModalOpen}
+                onClose={() => setIsWelcomeModalOpen(false)}
             />
 
         </div>

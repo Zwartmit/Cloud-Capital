@@ -213,6 +213,17 @@ export const reserveBtcAddress = async (req: Request, res: Response): Promise<vo
   }
 };
 
+// NEW: Check if user has reserved address
+export const getReservedAddress = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const reservation = await userService.getReservedAddress(userId);
+    res.status(200).json(reservation);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 // Release reserved address (when user closes modal)
 export const releaseReservedAddress = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -353,8 +364,8 @@ export const changeInvestmentPlan = async (req: Request, res: Response): Promise
       return;
     }
 
-    const user = await userService.changeInvestmentPlan(userId, planName);
-    res.status(200).json(user);
+    const result = await userService.changeInvestmentPlan(userId, planName);
+    res.status(200).json(result);
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }
@@ -418,7 +429,8 @@ export const getContractStatus = async (req: Request, res: Response): Promise<vo
         currentPlanStartDate: true,
         currentPlanExpiryDate: true,
         capitalUSDT: true,
-        currentBalanceUSDT: true
+        currentBalanceUSDT: true,
+        passiveIncomeRate: true
       }
     });
 
@@ -445,6 +457,27 @@ export const getContractStatus = async (req: Request, res: Response): Promise<vo
       daysRemaining,
       availableProfit
     });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Passive Income Controllers
+export const markWelcomeModalSeen = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    await userService.markWelcomeModalSeen(userId);
+    res.status(200).json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getPassiveIncomeInfo = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.userId;
+    const info = await userService.getPassiveIncomeInfo(userId);
+    res.status(200).json(info);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
