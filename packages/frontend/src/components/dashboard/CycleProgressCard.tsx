@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { contractService, CycleProgress, ContractStatus } from '../../services/contractService';
+import { investmentPlanService, InvestmentPlan } from '../../services/investmentPlanService';
 import { TrendingUp, Clock, AlertCircle } from 'lucide-react';
 
 export const CycleProgressCard = () => {
     const [progress, setProgress] = useState<CycleProgress | null>(null);
     const [contractStatus, setContractStatus] = useState<ContractStatus | null>(null);
+    const [plans, setPlans] = useState<InvestmentPlan[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -12,12 +14,14 @@ export const CycleProgressCard = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const [progressData, statusData] = await Promise.all([
+                const [progressData, statusData, plansData] = await Promise.all([
                     contractService.getCycleProgress(),
-                    contractService.getContractStatus()
+                    contractService.getContractStatus(),
+                    investmentPlanService.getAllPlans()
                 ]);
                 setProgress(progressData);
                 setContractStatus(statusData);
+                setPlans(plansData);
             } catch (err: any) {
                 setError(err.message || 'Error al cargar datos');
             } finally {
@@ -59,7 +63,7 @@ export const CycleProgressCard = () => {
     // SCENARIO 1: User with capital but no plan (Passive Income Mode)
     if (!hasActivePlan && hasCapital) {
         const monthlyRate = passiveIncomeRate * 100; // Convert 0.03 to 3, 0.06 to 6
-        const dailyRate = ((passiveIncomeRate * 100) / 30).toFixed(3); // Convert to percentage then divide by 30
+        const dailyRate = ((passiveIncomeRate * 100) / 30).toFixed(1); // 1 decimal for display
         const isUpgraded = passiveIncomeRate >= 0.06; // Compare with decimal
 
         return (
@@ -81,18 +85,29 @@ export const CycleProgressCard = () => {
                         </div>
                     </div>
 
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    {/* Stats Grid - 3 metrics */}
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                        {/* Metric 1: Daily Rate */}
                         <div className="p-3 rounded-xl bg-gray-700/30 border border-gray-600/30">
-                            <p className="text-xs text-gray-400 mb-1">Tasa Diaria</p>
+                            <p className="text-xs text-gray-400 mb-1">Tasa diaria</p>
                             <p className={`text-xl font-bold ${isUpgraded ? 'text-purple-400' : 'text-green-400'}`}>
                                 {dailyRate}%
                             </p>
                         </div>
+
+                        {/* Metric 2: Monthly Earnings Estimate */}
                         <div className="p-3 rounded-xl bg-gray-700/30 border border-gray-600/30">
-                            <p className="text-xs text-gray-400 mb-1">Capital Actual</p>
-                            <p className="text-xl font-bold text-white">
-                                ${contractStatus?.currentBalanceUSDT?.toFixed(2)}
+                            <p className="text-xs text-gray-400 mb-1">Ganancia mensual</p>
+                            <p className={`text-xl font-bold ${isUpgraded ? 'text-purple-400' : 'text-green-400'}`}>
+                                ${((contractStatus?.currentBalanceUSDT || 0) * passiveIncomeRate).toFixed(2)}
+                            </p>
+                        </div>
+
+                        {/* Metric 3: Daily Earnings Estimate */}
+                        <div className="p-3 rounded-xl bg-gray-700/30 border border-gray-600/30">
+                            <p className="text-xs text-gray-400 mb-1">Ganancia diaria</p>
+                            <p className={`text-xl font-bold ${isUpgraded ? 'text-purple-400' : 'text-green-400'}`}>
+                                ${((contractStatus?.currentBalanceUSDT || 0) * (passiveIncomeRate / 30)).toFixed(3)}
                             </p>
                         </div>
                     </div>
@@ -103,14 +118,11 @@ export const CycleProgressCard = () => {
                         <p className="text-xs text-gray-300">
                             {isUpgraded
                                 ? 'Tienes la tasa mejorada del 6% por haber referido a alguien. Al suscribirte a un plan, obtendrás rendimientos aún mayores.'
-                                : 'Al suscribirte a un plan de inversión, puedes obtener rendimientos diarios de hasta 0.8% - 1.2% (mucho más que el 0.1% actual).'}
-                        </p>
-                    </div>
-
-                    {/* CTA */}
-                    <div className="text-center">
-                        <p className="text-xs text-gray-400">
-                            Suscríbete a un plan para maximizar tus ganancias →
+                                : (() => {
+                                    const minReturn = Math.min(...plans.map(p => p.minDailyReturn)).toFixed(1);
+                                    const maxReturn = Math.max(...plans.map(p => p.maxDailyReturn)).toFixed(1);
+                                    return `Al suscribirte a un plan de inversión, puedes obtener rendimientos diarios de hasta ${minReturn}% - ${maxReturn}% (mucho más que el ${dailyRate}% actual).`;
+                                })()}
                         </p>
                     </div>
                 </div>
@@ -164,13 +176,13 @@ export const CycleProgressCard = () => {
                 </div>
             </div>
 
-            {/* Paused Profit Warning - Only show if plan expired AND cycle not completed */}
+            {/* Plan Expired Info - Show passive income message */}
             {daysRemaining <= 0 && !progress?.isCompleted && (
-                <div className="mb-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-center gap-3 relative z-10">
-                    <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center gap-3 relative z-10">
+                    <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
                     <div>
-                        <p className="text-sm font-bold text-orange-400">Generación de ganancias pausada</p>
-                        <p className="text-xs text-gray-300">Tu plan ha expirado. Renueva para continuar generando profit.</p>
+                        <p className="text-sm font-bold text-blue-400">Plan expirado - Modo pasivo activo</p>
+                        <p className="text-xs text-gray-300">Ahora estás generando {passiveIncomeRate * 100}% mensual en modo pasivo. Renueva tu plan para obtener mayores rendimientos.</p>
                     </div>
                 </div>
             )}

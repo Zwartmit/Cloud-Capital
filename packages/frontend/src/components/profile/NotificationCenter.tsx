@@ -1,16 +1,20 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Bell, CheckCircle, XCircle, Clock, TrendingUp, TrendingDown, Search, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react';
+import { Bell, CheckCircle, XCircle, Clock, TrendingUp, TrendingDown, Search, ChevronLeft, ChevronRight, Copy, Check, Shield, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
+import { Modal } from '../common/Modal';
+import * as btcPoolService from '../../services/btcPool.service';
 
 interface Task {
     id: string;
     type: string;
     status: string;
     amountUSD: number;
+    amountBTC?: number;
     createdAt: string;
     approvedByAdmin?: string;
     rejectionReason?: string;
     destinationUserId?: string;
     assignedAddress?: string; // BTC address for auto deposits
+    adminNotes?: string;
 }
 
 interface NotificationCenterProps {
@@ -29,6 +33,40 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
     // Date filters
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
+
+    // Blockchain Verification Modal state
+    const [showBlockchainModal, setShowBlockchainModal] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [blockchainData, setBlockchainData] = useState<any>(null);
+    const [verifying, setVerifying] = useState(false);
+
+    const handleVerifyBlockchain = async (task: Task) => {
+        if (!task.assignedAddress) return;
+
+        setSelectedTask(task);
+        setShowBlockchainModal(true);
+        setVerifying(true);
+        setBlockchainData(null);
+
+        try {
+            const data = await btcPoolService.verifyDeposit({
+                address: task.assignedAddress,
+                expectedAmountBTC: task.amountBTC
+            });
+            setBlockchainData(data);
+        } catch (error) {
+            console.error('Error verifying blockchain:', error);
+            setBlockchainData({ error: 'No se pudo verificar la información de la blockchain. Intente nuevamente.' });
+        } finally {
+            setVerifying(false);
+        }
+    };
+
+    const handleRefreshBlockchain = () => {
+        if (selectedTask) {
+            handleVerifyBlockchain(selectedTask);
+        }
+    };
 
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -313,6 +351,12 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
                                                     {task.rejectionReason}
                                                 </div>
                                             )}
+                                            {task.adminNotes && (
+                                                <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded text-xs text-blue-400">
+                                                    <span className="font-semibold">Nota: </span>
+                                                    {task.adminNotes}
+                                                </div>
+                                            )}
                                             {/* Show BTC address for auto deposits */}
                                             {task.type === 'DEPOSIT_AUTO' && task.assignedAddress && (
                                                 <div className="mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded">
@@ -331,6 +375,15 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
                                                             ) : (
                                                                 <Copy className="w-4 h-4 text-blue-400" />
                                                             )}
+                                                        </button>
+                                                    </div>
+                                                    <div className="mt-2 pt-2 border-t border-blue-500/20 flex justify-end">
+                                                        <button
+                                                            onClick={() => handleVerifyBlockchain(task)}
+                                                            className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                                                        >
+                                                            <Shield className="w-3.5 h-3.5" />
+                                                            Verificar en Blockchain
                                                         </button>
                                                     </div>
                                                 </div>
@@ -372,6 +425,151 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
                     )}
                 </>
             )}
-        </div>
+
+            {/* Blockchain Verification Modal */}
+            <Modal
+                isOpen={showBlockchainModal}
+                onClose={() => setShowBlockchainModal(false)}
+                title="Verificación en Blockchain"
+            >
+                <div className="space-y-4">
+                    {verifying ? (
+                        <div className="text-center py-8">
+                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
+                            <p className="mt-4 text-gray-300">Verificando en Blockchain...</p>
+                        </div>
+                    ) : blockchainData ? (
+                        <>
+                            <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                                <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+                                    {blockchainData.error ? (
+                                        <><AlertCircle className="w-5 h-5 text-red-500" /> ❌ Error</>
+                                    ) : blockchainData.verified ? (
+                                        <><Check className="w-5 h-5 text-green-500" /> ✅ Verificado</>
+                                    ) : (
+                                        <><AlertCircle className="w-5 h-5 text-yellow-500" /> ⚠️ Pendiente</>
+                                    )}
+                                </h3>
+
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">Dirección:</span>
+                                        <code className="text-cyan-400 text-xs">{selectedTask?.assignedAddress}</code>
+                                    </div>
+                                    {blockchainData.expectedAmountBTC && (
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-400">Monto esperado:</span>
+                                            <strong className="text-yellow-400">{blockchainData.expectedAmountBTC.toFixed(8)} BTC</strong>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">Balance:</span>
+                                        <strong className="text-white">{blockchainData.balance} BTC</strong>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">Total recibido:</span>
+                                        <strong className={blockchainData.totalReceived > 0 ? "text-green-400" : "text-white"}>{blockchainData.totalReceived} BTC</strong>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">Confirmaciones:</span>
+                                        <strong className={blockchainData.confirmations >= 1 ? 'text-green-500' : 'text-yellow-500'}>
+                                            {blockchainData.confirmations}
+                                        </strong>
+                                    </div>
+                                </div>
+
+                                {blockchainData.validationMessage && (
+                                    <div className={`mt-3 p-3 rounded border-l-4 ${blockchainData.error ? 'bg-red-900/20 border-red-500' :
+                                        blockchainData.verified ? 'bg-green-900/20 border-green-500' :
+                                            'bg-yellow-900/20 border-yellow-500'
+                                        }`}>
+                                        <p className="text-sm text-gray-300 whitespace-pre-line">{blockchainData.validationMessage}</p>
+                                    </div>
+                                )}
+
+                                {blockchainData.message && !blockchainData.validationMessage && (
+                                    <div className="mt-3 p-3 bg-gray-900/50 rounded border-l-4 border-cyan-500">
+                                        <p className="text-sm text-gray-300">{blockchainData.message}</p>
+                                    </div>
+                                )}
+
+                                {blockchainData.explorerLink && !blockchainData.error && (
+                                    <a
+                                        href={blockchainData.explorerLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="mt-4 flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition w-full"
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                        Ver en Explorador de Bloques
+                                    </a>
+                                )}
+                            </div>
+
+                            {/* Transactions */}
+                            <div className="mt-4 border-t border-gray-700 pt-4">
+                                <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                                    <RefreshCw className="w-4 h-4 text-gray-400" />
+                                    Últimas Transacciones
+                                </h4>
+                                {blockchainData.transactions && blockchainData.transactions.length > 0 ? (
+                                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                        {blockchainData.transactions.map((tx: any) => (
+                                            <div key={tx.txid} className="p-3 bg-gray-900/50 rounded-lg border border-gray-700/50">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <a
+                                                            href={`https://mempool.space/tx/${tx.txid}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-xs font-mono text-accent hover:underline flex items-center gap-1"
+                                                        >
+                                                            {tx.txid.substring(0, 8)}...{tx.txid.substring(tx.txid.length - 8)}
+                                                            <ExternalLink className="w-3 h-3" />
+                                                        </a>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className={`text-xs px-1.5 py-0.5 rounded ${tx.confirmed ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+                                                                }`}>
+                                                                {tx.confirmed ? 'Confirmada' : 'Pendiente'}
+                                                            </span>
+                                                            <span className="text-xs text-gray-500">
+                                                                {new Date(tx.time * 1000).toLocaleString()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className={`text-sm font-bold ${tx.value > 0 ? 'text-green-400' : 'text-white'}`}>
+                                                            {tx.value > 0 ? '+' : ''}{tx.value} BTC
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-400 italic text-center py-4 bg-gray-900/50 rounded-lg">
+                                        No se encontraron transacciones recientes
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="flex justify-end pt-4 mt-2 border-t border-gray-700">
+                                <button
+                                    onClick={handleRefreshBlockchain}
+                                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors flex items-center gap-2 text-sm"
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                    Actualizar
+                                </button>
+                            </div>
+
+                        </>
+                    ) : (
+                        <p className="text-gray-400 text-center py-4">No hay datos disponibles</p>
+                    )}
+                </div>
+            </Modal >
+
+        </div >
     );
 };

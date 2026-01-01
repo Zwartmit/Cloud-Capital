@@ -413,7 +413,11 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
           status: 'COMPLETED',
           approvedByAdmin: adminEmail,
           collaboratorProof: collaboratorProof || undefined,
-          reference: reference || undefined
+          reference: reference || undefined,
+          // Si el monto aprobado es diferente al solicitado (y se proporcionó receivedAmount), agregar nota
+          adminNotes: (receivedAmount && receivedAmount !== task.amountUSD)
+            ? `La solicitud se aprobó con un monto de $${receivedAmount}, ya que fue lo que se recibió en la wallet`
+            : undefined
         },
         include: {
           user: {

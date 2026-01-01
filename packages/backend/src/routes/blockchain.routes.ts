@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import * as blockchainController from '../controllers/blockchain.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
-import { requireAdmin } from '../middleware/role.middleware.js';
+import { requireAdmin } from '../middleware/role.middleware.js'; // Unused now
 
 const router = Router();
 
 // All routes require authentication
 router.use(authenticateToken);
-router.use(requireAdmin); // Only admins can verify blockchain data
+// router.use(requireAdmin); // Removed to allow users to verify their own transactions
 
 // GET /api/blockchain/address/:address
 router.get('/address/:address', blockchainController.getAddressInfo);

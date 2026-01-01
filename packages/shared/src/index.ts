@@ -122,6 +122,7 @@ export interface TaskDTO {
   collaboratorId?: string;
   collaboratorVerified?: boolean;
   rejectionReason?: string;
+  adminNotes?: string;
   destinationUserId?: string;
   user: {
     id: string;

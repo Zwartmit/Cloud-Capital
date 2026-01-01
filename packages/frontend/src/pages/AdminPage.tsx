@@ -78,9 +78,9 @@ export const AdminPage: React.FC = () => {
     const [newCapital, setNewCapital] = useState('');
     const [capitalMessage, setCapitalMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-
-
-
+    // Profit modification state
+    const [newProfit, setNewProfit] = useState('');
+    const [profitMessage, setProfitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     // Inside render:
     // {activeTab === 'tasks' && <TaskManager onTaskProcessed={fetchStats} />}
@@ -541,78 +541,152 @@ export const AdminPage: React.FC = () => {
                                                 </div>
                                             )}
 
-                                            {/* Capital Modification Section - Only for SUPERADMIN */}
+                                            {/* Capital and Profit Modification Section - Only for SUPERADMIN */}
                                             {user?.role === 'SUPERADMIN' && (
                                                 <div className="border-t border-gray-700 pt-4">
-                                                    <h4 className="text-sm font-bold text-accent mb-3">Modificar capital del usuario:</h4>
+                                                    <h4 className="text-sm font-bold text-accent mb-3">Modificar capital y profit del usuario:</h4>
                                                     {selectedUser.isBlocked && (
                                                         <div className="mb-3 p-2 bg-yellow-900/20 border border-yellow-700/30 rounded text-xs text-yellow-400">
-                                                            ⚠️ Actualmente no se puede modificar el capital de esta cuenta ya que está bloqueada.
+                                                            ⚠️ Actualmente no se puede modificar el capital ni el profit de esta cuenta ya que está bloqueada.
                                                         </div>
                                                     )}
-                                                    <form onSubmit={async (e) => {
-                                                        e.preventDefault();
-                                                        if (!selectedUser) return;
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        {/* Capital Modification - Left Column */}
+                                                        <form onSubmit={async (e) => {
+                                                            e.preventDefault();
+                                                            if (!selectedUser) return;
 
-                                                        const capitalVal = parseFloat(newCapital);
+                                                            const capitalVal = parseFloat(newCapital);
 
-                                                        if (!capitalVal || isNaN(capitalVal)) {
-                                                            setCapitalMessage({ type: 'error', text: 'Ingresa un valor válido' });
-                                                            return;
-                                                        }
+                                                            if (!capitalVal || isNaN(capitalVal)) {
+                                                                setCapitalMessage({ type: 'error', text: 'Ingresa un valor válido' });
+                                                                return;
+                                                            }
 
-                                                        if (capitalVal < 0) {
-                                                            setCapitalMessage({ type: 'error', text: 'El valor no puede ser negativo' });
-                                                            return;
-                                                        }
+                                                            if (capitalVal < 0) {
+                                                                setCapitalMessage({ type: 'error', text: 'El valor no puede ser negativo' });
+                                                                return;
+                                                            }
 
-                                                        try {
-                                                            const updated = await adminService.updateUserBalance(
-                                                                selectedUser.id,
-                                                                capitalVal,
-                                                                selectedUser.currentBalanceUSDT // Keep current balance
-                                                            );
-                                                            setSelectedUser(updated);
-                                                            setCapitalMessage({ type: 'success', text: 'Capital actualizado exitosamente' });
-                                                            setNewCapital('');
-                                                            setTimeout(() => setCapitalMessage(null), 5000);
-                                                            // Refresh stats
+                                                            try {
+                                                                // Calculate current profit
+                                                                const currentProfit = selectedUser.currentBalanceUSDT - selectedUser.capitalUSDT;
 
-                                                        } catch (err: any) {
-                                                            setCapitalMessage({
-                                                                type: 'error',
-                                                                text: err.response?.data?.error || 'Error al actualizar capital'
-                                                            });
-                                                        }
-                                                    }} className="space-y-3">
-                                                        <div>
-                                                            <input
-                                                                type="number"
-                                                                step="0.01"
-                                                                value={newCapital}
-                                                                onChange={(e) => setNewCapital(e.target.value)}
-                                                                placeholder={selectedUser.capitalUSDT.toFixed(2)}
-                                                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                disabled={selectedUser.isBlocked}
-                                                                required
-                                                            />
-                                                            <p className="text-xs text-gray-500 mt-1 italic">
-                                                                El balance total se mantendrá igual
-                                                            </p>
-                                                        </div>
-                                                        <button
-                                                            type="submit"
-                                                            className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2 text-sm rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                            disabled={selectedUser.isBlocked}
-                                                        >
-                                                            Actualizar capital
-                                                        </button>
-                                                        {capitalMessage && (
-                                                            <div className={`p-2 rounded-lg text-xs ${capitalMessage.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                                                                {capitalMessage.text}
+                                                                // New balance = new capital + current profit (profit stays constant)
+                                                                const newBalance = capitalVal + currentProfit;
+
+                                                                const updated = await adminService.updateUserBalance(
+                                                                    selectedUser.id,
+                                                                    capitalVal,
+                                                                    newBalance
+                                                                );
+                                                                setSelectedUser(updated);
+                                                                setCapitalMessage({ type: 'success', text: 'Capital actualizado exitosamente' });
+                                                                setNewCapital('');
+                                                                setTimeout(() => setCapitalMessage(null), 5000);
+                                                            } catch (err: any) {
+                                                                setCapitalMessage({
+                                                                    type: 'error',
+                                                                    text: err.response?.data?.error || 'Error al actualizar capital'
+                                                                });
+                                                            }
+                                                        }} className="space-y-3">
+                                                            <div>
+                                                                <label className="block text-xs text-gray-400 mb-1">Nuevo capital</label>
+                                                                <input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    value={newCapital}
+                                                                    onChange={(e) => setNewCapital(e.target.value)}
+                                                                    placeholder={selectedUser.capitalUSDT.toFixed(2)}
+                                                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                    disabled={selectedUser.isBlocked}
+                                                                    required
+                                                                />
+                                                                <p className="text-xs text-gray-500 mt-1 italic">
+                                                                    El profit se mantendrá constante
+                                                                </p>
                                                             </div>
-                                                        )}
-                                                    </form>
+                                                            <button
+                                                                type="submit"
+                                                                className="w-full bg-accent hover:bg-blue-500 text-white font-bold py-2 text-sm rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                disabled={selectedUser.isBlocked}
+                                                            >
+                                                                Actualizar capital
+                                                            </button>
+                                                            {capitalMessage && (
+                                                                <div className={`p-2 rounded-lg text-xs ${capitalMessage.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                                                    {capitalMessage.text}
+                                                                </div>
+                                                            )}
+                                                        </form>
+
+                                                        {/* Profit Modification - Right Column */}
+                                                        <form onSubmit={async (e) => {
+                                                            e.preventDefault();
+                                                            if (!selectedUser) return;
+
+                                                            const profitVal = parseFloat(newProfit);
+
+                                                            if (isNaN(profitVal)) {
+                                                                setProfitMessage({ type: 'error', text: 'Ingresa un valor válido' });
+                                                                return;
+                                                            }
+
+                                                            try {
+                                                                const newBalance = selectedUser.capitalUSDT + profitVal;
+
+                                                                if (newBalance < 0) {
+                                                                    setProfitMessage({ type: 'error', text: 'El balance resultante no puede ser negativo' });
+                                                                    return;
+                                                                }
+
+                                                                const updated = await adminService.updateUserBalance(
+                                                                    selectedUser.id,
+                                                                    selectedUser.capitalUSDT, // Keep capital
+                                                                    newBalance // Update balance
+                                                                );
+                                                                setSelectedUser(updated);
+                                                                setProfitMessage({ type: 'success', text: 'Profit actualizado exitosamente' });
+                                                                setNewProfit('');
+                                                                setTimeout(() => setProfitMessage(null), 5000);
+                                                            } catch (err: any) {
+                                                                setProfitMessage({
+                                                                    type: 'error',
+                                                                    text: err.response?.data?.error || 'Error al actualizar profit'
+                                                                });
+                                                            }
+                                                        }} className="space-y-3">
+                                                            <div>
+                                                                <label className="block text-xs text-gray-400 mb-1">Nuevo profit</label>
+                                                                <input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    value={newProfit}
+                                                                    onChange={(e) => setNewProfit(e.target.value)}
+                                                                    placeholder={(selectedUser.currentBalanceUSDT - selectedUser.capitalUSDT).toFixed(2)}
+                                                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:ring-profit focus:border-profit focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                    disabled={selectedUser.isBlocked}
+                                                                    required
+                                                                />
+                                                                <p className="text-xs text-gray-500 mt-1 italic">
+                                                                    El capital se mantendrá igual
+                                                                </p>
+                                                            </div>
+                                                            <button
+                                                                type="submit"
+                                                                className="w-full bg-profit hover:bg-green-500 text-white font-bold py-2 text-sm rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                disabled={selectedUser.isBlocked}
+                                                            >
+                                                                Actualizar profit
+                                                            </button>
+                                                            {profitMessage && (
+                                                                <div className={`p-2 rounded-lg text-xs ${profitMessage.type === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                                                    {profitMessage.text}
+                                                                </div>
+                                                            )}
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             )}
 

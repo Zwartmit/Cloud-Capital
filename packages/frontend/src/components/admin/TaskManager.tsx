@@ -708,6 +708,14 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                         </div>
                                     )}
 
+                                    {task.adminNotes && (
+                                        <div className="mt-2 p-2 bg-blue-900/20 border border-blue-700 rounded">
+                                            <p className="text-xs text-blue-400">
+                                                <span className="font-bold">Nota:</span> {task.adminNotes}
+                                            </p>
+                                        </div>
+                                    )}
+
                                     {activeTab === 'history' && task.approvedByAdmin && (
                                         <p className="text-xs text-gray-500 mt-1">
                                             Procesado por: {task.approvedByAdmin}
@@ -765,7 +773,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                             title="Verificar en Blockchain"
                                         >
                                             <ExternalLink className="w-4 h-4" />
-                                            <span className="text-xs">Blockchain</span>
+                                            <span className="text-xs">Verificar en Blockchain</span>
                                         </button>
                                     )}
 
