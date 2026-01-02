@@ -128,7 +128,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
                     <div className="flex-1 flex items-center justify-end">
                         {currentPlan ? (
                             <div className={`flex items-center justify-between space-x-2 py-2 px-4 rounded-lg text-xs sm:text-sm font-bold transition-all ${planColor} bg-opacity-10 border border-gray-700 hover:border-accent w-full sm:w-auto`}>
-                                <span>PLAN {currentPlan.name}: {currentPlan.minDailyReturn}% - {currentPlan.maxDailyReturn}% Diario</span>
+                                <span>PLAN {currentPlan.name}: {currentPlan.minDailyReturn}% - {currentPlan.maxDailyReturn}% Diario (Lun-Vie)</span>
                             </div>
                         ) : (
                             <div className="flex items-center justify-center space-x-2 py-2 px-4 rounded-lg text-xs sm:text-sm font-bold text-gray-400 border border-gray-700 w-full sm:w-auto bg-gray-800/50">

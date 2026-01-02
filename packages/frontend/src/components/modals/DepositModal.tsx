@@ -4,6 +4,7 @@ import { Countdown } from '../common/Countdown';
 import { Copy, Upload, Building2 } from 'lucide-react';
 import investmentService from '../../services/investmentService';
 import { collaboratorBankService, CollaboratorBankAccount } from '../../services/collaboratorBankService';
+import { userService } from '../../services/userService';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface DepositModalProps {
@@ -22,6 +23,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
     userData,
 }) => {
     const [selectedMethod, setSelectedMethod] = useState<null | 'direct' | 'collaborator'>(null);
+    const [showDirectDepositWarning, setShowDirectDepositWarning] = useState(false);
     const [amount, setAmount] = useState('');
     const [txid, setTxid] = useState('');
     const [proof, setProof] = useState<File | null>(null);
@@ -48,6 +50,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         };
     }>>([]);
 
+    // Contact information state
+    const [contactInfo, setContactInfo] = useState<{ email: string | null; telegram: string | null }>({ email: null, telegram: null });
+
     // Reset form function
     const resetForm = () => {
         setAmount('');
@@ -57,6 +62,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         setAddressExpiration(null);
         setReservedAddressId(null);
         setSelectedMethod(null);
+        setShowDirectDepositWarning(false);
         setIsReuseNotification(false);
     };
 
@@ -116,12 +122,16 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         }
     }, [selectedMethod]);
 
-    // Fetch collaborators on mount
+    // Fetch collaborators and contact info on mount
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const collabData = await investmentService.getCollaborators();
                 setCollaborators(collabData);
+
+                // Fetch public contact information
+                const contactData = await userService.getPublicContactInfo();
+                setContactInfo(contactData);
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -266,7 +276,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Direct Deposit Button */}
                         <button
-                            onClick={() => setSelectedMethod('direct')}
+                            onClick={() => setShowDirectDepositWarning(true)}
                             className="group relative p-6 bg-gradient-to-br from-blue-900/40 to-blue-800/20 hover:from-blue-800/60 hover:to-blue-700/40 border-2 border-blue-700/50 hover:border-accent rounded-xl transition-all duration-300 text-left"
                         >
                             <div className="flex flex-col items-center text-center space-y-3">
@@ -298,6 +308,114 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                                     <p className="text-xs text-gray-400">Deposita en moneda local a través de un colaborador</p>
                                 </div>
                             </div>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Direct Deposit Warning Screen */}
+            {showDirectDepositWarning && selectedMethod === null && (
+                <div className="space-y-3 mt-4">
+                    <div className="bg-gradient-to-br from-blue-900/20 to-blue-800/10 border border-blue-600/30 rounded-lg p-4">
+                        <h3 className="text-base font-bold text-blue-300 mb-3 text-center flex items-center justify-center gap-2">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Información sobre aportes automáticos
+                        </h3>
+
+                        {/* Acreditación Inmediata */}
+                        <div className="bg-green-900/10 border border-green-600/30 rounded-lg p-3 mb-2">
+                            <h4 className="text-xs font-bold text-green-400 mb-1.5 flex items-center gap-1.5">
+                                <span className="text-sm">⚡</span>
+                                <span>Acreditación inmediata (&lt;60 min)</span>
+                            </h4>
+                            <p className="text-[11px] text-gray-400 leading-snug mb-2">
+                                Recomendamos usar <strong className="text-green-400">Binance, Kraken, Coinbase u OKX</strong> con <strong className="text-accent">Red Bitcoin (BTC)</strong> para procesamiento rápido con comisiones competitivas y prioridad garantizada.
+                            </p>
+                        </div>
+
+                        {/* Advertencias */}
+                        <div className="bg-yellow-900/10 border border-yellow-600/30 rounded-lg p-3 mb-2">
+                            <h4 className="text-xs font-bold text-yellow-400 mb-1.5 flex items-center gap-1.5">
+                                <span className="text-sm">⚠️</span>
+                                <span>Wallets de custodia propia</span>
+                            </h4>
+                            <p className="text-[11px] text-gray-400 leading-snug">
+                                Si usas Blockstream, BlueWallet o Electrum, <strong className="text-yellow-400">configura tasa de prioridad alta</strong>. Configuraciones insuficientes o RBF pueden causar esperas de varios días.
+                            </p>
+                        </div>
+
+                        {/* Garantías */}
+                        <div className="bg-blue-900/10 border border-blue-600/30 rounded-lg p-3 mb-2">
+                            <h4 className="text-xs font-bold text-blue-400 mb-1.5 flex items-center gap-1.5">
+                                <span className="text-sm">🛡️</span>
+                                <span>Garantía y soporte</span>
+                            </h4>
+                            <p className="text-[11px] text-gray-400 leading-snug mb-2">
+                                Dirección única (expira en 24h). Fondos protegidos. Para soporte manual, envía tu TXID, usuario y captura a:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                {contactInfo.telegram && (
+                                    <a
+                                        href={contactInfo.telegram.startsWith('@') || contactInfo.telegram.startsWith('http')
+                                            ? (contactInfo.telegram.startsWith('http') ? contactInfo.telegram : `https://t.me/${contactInfo.telegram.replace('@', '')}`)
+                                            : `https://t.me/${contactInfo.telegram}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 px-2.5 py-1 rounded text-[10px] font-semibold transition-colors"
+                                    >
+                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z" />
+                                        </svg>
+                                        Telegram
+                                    </a>
+                                )}
+                                {contactInfo.email && (
+                                    <a
+                                        href={`mailto:${contactInfo.email}`}
+                                        className="flex items-center gap-1.5 bg-red-600/20 hover:bg-red-600/40 text-red-300 px-2.5 py-1 rounded text-[10px] font-semibold transition-colors"
+                                    >
+                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+                                        </svg>
+                                        Gmail
+                                    </a>
+                                )}
+                                {!contactInfo.telegram && !contactInfo.email && (
+                                    <p className="text-[10px] text-gray-500 italic">
+                                        Información de contacto no configurada
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Confirmación */}
+                        <div className="bg-gray-800/30 border border-gray-600/30 rounded-lg p-2.5">
+                            <p className="text-[11px] text-gray-400 text-center leading-snug">
+                                Al continuar, confirmas que comprendes que la <strong className="text-accent">eficiencia depende de la plataforma de origen</strong>
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => {
+                                setShowDirectDepositWarning(false);
+                            }}
+                            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 rounded-lg transition text-sm"
+                        >
+                            Volver
+                        </button>
+                        <button
+                            onClick={() => {
+                                setShowDirectDepositWarning(false);
+                                setSelectedMethod('direct');
+                            }}
+                            className="flex-1 bg-accent hover:bg-blue-500 text-white font-semibold py-2.5 rounded-lg transition shadow-lg shadow-accent/20 hover:shadow-accent/40 text-sm"
+                        >
+                            Acepto – Continuar
                         </button>
                     </div>
                 </div>

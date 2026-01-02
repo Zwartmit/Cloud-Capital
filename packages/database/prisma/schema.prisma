@@ -346,3 +346,15 @@ model CollaboratorBankAccount {
   
   @@map("collaborator_bank_accounts")
 }
+
+// System Configuration
+model SystemConfig {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?  // Admin user ID who made the change
+  
+  @@map("system_config")
+}

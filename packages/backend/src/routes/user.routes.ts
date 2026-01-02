@@ -5,7 +5,11 @@ import { upload } from '../config/multer.js';
 
 const router = Router();
 
-// All routes require authentication
+// Public routes (no authentication required)
+// GET /api/user/public-contact - Get public contact information
+router.get('/public-contact', userController.getPublicContactInfo);
+
+// All other routes require authentication
 router.use(authenticateToken);
 
 // GET /api/user/profile

@@ -97,15 +97,17 @@ export const CycleCompletionModal: React.FC<CycleCompletionModalProps> = ({
                 </div>
 
                 {/* Important Notice */}
-                <div className="bg-blue-900/20 border border-blue-600 p-3 rounded-lg">
+                <div className="bg-yellow-900/20 border border-yellow-600 p-3 rounded-lg">
                     <div className="flex items-start gap-2">
-                        <Wallet className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                        <Wallet className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
                         <div>
-                            <h4 className="font-bold text-blue-400 mb-1 text-xs">Importante:</h4>
+                            <h4 className="font-bold text-yellow-400 mb-1 text-xs">⚠️ Importante - Ciclo completado:</h4>
                             <ul className="text-xs text-gray-300 leading-relaxed space-y-1">
-                                <li>• Este retiro es <strong>solo de profit</strong>, tu capital permanece intacto</li>
-                                <li>• Puedes continuar invirtiendo o solicitar liquidación desde tu perfil</li>
-                                <li>• Los retiros se procesan únicamente los viernes</li>
+                                <li>• Has alcanzado el <strong>200% de profit</strong> sobre tu capital inicial</li>
+                                <li>• Al retirar este profit, <strong>tu cuenta se reseteará a $0</strong></li>
+                                <li>• Podrás iniciar un <strong>nuevo ciclo</strong> con un nuevo depósito</li>
+                                <li>• Tu <strong>historial de transacciones</strong> se mantendrá intacto</li>
+                                <li>• Los retiros se procesan únicamente los <strong>viernes</strong></li>
                             </ul>
                         </div>
                     </div>

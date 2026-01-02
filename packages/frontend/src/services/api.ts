@@ -50,6 +50,17 @@ apiClient.interceptors.response.use(
 
     // Handle 401 (Unauthorized)
     const isAuthError = error.response?.status === 401;
+    // Handle 403 (Forbidden) - e.g. Blocked Account
+    const isForbidden = error.response?.status === 403;
+
+    if (isForbidden) {
+      // Clear tokens and redirect to login immediately for generic 403s
+      // (Assuming 403 always means 'Access Denied' which requires re-login or contact admin)
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      window.location.href = '/login';
+      return Promise.reject(error);
+    }
 
     if (isAuthError && !isLoginRequest && !isRegisterRequest && !isRefreshRequest && !originalRequest._retry) {
       if (isRefreshing) {
@@ -91,12 +102,12 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (err) {
         processQueue(err, null);
-        
+
         // Token expired or invalid
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         window.location.href = '/login';
-        
+
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

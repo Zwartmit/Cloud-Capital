@@ -89,5 +89,10 @@ export const userService = {
   }> {
     const response = await apiClient.get('/user/passive-income-info');
     return response.data;
+  },
+
+  async getPublicContactInfo(): Promise<{ email: string | null; telegram: string | null }> {
+    const response = await apiClient.get('/user/public-contact');
+    return response.data;
   }
 };

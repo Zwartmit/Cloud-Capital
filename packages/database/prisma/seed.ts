@@ -538,6 +538,19 @@ async function main() {
   });
   console.log('✅ Created Test User 5 (Plan expiring in 3 days):', testUser5.email);
 
+  // System Configuration
+  console.log('\n⚙️ Creating system configuration...');
+  await prisma.systemConfig.upsert({
+    where: { key: 'REFERRAL_COMMISSION_RATE' },
+    update: {},
+    create: {
+      key: 'REFERRAL_COMMISSION_RATE',
+      value: '0.10',
+      description: 'Porcentaje de comisión por primer aporte de referido (0.05 = 5%, 0.10 = 10%)'
+    }
+  });
+  console.log('✅ System configuration created');
+
   console.log('\n🎉 Seeding completed!');
   console.log('\n📝 Test credentials:');
   console.log('Admin: admin@cloudcapital.com / admin123');

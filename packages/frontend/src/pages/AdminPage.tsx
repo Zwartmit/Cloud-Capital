@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Search, Users, TrendingUp, User, DollarSign, Building, Shield, Copy, Check } from 'lucide-react';
 import { InvestmentPlanManager } from '../components/admin/InvestmentPlanManager';
@@ -34,6 +34,7 @@ export const AdminPage: React.FC = () => {
     const [whatsappMessage, setWhatsappMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [contactEmail, setContactEmail] = useState(user?.contactEmail || '');
     const [contactTelegram, setContactTelegram] = useState(user?.contactTelegram || '');
+    const isSelectionEvent = useRef(false);
 
     // User list state
     const [allUsers, setAllUsers] = useState<UserDTO[]>([]);
@@ -87,6 +88,11 @@ export const AdminPage: React.FC = () => {
 
     // Live search effect
     useEffect(() => {
+        if (isSelectionEvent.current) {
+            isSelectionEvent.current = false;
+            return;
+        }
+
         const delayDebounceFn = setTimeout(async () => {
             if (searchEmail.length >= 2) {
                 setLoading(true);
@@ -109,16 +115,22 @@ export const AdminPage: React.FC = () => {
         return () => clearTimeout(delayDebounceFn);
     }, [searchEmail]);
 
-    const handleSelectUser = async (user: UserDTO) => {
+    const handleSelectUser = async (user: UserDTO, updateSearch = true) => {
         try {
             // Fetch full user details including referredBy
             const fullUserDetails = await adminService.getUserById(user.id);
             setSelectedUser(fullUserDetails);
-            setSearchEmail(fullUserDetails.name); // Update search input with selected user's name
+            if (updateSearch) {
+                isSelectionEvent.current = true;
+                setSearchEmail(fullUserDetails.name); // Update search input with selected user's name
+            }
         } catch (err) {
             console.error('Error fetching user details:', err);
             setSelectedUser(user); // Fallback to table user data if full details fail
-            setSearchEmail(user.name); // Update search input with selected user's name
+            if (updateSearch) {
+                isSelectionEvent.current = true;
+                setSearchEmail(user.name); // Update search input with selected user's name
+            }
         } finally {
             setShowSuggestions(false);
             setError('');
@@ -521,11 +533,32 @@ export const AdminPage: React.FC = () => {
                                                             <span className="text-red-400 text-lg">🔒</span>
                                                             <div className="flex-1">
                                                                 <h4 className="text-sm font-bold text-red-400 mb-1">Cuenta bloqueada</h4>
-                                                                <p className="text-xs text-gray-300">
-                                                                    <span className="font-semibold">Motivo:</span> {selectedUser.blockedReason || 'No especificado'}
-                                                                </p>
+
+                                                                {/* Check if reason contains profit info */}
+                                                                {selectedUser.blockedReason && selectedUser.blockedReason.includes('Profit retenido') ? (
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                                                        <div>
+                                                                            <p className="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wider">Motivo</p>
+                                                                            <p className="text-sm text-white">Liquidación Aprobada</p>
+                                                                        </div>
+                                                                        <div className="bg-red-900/40 p-2 rounded border border-red-500/20">
+                                                                            <p className="text-xs text-red-300 mb-1 font-semibold uppercase tracking-wider">Profit Retenido</p>
+                                                                            <p className="text-sm text-red-100 font-mono font-bold">
+                                                                                {selectedUser.blockedReason.split('Profit retenido: ')[1]}
+                                                                            </p>
+                                                                            <p className="text-[10px] text-red-400 mt-1">
+                                                                                Ganancia al momento del retiro
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <p className="text-xs text-gray-300">
+                                                                        <span className="font-semibold">Motivo:</span> {selectedUser.blockedReason === 'LIQUIDATION_APPROVED' ? 'Liquidación Aprobada' : (selectedUser.blockedReason || 'No especificado')}
+                                                                    </p>
+                                                                )}
+
                                                                 {selectedUser.blockedAt && (
-                                                                    <p className="text-xs text-gray-400 mt-1">
+                                                                    <p className="text-xs text-gray-500 mt-2 pt-2 border-t border-red-900/30">
                                                                         Bloqueada el: {new Date(selectedUser.blockedAt).toLocaleDateString('es-ES', {
                                                                             day: '2-digit',
                                                                             month: '2-digit',
@@ -853,7 +886,7 @@ export const AdminPage: React.FC = () => {
                                                             <td className="p-2 sm:p-3">
                                                                 <div className="flex gap-2 justify-center">
                                                                     <button
-                                                                        onClick={() => handleSelectUser(tableUser)}
+                                                                        onClick={() => handleSelectUser(tableUser, false)}
                                                                         className="bg-blue-600 hover:bg-blue-500 text-white px-2 sm:px-3 py-1 rounded text-xs font-semibold transition-colors"
                                                                         title="Ver detalles"
                                                                     >

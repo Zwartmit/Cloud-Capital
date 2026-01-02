@@ -74,4 +74,11 @@ router.post('/charge-commissions', adminController.chargeAllCommissions);
 // POST /api/admin/charge-commission/:userId
 router.post('/charge-commission/:userId', adminController.chargeUserCommission);
 
+// System Configuration routes
+// GET /api/admin/system-config/:key
+router.get('/system-config/:key', adminController.getSystemConfig);
+
+// PUT /api/admin/system-config/:key
+router.put('/system-config/:key', adminController.updateSystemConfig);
+
 export default router;

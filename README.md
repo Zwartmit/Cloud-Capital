@@ -4,7 +4,7 @@ Plataforma moderna de inversión en criptomonedas.
 
 ## 📊 Estado del Proyecto
 
-**Progreso General**: 95% completado
+**Progreso General**: 98% completado
 
 - ✅ **Fase 1**: Monorepo Setup - COMPLETADA
 - ✅ **Fase 2**: Frontend Implementation - COMPLETADA
@@ -12,9 +12,9 @@ Plataforma moderna de inversión en criptomonedas.
 - ✅ **Fase 4**: Database Setup (MySQL) - COMPLETADA
 - ⏳ **Fase 5**: Configuration, Integration, Testing & Deployment - EN PROGRESO
 
-**Último Update**: 2025-12-10
+**Último Update**: 2026-01-02
 
-> 💡 **Nota**: El sistema está funcional con autenticación completa, gestión de planes de inversión, dashboard interactivo, panel administrativo avanzado, sistema de depósitos/retiros/reinversión con BTC, y gestión de colaboradores.
+> 💡 **Nota**: El sistema está funcional con autenticación completa, gestión de planes de inversión, dashboard interactivo con ciclos de inversión, panel administrativo avanzado con edición de capital/ganancias, sistema de depósitos/retiros/reinversión con BTC, gestión de colaboradores, y sistema de comisiones automatizado.
 
 ## 🏗️ Arquitectura
 
@@ -104,17 +104,22 @@ Aplicación React con Vite y diseño responsive moderno.
 - **Autenticación**: Login (Email/Usuario), Registro con referidos, Recuperación de contraseña.
 - **Dashboard Interactivo**: 
   - Vista general de balance con gráficas animadas (Recharts)
+  - Tarjetas de estadísticas (Stats Cards) con métricas clave
+  - Sistema de ciclos de inversión con progreso visual
+  - Modal de ciclo completado con historial de retiros de ganancias
   - Modales de gestión: Depósitos, Retiros, Reinversión, Proyecciones
   - Integración con direcciones BTC para operaciones
   - Sistema de colaboradores para retiros mediados
+  - Validaciones de capital mínimo para planes
 - **Planes de Inversión**: Visualización y gestión de planes (Admin).
 - **Perfil**: Gestión completa de datos de usuario y cambio de contraseña.
 - **Admin Panel Avanzado**: 
   - Gestión de usuarios con perfiles detallados
-  - Administración de planes de inversión
+  - Edición de capital y ganancias de usuarios (solo superadmin)
+  - Administración de planes de inversión (incluyendo planes legacy)
   - Sistema de aprobación de tareas (`TaskManager`) con filtros, búsqueda y paginación
   - Tabla de transacciones mejorada con búsqueda, filtros por tipo/estado, rango de fechas y conversión BTC
-  - Gestión de ganancias (`ProfitManager`)
+  - Gestión de ganancias (`ProfitManager`) con historial de retiros por ciclo
   - Gestión de colaboradores con configuración de comisiones y límites
   - Gestión de direcciones BTC para colaboradores y admins
   - Gestión de Bancos (CRUD)

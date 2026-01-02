@@ -99,7 +99,11 @@ export const CycleProgressCard = () => {
                         <div className="p-3 rounded-xl bg-gray-700/30 border border-gray-600/30">
                             <p className="text-xs text-gray-400 mb-1">Ganancia mensual</p>
                             <p className={`text-xl font-bold ${isUpgraded ? 'text-purple-400' : 'text-green-400'}`}>
-                                ${((contractStatus?.currentBalanceUSDT || 0) * passiveIncomeRate).toFixed(2)}
+                                ${(() => {
+                                    const value = (contractStatus?.capitalUSDT || 0) * passiveIncomeRate;
+                                    // Remove trailing zeros: 6.00 → 6, 6.78 → 6.78, 6.70 → 6.7
+                                    return parseFloat(value.toFixed(2)).toString();
+                                })()}
                             </p>
                         </div>
 
@@ -107,7 +111,11 @@ export const CycleProgressCard = () => {
                         <div className="p-3 rounded-xl bg-gray-700/30 border border-gray-600/30">
                             <p className="text-xs text-gray-400 mb-1">Ganancia diaria</p>
                             <p className={`text-xl font-bold ${isUpgraded ? 'text-purple-400' : 'text-green-400'}`}>
-                                ${((contractStatus?.currentBalanceUSDT || 0) * (passiveIncomeRate / 30)).toFixed(3)}
+                                ${(() => {
+                                    const value = (contractStatus?.capitalUSDT || 0) * (passiveIncomeRate / 30);
+                                    // Remove trailing zeros: 0.200 → 0.2, 0.226 → 0.226, 0.220 → 0.22
+                                    return parseFloat(value.toFixed(3)).toString();
+                                })()}
                             </p>
                         </div>
                     </div>
@@ -250,6 +258,9 @@ export const CycleProgressCard = () => {
                     </div>
                     <p className="text-xl font-bold text-white">
                         ${progress?.targetProfit.toFixed(2)}
+                    </p>
+                    <p className="text-[9px] text-gray-500 mt-1">
+                        Basado en todos tus depósitos
                     </p>
                 </div>
             </div>

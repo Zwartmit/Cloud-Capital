@@ -293,3 +293,34 @@ export const chargeUserCommission = async (req: Request, res: Response): Promise
     res.status(400).json({ error: error.message });
   }
 };
+
+// System Configuration endpoints
+export const getSystemConfig = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { key } = req.params;
+    const { getSystemConfig: getConfig } = await import('../services/config.service.js');
+    const value = await getConfig(key);
+    res.status(200).json({ key, value });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateSystemConfig = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { key } = req.params;
+    const { value } = req.body;
+    const user = req.user as any;
+
+    if (!value) {
+      res.status(400).json({ error: 'El valor es requerido' });
+      return;
+    }
+
+    const { updateSystemConfig: updateConfig } = await import('../services/config.service.js');
+    const config = await updateConfig(key, value, user.userId);
+    res.status(200).json(config);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+};

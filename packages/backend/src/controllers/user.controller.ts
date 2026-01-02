@@ -452,10 +452,23 @@ export const getContractStatus = async (req: Request, res: Response): Promise<vo
     const balance = user.currentBalanceUSDT || 0;
     const availableProfit = Math.max(0, balance - capital);
 
+    // Calculate total profit generated (sum of all PROFIT transactions)
+    const totalProfitResult = await prisma.transaction.aggregate({
+      where: {
+        userId,
+        type: 'PROFIT'
+      },
+      _sum: {
+        amountUSDT: true
+      }
+    });
+    const totalProfit = totalProfitResult._sum.amountUSDT || 0;
+
     res.status(200).json({
       ...user,
       daysRemaining,
-      availableProfit
+      availableProfit,
+      totalProfit
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

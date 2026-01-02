@@ -448,7 +448,11 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
 
       // Handle referral commission if this is first deposit
       if (isFirstDeposit && task.user.referrerId) {
-        const referralCommissionRate = 0.10; // 10%
+        // Get commission rate from system config (dynamic)
+        const { getSystemConfig } = await import('./config.service.js');
+        const referralCommissionRate = parseFloat(
+          await getSystemConfig('REFERRAL_COMMISSION_RATE')
+        );
         const commissionAmount = amountToAdd * referralCommissionRate;
 
         // Get referrer info
@@ -492,7 +496,7 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
               userId: task.user.referrerId,
               type: 'PROFIT',
               amountUSDT: commissionAmount,
-              reference: `Bono por referido: ${task.user.name} (10%)`,
+              reference: `Bono por referido: ${task.user.name} (${(referralCommissionRate * 100).toFixed(0)}%)`,
               status: 'COMPLETED'
             }
           });
@@ -511,10 +515,15 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
 
       // If it's a liquidation, also reset capital AND block account
       if (task.type === 'LIQUIDATION') {
+        const currentBalance = task.user.currentBalanceUSDT || 0;
+        const currentCapital = task.user.capitalUSDT || 0;
+        const profit = Math.max(0, currentBalance - currentCapital);
+
         updateData.capitalUSDT = 0;
+        updateData.currentBalanceUSDT = 0; // Reset balance to 0 (forfeit profit)
         updateData.isBlocked = true;
         updateData.blockedAt = new Date();
-        updateData.blockedReason = 'LIQUIDATION_APPROVED';
+        updateData.blockedReason = `Liquidación Aprobada. Profit retenido: $${profit.toFixed(2)}`;
       }
 
       // SPEC 4: Check if this is a full withdrawal after cycle completion

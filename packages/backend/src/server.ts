@@ -27,8 +27,8 @@ app.listen(PORT, () => {
   startCommissionChargeJob();
   startPlanExpiryCheckJob();
 
-  // Passive Income: Run daily at 00:01 AM
-  cron.schedule('1 0 * * *', async () => {
+  // Passive Income: Run daily at 00:01 AM (Mon-Fri)
+  cron.schedule('1 0 * * 1-5', async () => {
     console.log('[Cron] Running daily passive profit calculation...');
     try {
       const result = await applyDailyPassiveProfit();

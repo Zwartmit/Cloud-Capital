@@ -22,6 +22,20 @@ export const applyDailyPassiveProfit = async () => {
 
         console.log(`[Daily Profit] Processing ${users.length} eligible users...`);
 
+        // Check if today is weekend (0 = Sunday, 6 = Saturday)
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            console.log('[Daily Profit] Today is weekend (Sat/Sun). No profit generated.');
+            return {
+                success: true,
+                processed: 0,
+                skipped: 0,
+                message: 'Weekend - no profit generated'
+            };
+        }
+
         let processedCount = 0;
         let skippedCount = 0;
 

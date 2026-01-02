@@ -73,6 +73,16 @@ export const processDailyProfits = async (dateStr?: string) => {
     targetDate = yesterday;
   }
 
+  // Check if targetDate is weekend
+  const dayOfWeek = targetDate.getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    console.log(`[Plan Profit] Target date ${targetDate.toISOString()} is weekend. No profit generated.`);
+    return {
+      processed: 0,
+      message: `Fin de semana (${targetDate.toISOString().split('T')[0]}) - no se generan ganancias.`
+    };
+  }
+
   // Get rates for the target date that are NOT processed
   const rates = await prisma.dailyProfitRate.findMany({
     where: {

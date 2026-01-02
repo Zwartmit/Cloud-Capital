@@ -38,6 +38,7 @@ export const DashboardPage: React.FC = () => {
     // FASE 2: Contract status state
     const [contractStatus, setContractStatus] = useState<ContractStatus | null>(null);
     const [hasDismissedCycleModal, setHasDismissedCycleModal] = useState(false);
+    const [previousWithdrawals, setPreviousWithdrawals] = useState<number>(0);
 
     // Fetch BTC price from CoinGecko
     useEffect(() => {
@@ -65,6 +66,12 @@ export const DashboardPage: React.FC = () => {
             try {
                 const data = await userService.getTransactions();
                 setTransactions(data);
+
+                // Calculate previous withdrawals (only WITHDRAWAL type, not commissions)
+                const withdrawals = data
+                    .filter(t => t.type === 'WITHDRAWAL')
+                    .reduce((sum, t) => sum + t.amountUSDT, 0);
+                setPreviousWithdrawals(withdrawals);
             } catch (error) {
                 console.error('Error fetching transactions:', error);
             } finally {
@@ -318,7 +325,9 @@ export const DashboardPage: React.FC = () => {
             {/* FASE 2: Cycle Completed Modal */}
             <CycleCompletedModal
                 isOpen={contractStatus?.contractStatus === 'COMPLETED' && !hasDismissedCycleModal}
-                totalProfit={contractStatus?.availableProfit || 0}
+                totalProfit={contractStatus?.totalProfit || 0}
+                availableProfit={contractStatus?.availableProfit || 0}
+                previousWithdrawals={previousWithdrawals}
                 onClose={() => setHasDismissedCycleModal(true)}
                 onWithdrawProfit={() => setIsCycleCompletionModalOpen(true)}
                 onReinvest={() => setIsReinvestModalOpen(true)}

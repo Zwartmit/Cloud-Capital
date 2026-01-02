@@ -19,6 +19,7 @@ export interface ContractStatus {
     currentBalanceUSDT: number;
     daysRemaining: number;
     availableProfit: number;
+    totalProfit: number; // Total profit generated (before withdrawals)
     passiveIncomeRate: number;
 }
 
