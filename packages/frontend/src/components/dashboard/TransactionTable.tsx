@@ -32,8 +32,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
         }
     };
 
-    const getTypeText = (type: string) => {
-        switch (type) {
+    const getTransactionLabel = (tx: TransactionDTO) => {
+        // Special case for admin profit additions
+        if (tx.type === 'PROFIT' && tx.reference === 'Adicionada por el admin/sistema') {
+            return 'Suma al profit';
+        }
+
+        switch (tx.type) {
             case 'DEPOSIT':
                 return 'Aporte';
             case 'WITHDRAWAL':
@@ -51,7 +56,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
             case 'REFERRAL_COMMISSION':
                 return 'Comisión Referido';
             default:
-                return type;
+                return tx.type;
         }
     };
 
@@ -80,7 +85,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
             const searchLower = searchTerm.toLowerCase();
             const matchesSearch = searchTerm === '' ||
                 (tx.reference?.toLowerCase().includes(searchLower)) ||
-                getTypeText(tx.type).toLowerCase().includes(searchLower);
+                getTransactionLabel(tx).toLowerCase().includes(searchLower);
 
             // Type filter
             const matchesType = typeFilter === 'ALL' || tx.type === typeFilter;
@@ -104,9 +109,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
 
     // Pagination calculations
     const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(filteredTransactions.length / itemsPerPage);
+
     const paginatedTransactions = itemsPerPage === -1
         ? filteredTransactions
-        : filteredTransactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+        : filteredTransactions.slice(
+            (currentPage - 1) * itemsPerPage,
+            currentPage * itemsPerPage
+        );
 
     return (
         <div className="card p-4 sm:p-6 rounded-xl mt-6 sm:mt-8">
@@ -250,10 +259,12 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                                             {new Date(tx.createdAt).toLocaleDateString('es-ES')}
                                         </td>
                                         <td className={`px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-semibold ${getTypeColor(tx.type)}`}>
-                                            {getTypeText(tx.type)}
-                                            {tx.reference && (
-                                                <span className="block text-xs text-gray-500">{tx.reference}</span>
-                                            )}
+                                            <div className="flex flex-col">
+                                                <span>{getTransactionLabel(tx)}</span>
+                                                {tx.reference && (
+                                                    <span className="block text-xs text-gray-500 font-normal">{tx.reference}</span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className={`px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-black data-metric ${getTypeColor(tx.type)}`}>
                                             {formatBTC(btcAmount)} BTC
@@ -272,14 +283,12 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                                             </span>
                                         </td>
                                     </tr>
-                                )
+                                );
                             })
                         )}
                     </tbody>
                 </table>
             </div>
-
-            {/* Pagination Controls */}
             {filteredTransactions.length > 0 && itemsPerPage !== -1 && totalPages > 1 && (
                 <div className="mt-4 flex justify-center items-center gap-2">
                     <button

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import * as btcPoolService from '../../services/btcPool.service';
 import { TaskDTO, UserDTO } from '@cloud-capital/shared';
-import { Check, X, Eye, Clock, ListChecks, Download, ExternalLink, ChevronLeft, ChevronRight, AlertCircle, Shield } from 'lucide-react';
+import { Check, X, Eye, Clock, ListChecks, Download, ExternalLink, ChevronLeft, ChevronRight, AlertCircle, Shield, MessageCircle } from 'lucide-react';
 import { formatUSDT } from '../../utils/formatters';
 import { Modal } from '../common/Modal';
 import { CollaboratorProofModal } from './CollaboratorProofModal';
@@ -804,6 +804,18 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                             <Shield className="w-4 h-4" />
                                             <Eye className="w-4 h-4" />
                                         </button>
+                                    )}
+
+                                    {task.collaborator?.whatsappNumber && (
+                                        <a
+                                            href={`https://wa.me/${task.collaborator.whatsappNumber.replace(/\+/g, '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-2 bg-green-600 hover:bg-green-500 rounded-lg text-white flex justify-center items-center gap-1"
+                                            title="Contactar al colaborador"
+                                        >
+                                            <MessageCircle className="w-4 h-4" />
+                                        </a>
                                     )}
 
 

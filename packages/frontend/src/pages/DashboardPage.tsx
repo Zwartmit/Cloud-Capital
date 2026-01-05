@@ -179,8 +179,6 @@ export const DashboardPage: React.FC = () => {
     // Calculate dynamic weekly rate
     const weeklyRate = currentPlan ? currentPlan.dailyAverage * 7 : 0;
 
-
-
     return (
         <div className="flex min-h-screen">
             <Sidebar />
@@ -189,8 +187,8 @@ export const DashboardPage: React.FC = () => {
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 border-b border-secondary pb-3 sm:pb-4">
-                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-accent flex flex-col sm:flex-row sm:items-center mb-2 sm:mb-0">
-                            Resumen general
+                        <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-accent mb-2 sm:mb-0">
+                            Hola, <span className="text-white">{user?.name?.split(' ')[0]}</span>. Te damos la bienvenida!
                         </h2>
                     </div>
 
@@ -328,6 +326,7 @@ export const DashboardPage: React.FC = () => {
                 totalProfit={contractStatus?.totalProfit || 0}
                 availableProfit={contractStatus?.availableProfit || 0}
                 previousWithdrawals={previousWithdrawals}
+                withdrawalHistory={contractStatus?.withdrawalHistory || []}
                 onClose={() => setHasDismissedCycleModal(true)}
                 onWithdrawProfit={() => setIsCycleCompletionModalOpen(true)}
                 onReinvest={() => setIsReinvestModalOpen(true)}

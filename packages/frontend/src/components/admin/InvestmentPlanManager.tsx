@@ -290,7 +290,7 @@ export const InvestmentPlanManager: React.FC = () => {
                                 <span className="font-bold text-profit">{plan.dailyAverage}%</span>
                             </p>
                             <p className="flex justify-between">
-                                <span>Comisión mensual:</span>
+                                <span>Costo mensual (Gestión operativa):</span>
                                 <span className="font-bold text-white">{plan.monthlyCommission}%</span>
                             </p>
                             <p className="flex justify-between">

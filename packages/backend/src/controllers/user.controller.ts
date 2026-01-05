@@ -447,12 +447,13 @@ export const getContractStatus = async (req: Request, res: Response): Promise<vo
       daysRemaining = Math.max(0, Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
     }
 
-    // Calculate available profit
+    // Calculate available profit and total profit
     const capital = user.capitalUSDT || 0;
     const balance = user.currentBalanceUSDT || 0;
     const availableProfit = Math.max(0, balance - capital);
 
     // Calculate total profit generated (sum of all PROFIT transactions)
+    // This represents the historical total profit generated across all time
     const totalProfitResult = await prisma.transaction.aggregate({
       where: {
         userId,
@@ -464,11 +465,29 @@ export const getContractStatus = async (req: Request, res: Response): Promise<vo
     });
     const totalProfit = totalProfitResult._sum.amountUSDT || 0;
 
+    // Get withdrawal history for display in modal
+    const withdrawalHistory = await prisma.transaction.findMany({
+      where: {
+        userId,
+        type: 'WITHDRAWAL',
+        status: 'COMPLETED'
+      },
+      select: {
+        amountUSDT: true,
+        createdAt: true,
+        reference: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
     res.status(200).json({
       ...user,
       daysRemaining,
       availableProfit,
-      totalProfit
+      totalProfit,
+      withdrawalHistory
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

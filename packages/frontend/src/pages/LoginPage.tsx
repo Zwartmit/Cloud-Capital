@@ -351,12 +351,12 @@ export const LoginPage: React.FC = () => {
                                         </div>
                                         <div>
                                             <span className="text-gray-400">Password: </span>
-                                            <code className="text-profit">user123</code>
+                                            <code className="text-profit">test123</code>
                                         </div>
                                     </div>
                                     <p className="text-xs text-gray-500 mt-2">Capital: $1,000 | Balance: $1,150</p>
                                     <button
-                                        onClick={() => handleFillCredentials('user@example.com', 'user123')}
+                                        onClick={() => handleFillCredentials('user@example.com', 'test123')}
                                         className="mt-3 w-full bg-profit/20 hover:bg-profit/30 text-profit border border-profit/30 font-semibold py-2 px-3 rounded-lg transition-all duration-200 text-sm"
                                     >
                                         Usar credenciales

@@ -40,6 +40,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
     const [collaborators, setCollaborators] = useState<Array<{
         id: string;
         name: string;
+        role?: string;
         btcDepositAddress?: string;
         whatsappNumber?: string;
         collaboratorConfig?: { commission: number; processingTime: string; minAmount: number; maxAmount: number };
@@ -55,7 +56,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         const fetchData = async () => {
             try {
                 const collabData = await investmentService.getCollaborators();
-                setCollaborators(collabData);
+                setCollaborators(collabData.filter((c: any) => c.role !== 'SUPERADMIN'));
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -440,12 +441,6 @@ Quedo atento a la gestión. Gracias.`;
                                 </select>
                                 {collaboratorId && (
                                     <>
-                                        {/* <div className="mt-2 p-2 bg-gray-800 rounded border border-gray-700 flex flex-col gap-1">
-                                            <p className="text-[10px] text-gray-400">Wallet del colaborador:</p>
-                                            <code className="text-[10px] text-accent break-all font-mono">
-                                                {collaborators.find(c => c.id === collaboratorId)?.btcDepositAddress}
-                                            </code>
-                                        </div> */}
                                         <div className="flex flex-wrap gap-2 mt-2">
                                             {selectedCollaborator?.collaboratorConfig?.minAmount !== undefined && (
                                                 <span className="text-[10px] bg-gray-700 px-2 py-0.5 rounded text-gray-300">

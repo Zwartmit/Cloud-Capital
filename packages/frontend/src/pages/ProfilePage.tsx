@@ -88,7 +88,6 @@ export const ProfilePage: React.FC = () => {
         return null;
     }
 
-
     return (
         <div className="flex min-h-screen">
             <Sidebar />
@@ -98,7 +97,7 @@ export const ProfilePage: React.FC = () => {
                     {/* Header */}
                     <div className="mb-8 border-b border-secondary pb-4">
                         <h2 className="text-2xl sm:text-4xl font-extrabold text-accent mb-2">
-                            Mi Perfil
+                            Mi perfil
                         </h2>
                         <p className="text-gray-400 text-sm sm:text-base">
                             Información de tu cuenta y estadísticas de inversión.

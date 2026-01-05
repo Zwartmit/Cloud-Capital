@@ -33,12 +33,27 @@ export const getAllUsers = async (page: number = 1, limit: number = 20) => {
     prisma.user.count({ where: { role: 'USER' } })
   ]);
 
-  // Map _count to referralsCount for DTO compatibility
-  const users = allUsers.map(user => ({
-    ...user,
-    referralsCount: user._count.referrals,
-    _count: undefined
-  }));
+  // Calculate manual profit for these users (PROFIT + Adicionada por el admin/sistema)
+  const manualProfits = await prisma.transaction.groupBy({
+    by: ['userId'],
+    where: {
+      userId: { in: allUsers.map(u => u.id) },
+      type: 'PROFIT',
+      reference: 'Adicionada por el admin/sistema'
+    },
+    _sum: { amountUSDT: true }
+  });
+
+  // Map _count to referralsCount for DTO compatibility and add manualProfit
+  const users = allUsers.map(user => {
+    const profitRecord = manualProfits.find(p => p.userId === user.id);
+    return {
+      ...user,
+      referralsCount: user._count.referrals,
+      manualProfit: profitRecord?._sum.amountUSDT || 0,
+      _count: undefined
+    };
+  });
 
   return {
     users,
@@ -140,24 +155,77 @@ export const searchUsers = async (query: string) => {
 };
 
 export const updateUserBalance = async (id: string, capitalUSDT: number, currentBalanceUSDT: number) => {
-  const user = await prisma.user.update({
-    where: { id },
-    data: {
-      capitalUSDT,
-      currentBalanceUSDT
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      username: true,
-      capitalUSDT: true,
-      currentBalanceUSDT: true,
-      investmentClass: true
-    }
-  });
+  return prisma.$transaction(async (tx) => {
+    // 1. Get current user state to calculate difference
+    const user = await tx.user.findUnique({
+      where: { id },
+      select: { currentBalanceUSDT: true }
+    });
 
-  return user;
+    if (!user) {
+      throw new Error('User not found in updateUserBalance');
+    }
+
+    // 2. Calculate difference: New Balance - Old Balance
+    const currentBalance = user.currentBalanceUSDT || 0;
+    const profitDiff = currentBalanceUSDT - currentBalance;
+
+    // 3. If profit increased, create a transaction record
+    if (profitDiff > 0.001) {
+      await tx.transaction.create({
+        data: {
+          userId: id,
+          type: 'PROFIT',
+          amountUSDT: profitDiff,
+          amountBTC: 0,
+          status: 'COMPLETED',
+          reference: 'Adicionada por el admin/sistema'
+        }
+      });
+    }
+
+    // 4. Update the user
+    const updatedUser = await tx.user.update({
+      where: { id },
+      data: {
+        capitalUSDT,
+        currentBalanceUSDT
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        username: true,
+        capitalUSDT: true,
+        currentBalanceUSDT: true,
+        investmentClass: true,
+        referralCode: true,
+        isBlocked: true,
+        blockedReason: true,
+        createdAt: true,
+        _count: {
+          select: { referrals: true }
+        }
+      }
+    });
+
+    // 5. Get total manual profit for this user
+    const manualProfitAgg = await tx.transaction.aggregate({
+      where: {
+        userId: id,
+        type: 'PROFIT',
+        reference: 'Adicionada por el admin/sistema'
+      },
+      _sum: { amountUSDT: true }
+    });
+
+    return {
+      ...updatedUser,
+      referralsCount: updatedUser._count?.referrals || 0,
+      manualProfit: manualProfitAgg._sum.amountUSDT || 0,
+      _count: undefined
+    };
+  });
 };
 
 export const deleteUser = async (id: string) => {

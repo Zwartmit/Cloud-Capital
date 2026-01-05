@@ -64,7 +64,9 @@ export const CollaboratorsManager: React.FC = () => {
         setLoading(true);
         try {
             const data = await adminService.getAllStaff();
-            setStaff(data);
+            // Filter out SUPERADMIN users
+            const filteredStaff = data.filter(user => user.role !== 'SUPERADMIN');
+            setStaff(filteredStaff);
             setError('');
         } catch (err: any) {
             setError('Error al cargar colaboradores');

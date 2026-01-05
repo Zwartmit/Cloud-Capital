@@ -127,7 +127,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
         const fetchData = async () => {
             try {
                 const collabData = await investmentService.getCollaborators();
-                setCollaborators(collabData);
+                setCollaborators(collabData.filter((c: any) => c.role !== 'SUPERADMIN'));
 
                 // Fetch public contact information
                 const contactData = await userService.getPublicContactInfo();

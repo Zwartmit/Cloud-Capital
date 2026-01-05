@@ -5,13 +5,18 @@ interface Props {
     totalProfit: number;
     availableProfit: number;
     previousWithdrawals?: number;
+    withdrawalHistory?: Array<{
+        amountUSDT: number;
+        createdAt: Date;
+        reference: string;
+    }>;
     onClose: () => void;
     onWithdrawProfit: () => void;
     onReinvest: () => void;
     onLogout: () => void;
 }
 
-export const CycleCompletedModal = ({ isOpen, totalProfit, availableProfit, previousWithdrawals = 0, onWithdrawProfit, onReinvest, onLogout, onClose }: Props) => {
+export const CycleCompletedModal = ({ isOpen, totalProfit, availableProfit, previousWithdrawals = 0, withdrawalHistory = [], onWithdrawProfit, onReinvest, onLogout, onClose }: Props) => {
     const [loading, setLoading] = useState(false);
 
     if (!isOpen) return null;
@@ -40,7 +45,6 @@ export const CycleCompletedModal = ({ isOpen, totalProfit, availableProfit, prev
             <div className="relative w-full max-w-lg bg-gray-900 border border-gray-800 shadow-2xl rounded-2xl max-h-[90vh] flex flex-col">
 
                 {/* Decorative Elements */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600" />
                 <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -93,19 +97,39 @@ export const CycleCompletedModal = ({ isOpen, totalProfit, availableProfit, prev
                                 </svg>
                                 Retiros Previos Durante el Ciclo
                             </p>
-                            <div className="space-y-2">
+
+                            {/* Individual withdrawal list */}
+                            <div className="space-y-2 mb-3">
+                                {withdrawalHistory && withdrawalHistory.map((withdrawal, index) => (
+                                    <div key={index} className="flex justify-between items-center text-sm py-2 border-b border-yellow-600/10 last:border-0">
+                                        <div className="flex flex-col">
+                                            <span className="text-gray-300 font-medium">
+                                                {new Date(withdrawal.createdAt).toLocaleDateString('es-ES', {
+                                                    day: '2-digit',
+                                                    month: 'short',
+                                                    year: 'numeric'
+                                                })}
+                                            </span>
+                                            <span className="text-xs text-gray-500">{withdrawal.reference}</span>
+                                        </div>
+                                        <span className="font-bold text-yellow-300">-${withdrawal.amountUSDT.toFixed(2)}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Total and available profit */}
+                            <div className="pt-3 border-t border-yellow-600/20 space-y-2">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-gray-400">Total retirado:</span>
                                     <span className="font-bold text-yellow-300">-${previousWithdrawals.toFixed(2)} USDT</span>
                                 </div>
-                                <div className="pt-2 border-t border-yellow-600/20">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-gray-300 font-medium">Profit disponible para retirar:</span>
-                                        <span className="font-bold text-emerald-400">${availableProfit.toFixed(2)} USDT</span>
-                                    </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-300 font-medium">Profit disponible para retirar:</span>
+                                    <span className="font-bold text-green-400">${availableProfit.toFixed(2)} USDT</span>
                                 </div>
                             </div>
-                            <p className="mt-3 text-[10px] text-gray-500 italic">
+
+                            <p className="text-[10px] text-gray-500 mt-3 italic">
                                 * El profit disponible es menor porque ya retiraste ${previousWithdrawals.toFixed(2)} USDT durante el ciclo
                             </p>
                         </div>

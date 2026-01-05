@@ -21,6 +21,11 @@ export interface ContractStatus {
     availableProfit: number;
     totalProfit: number; // Total profit generated (before withdrawals)
     passiveIncomeRate: number;
+    withdrawalHistory?: Array<{
+        amountUSDT: number;
+        createdAt: Date;
+        reference: string;
+    }>;
 }
 
 export const contractService = {

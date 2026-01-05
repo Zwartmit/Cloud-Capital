@@ -62,6 +62,7 @@ export interface UserDTO {
   blockedAt?: string;
   blockedReason?: string;
   hasSeenWelcomeModal?: boolean;
+  manualProfit?: number; // Sum of profit added by admin
   createdAt: string;
 }
 

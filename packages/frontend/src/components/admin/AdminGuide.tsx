@@ -63,7 +63,7 @@ export const AdminGuide: React.FC = () => {
                             </div>
                             <div>
                                 <h4 className="text-lg sm:text-xl font-bold text-white">Planes de inversión</h4>
-                                <span className="text-xs text-accent font-mono bg-accent/10 px-2 py-1 rounded whitespace-nowrap">Panel → Planes</span>
+                                <span className="text-xs text-accent font-mono bg-accent/10 px-2 py-1 rounded whitespace-nowrap">Panel → Planes de inversión</span>
                             </div>
                         </div>
 

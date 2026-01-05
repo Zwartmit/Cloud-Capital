@@ -18,8 +18,5 @@
     "@prisma/client": "^5.7.1",
     "bcryptjs": "^2.4.3",
     "tsx": "^4.7.0"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }
