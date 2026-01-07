@@ -183,12 +183,15 @@ export async function getActiveReservation(userId: string) {
         };
     }
 
-    // NEW: Check for recently submitted tasks (Reuse address from last 24h)
+    // NEW: Check for recently submitted DEPOSIT tasks (Reuse address from last 24h)
+    // IMPORTANT: Only check DEPOSIT tasks, NOT withdrawal/liquidation tasks
     const recentTask = await prisma.task.findFirst({
         where: {
             userId: userId,
             createdAt: { gt: validThreshold },
-            btcAddress: { not: null }
+            btcAddress: { not: null },
+            // Only include deposit-related tasks, exclude withdrawals and liquidations
+            type: { in: ['DEPOSIT_MANUAL', 'DEPOSIT_AUTO'] }
         },
         orderBy: { createdAt: 'desc' },
         select: { btcAddress: true, createdAt: true, amountUSD: true }

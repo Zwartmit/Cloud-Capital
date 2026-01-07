@@ -70,7 +70,7 @@ export const CycleCompletionModal: React.FC<CycleCompletionModalProps> = ({
     const netAmount = totalProfit - platformFee;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Retiro de Profit - Ciclo completado" maxWidth="lg">
+        <Modal isOpen={isOpen} onClose={onClose} title="Retiro de profit - Ciclo completado" maxWidth="lg">
             <div className="space-y-5">
                 {/* Profit Display */}
                 <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-4">
@@ -141,7 +141,7 @@ export const CycleCompletionModal: React.FC<CycleCompletionModalProps> = ({
                                 : 'bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white shadow-green-600/20 hover:shadow-green-500/40'
                             }`}
                     >
-                        {loading ? 'Procesando retiro...' : 'Confirmar retiro de Profit'}
+                        {loading ? 'Procesando retiro...' : 'Confirmar retiro de profit'}
                     </button>
                     <p className="text-center text-[10px] text-gray-500 mt-3">
                         Al confirmar, aceptas el costo operativo del 4.5% sobre el monto a retirar.

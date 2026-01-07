@@ -52,6 +52,36 @@ apiClient.interceptors.response.use(
     const isAuthError = error.response?.status === 401;
     // Handle 403 (Forbidden) - e.g. Blocked Account
     const isForbidden = error.response?.status === 403;
+    // Handle 404 (Not Found) on user endpoints - indicates deleted user
+    // Also handle 500 errors if they happen on profile/status endpoints (sometimes backend errors out on missing user)
+    const status = error.response?.status;
+    const url = originalRequest?.url || '';
+
+    // Check if it's a user-specific endpoint
+    const isUserEndpoint = url.includes('/user/') || url.includes('/profile') || url.includes('/balance');
+
+    // Critical endpoints that indicate user existence
+    const isCriticalUserEndpoint = url.includes('/user/profile') || url.includes('/user/contract-status');
+
+    // If we get 404 on any user endpoint, OR 500 on critical "get user" endpoints
+    // It usually means the user record is gone from DB but session is active
+    if ((status === 404 && isUserEndpoint) || (status === 500 && isCriticalUserEndpoint)) {
+      // Avoid infinite refresh loops if we are already processing a logout
+      if (!localStorage.getItem('is_logging_out')) {
+        localStorage.setItem('is_logging_out', 'true');
+
+        // Clear tokens
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+
+        // Redirect with a message parameter
+        window.location.replace('/login?message=account_deleted');
+
+        // Cleanup flag after a moment (though redirect happens fast)
+        setTimeout(() => localStorage.removeItem('is_logging_out'), 1000);
+      }
+      return Promise.reject(error);
+    }
 
     if (isForbidden) {
       // Clear tokens and redirect to login immediately for generic 403s

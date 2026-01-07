@@ -522,6 +522,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="Ej: 1000"
+                            min="50"
                             className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                         />
                         {amount && parseFloat(amount) < 50 && (
@@ -738,6 +739,7 @@ Quedo atento a los datos de la cuenta para realizar la transferencia. Gracias.`;
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="Ej: 1000"
+                    min="50"
                     className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
                 />
             </div>

@@ -124,6 +124,7 @@ export interface TaskDTO {
   collaboratorVerified?: boolean;
   rejectionReason?: string;
   adminNotes?: string;
+  adjustedAmount?: number; // Original requested amount when admin approves with different amount
   destinationUserId?: string;
   user: {
     id: string;

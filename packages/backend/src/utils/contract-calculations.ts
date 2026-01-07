@@ -1,36 +1,105 @@
 import prisma from '../config/database.js';
 
 /**
- * Calculate total deposits for a user (historical sum)
- * Spec 2: Sum of ALL deposits ever made
+ * Helper to determine the start date of the CURRENT cycle
+ */
+export const getCycleStartDate = async (userId: string): Promise<Date | null> => {
+    try {
+        // 1. Find the most recent REINVEST transaction
+        const lastReinvest = await prisma.transaction.findFirst({
+            where: { userId, type: 'REINVEST' },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // 2. Find the most recent "Cycle Reset" withdrawal
+        // 2. Find the most recent "Cycle Reset" withdrawal
+        // expanded to include Early Liquidation
+        const lastCycleReset = await prisma.transaction.findFirst({
+            where: {
+                userId,
+                type: 'WITHDRAWAL',
+                OR: [
+                    { reference: 'Liquidación al completar meta del 200%' },
+                    { reference: 'Liquidación Anticipada de Capital' }
+                ]
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        if (lastReinvest && lastCycleReset) {
+            return lastReinvest.createdAt > lastCycleReset.createdAt
+                ? lastReinvest.createdAt
+                : lastCycleReset.createdAt;
+        } else if (lastReinvest) {
+            return lastReinvest.createdAt;
+        } else if (lastCycleReset) {
+            return lastCycleReset.createdAt;
+        }
+
+        return null;
+    } catch (error) {
+        console.error('Error in getCycleStartDate:', error);
+        throw error;
+    }
+};
+
+/**
+ * Calculate total deposits for a user (for current cycle)
  */
 export const calculateTotalDeposits = async (userId: string): Promise<number> => {
+    const cycleStartDate = await getCycleStartDate(userId);
+
     const result = await prisma.transaction.aggregate({
         where: {
             userId,
-            type: 'DEPOSIT'
+            type: 'DEPOSIT',
+            ...(cycleStartDate && {
+                createdAt: { gt: cycleStartDate }
+            })
         },
-        _sum: {
-            amountUSDT: true
-        }
+        _sum: { amountUSDT: true }
     });
 
     return result._sum.amountUSDT || 0;
 };
 
 /**
- * Calculate total profit generated for a user (historical sum)
- * Spec 2: Sum of ALL profit ever generated, regardless of withdrawals
+ * Calculate total commissions paid in the current cycle
+ * Returns absolute value (positive number)
  */
-export const calculateTotalProfit = async (userId: string): Promise<number> => {
+export const calculateTotalCommissions = async (userId: string): Promise<number> => {
+    const cycleStartDate = await getCycleStartDate(userId);
+
     const result = await prisma.transaction.aggregate({
         where: {
             userId,
-            type: 'PROFIT'
+            type: 'COMMISSION',
+            ...(cycleStartDate && {
+                createdAt: { gt: cycleStartDate }
+            })
         },
-        _sum: {
-            amountUSDT: true
-        }
+        _sum: { amountUSDT: true }
+    });
+
+    // Commissions are stored as negative numbers, return absolute value
+    return Math.abs(result._sum.amountUSDT || 0);
+};
+
+/**
+ * Calculate total profit generated for a user (for current cycle)
+ */
+export const calculateTotalProfit = async (userId: string): Promise<number> => {
+    const cycleStartDate = await getCycleStartDate(userId);
+
+    const result = await prisma.transaction.aggregate({
+        where: {
+            userId,
+            type: 'PROFIT',
+            ...(cycleStartDate && {
+                createdAt: { gt: cycleStartDate }
+            })
+        },
+        _sum: { amountUSDT: true }
     });
 
     return result._sum.amountUSDT || 0;
@@ -38,19 +107,28 @@ export const calculateTotalProfit = async (userId: string): Promise<number> => {
 
 /**
  * Check if user has completed their investment cycle
- * Spec 3: Cycle is complete when total profit >= 2x total deposits
  */
 export const hasCycleCompleted = async (userId: string): Promise<boolean> => {
-    const totalDeposits = await calculateTotalDeposits(userId);
+    // Get user's current capital
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { capitalUSDT: true }
+    });
+
+    const currentCapital = user?.capitalUSDT || 0;
+    const totalCommissions = await calculateTotalCommissions(userId);
+
+    // Base capital for target is Current Capital + Paid Commissions
+    // This represents the "Gross Capital" invested by the user
+    const baseCapital = currentCapital + totalCommissions;
+
     const totalProfit = await calculateTotalProfit(userId);
 
-    // Cycle completes when profit reaches or exceeds 200% of deposits
-    return totalProfit >= (totalDeposits * 2);
+    return totalProfit >= (baseCapital * 2) && baseCapital > 0;
 };
 
 /**
  * Check if user can generate profit
- * Spec 3: Cannot generate profit if cycle is completed
  */
 export const canGenerateProfit = async (userId: string): Promise<boolean> => {
     const user = await prisma.user.findUnique({
@@ -64,18 +142,12 @@ export const canGenerateProfit = async (userId: string): Promise<boolean> => {
 
     if (!user) return false;
 
-    // Cannot generate profit if:
-    // 1. Cycle is already completed
-    // 2. Contract status is not ACTIVE
-    // 3. No capital invested
     if (user.cycleCompleted) return false;
     if (user.contractStatus !== 'ACTIVE') return false;
     if (!user.capitalUSDT || user.capitalUSDT <= 0) return false;
 
-    // Check if cycle should be marked as completed
     const cycleCompleted = await hasCycleCompleted(userId);
     if (cycleCompleted) {
-        // Mark as completed
         await prisma.user.update({
             where: { id: userId },
             data: {
@@ -92,7 +164,6 @@ export const canGenerateProfit = async (userId: string): Promise<boolean> => {
 
 /**
  * Get cycle progress for a user
- * Returns percentage of completion towards 200% goal
  */
 export const getCycleProgress = async (userId: string): Promise<{
     totalDeposits: number;
@@ -101,24 +172,42 @@ export const getCycleProgress = async (userId: string): Promise<{
     progressPercentage: number;
     isCompleted: boolean;
 }> => {
-    const totalDeposits = await calculateTotalDeposits(userId);
-    const totalProfit = await calculateTotalProfit(userId);
-    const targetProfit = totalDeposits * 2;
-    const progressPercentage = totalDeposits > 0 ? (totalProfit / targetProfit) * 100 : 0;
-    const isCompleted = totalProfit >= targetProfit;
+    try {
+        // Get user's current capital
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { capitalUSDT: true }
+        });
 
-    return {
-        totalDeposits,
-        totalProfit,
-        targetProfit,
-        progressPercentage: Math.min(progressPercentage, 100),
-        isCompleted
-    };
+        const currentCapital = user?.capitalUSDT || 0;
+        const totalCommissions = await calculateTotalCommissions(userId);
+
+        // Target Base = Current Capital + Commissions Paid
+        // Ensures target is 200% of what user put in, not what remains after fees
+        const baseCapital = currentCapital + totalCommissions;
+
+        const totalDeposits = await calculateTotalDeposits(userId);
+        const totalProfit = await calculateTotalProfit(userId);
+
+        const targetProfit = baseCapital * 2;
+        const progressPercentage = targetProfit > 0 ? (totalProfit / targetProfit) * 100 : 0;
+        const isCompleted = totalProfit >= targetProfit && targetProfit > 0;
+
+        return {
+            totalDeposits,
+            totalProfit,
+            targetProfit,
+            progressPercentage: Math.min(progressPercentage, 100),
+            isCompleted
+        };
+    } catch (error) {
+        console.error('Error in getCycleProgress:', error);
+        throw error;
+    }
 };
 
 /**
  * Calculate available profit for withdrawal
- * Available profit = currentBalance - capital
  */
 export const calculateAvailableProfit = async (userId: string): Promise<number> => {
     const user = await prisma.user.findUnique({
@@ -140,7 +229,6 @@ export const calculateAvailableProfit = async (userId: string): Promise<number> 
 
 /**
  * Check if plan commission is due
- * Spec 1: Commission charged once per 30-day period
  */
 export const isPlanCommissionDue = async (userId: string): Promise<boolean> => {
     const user = await prisma.user.findUnique({
@@ -153,12 +241,10 @@ export const isPlanCommissionDue = async (userId: string): Promise<boolean> => {
     });
 
     if (!user || !user.investmentClass) return false;
-    if (!user.currentPlanStartDate) return true; // First time subscription
+    if (!user.currentPlanStartDate) return true;
 
-    // If never charged, it's due
     if (!user.lastCommissionChargeDate) return true;
 
-    // Check if 30 days have passed since last charge
     const daysSinceLastCharge = Math.floor(
         (Date.now() - user.lastCommissionChargeDate.getTime()) / (1000 * 60 * 60 * 24)
     );
@@ -168,7 +254,6 @@ export const isPlanCommissionDue = async (userId: string): Promise<boolean> => {
 
 /**
  * Check if plan has expired
- * Spec 1: Plans expire after 30 days
  */
 export const hasPlanExpired = async (userId: string): Promise<boolean> => {
     const user = await prisma.user.findUnique({

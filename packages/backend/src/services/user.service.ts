@@ -188,49 +188,113 @@ export const reinvestProfit = async (userId: string, amountUSD: number) => {
   // Check if user has enough profit
   const currentBalance = user.currentBalanceUSDT || 0;
   const capital = user.capitalUSDT || 0;
-  const availableProfit = currentBalance - capital;
+  const availableProfit = Math.max(0, currentBalance - capital);
 
-  if (availableProfit < amountUSD) {
-    throw new Error('Saldo insuficiente para reinvertir');
-  }
+  // LOGIC BRANCHING BASED ON CONTRACT STATUS
+  const isNewCycle = user.contractStatus === 'COMPLETED';
 
-  if (amountUSD < 50) {
-    throw new Error('El monto mínimo de reinversión es $50 USDT');
-  }
+  if (isNewCycle) {
+    // --- PATH 1: NEW CYCLE REINVESTMENT (RESET) ---
+    // User starts a new cycle with a specific amount (Partial or Total).
+    // Remaining profit stays in the balance (as profit).
 
-  // SPEC 5: Reinversión = Contrato Cero
-  // Reset EVERYTHING except history
-  const updatedUser = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      // Reset capital to ONLY the reinvested amount (not add to existing)
-      capitalUSDT: amountUSD,
-      // Reset balance to match capital
-      currentBalanceUSDT: amountUSD,
-      // Clear investment plan - user must select new one
-      investmentClass: null,
-      // Reset contract status
-      contractStatus: 'PENDING_PLAN_SELECTION',
-      cycleCompleted: false,
-      cycleCompletedAt: null,
-      // Clear plan tracking
-      currentPlanStartDate: null,
-      currentPlanExpiryDate: null,
-      lastCommissionChargeDate: null
+    const amountToReinvest = amountUSD;
+
+    if (amountToReinvest < 50) {
+      throw new Error('El monto mínimo para iniciar un nuevo ciclo es $50 USDT');
     }
-  });
 
-  const transaction = await prisma.transaction.create({
-    data: {
-      userId,
-      type: 'REINVEST',
-      amountUSDT: amountUSD,
-      reference: 'Reinversión - Nuevo ciclo iniciado',
-      status: 'COMPLETED',
+    // Reset EVERYTHING except history and balance
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        // Reset capital to ONLY the reinvested profit
+        capitalUSDT: amountToReinvest,
+        // We do NOT reset currentBalanceUSDT. It stays as is.
+        // Example: Balance 1200, Reinvest 200. 
+        // New Capital = 200. Balance = 1200. 
+        // Profit = 1000 (Available to withdraw).
+
+        // Clear investment plan - user must select new one
+        investmentClass: null,
+        // Reset contract status
+        contractStatus: 'PENDING_PLAN_SELECTION',
+        cycleCompleted: false,
+        cycleCompletedAt: null,
+        // Clear plan tracking
+        currentPlanStartDate: null,
+        currentPlanExpiryDate: null,
+        lastCommissionChargeDate: null,
+        // Set passive income rate: 6% if has referral, 3% otherwise
+        passiveIncomeRate: user.hasSuccessfulReferral ? 0.06 : 0.03,
+        lastDailyProfitDate: new Date()
+      }
+    });
+
+    const transaction = await prisma.transaction.create({
+      data: {
+        userId,
+        type: 'REINVEST',
+        // If it's a new cycle, we log what they put IN to the capital
+        amountUSDT: amountToReinvest,
+        reference: 'Reinversión - Nuevo ciclo iniciado',
+        status: 'COMPLETED',
+      }
+    });
+
+    return { user: updatedUser, transaction };
+
+  } else {
+    // --- PATH 2: STANDARD REINVESTMENT (ADDITIVE) ---
+    // User adds profit to existing capital to compound.
+
+    // Validation
+    if (amountUSD <= 0) throw new Error('Monto inválido');
+
+    if (availableProfit < amountUSD) {
+      throw new Error('Saldo insuficiente para reinvertir');
     }
-  });
 
-  return { user: updatedUser, transaction };
+    if (amountUSD < 50) {
+      throw new Error('El monto mínimo de reinversión es $50 USDT');
+    }
+
+    // Multiples of 25 rule
+    if (amountUSD % 25 !== 0) {
+      throw new Error('El monto debe ser múltiplo de $25 (ej: 50, 75, 100...)');
+    }
+
+    // Additive Logic:
+    // Capital increases by amount.
+    // Balance stays the same (Total Value = Capital + Profit). 
+    // Since Capital increases, Profit (Balance - Capital) naturally decreases.
+
+    const newCapital = capital + amountUSD;
+
+    // We do NOT reset the plan or dates for standard reinvestment?
+    // Usually standard reinvestment just compounds.
+    // Implementation Plan didn't restart 30 days on reinvest.
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        capitalUSDT: newCapital,
+        // currentBalanceUSDT remains the same
+      }
+    });
+
+    const transaction = await prisma.transaction.create({
+      data: {
+        userId,
+        type: 'REINVEST',
+        amountUSDT: amountUSD,
+        reference: 'Reinversión de ganancias (Compuesto)',
+        status: 'COMPLETED',
+      }
+    });
+
+    return { user: updatedUser, transaction };
+  }
 };
 
 export const changePassword = async (userId: string, currentPassword: string, newPassword: string): Promise<void> => {
@@ -526,23 +590,40 @@ export const createEarlyLiquidationRequest = async (
   const penaltyAmount = capital * penaltyRate;
   const netAmount = capital - penaltyAmount;
 
-  const task = await prisma.task.create({
-    data: {
-      userId,
-      type: 'LIQUIDATION',
-      amountUSD: capital, // The full capital amount is what is being liquidated
-      btcAddress,
-      destinationType: 'PERSONAL', // Always personal for capital liquidation? Or debatable. For now assume personal.
-      reference: reason || 'Liquidación Anticipada de Capital',
-      liquidationDetails: {
-        penaltyRate,
-        penaltyAmount,
-        netAmount,
-        originalCapital: capital,
-        type: 'CAPITAL_LIQUIDATION'
-      },
-      status: 'PENDING',
-    }
+  return prisma.$transaction(async (tx) => {
+    // 1. Create the liquidation task
+    const task = await tx.task.create({
+      data: {
+        userId,
+        type: 'LIQUIDATION',
+        amountUSD: capital,
+        btcAddress,
+        destinationType: 'PERSONAL',
+        reference: reason || 'Liquidación Anticipada de Capital',
+        liquidationDetails: {
+          penaltyRate,
+          penaltyAmount,
+          netAmount,
+          originalCapital: capital,
+          type: 'CAPITAL_LIQUIDATION'
+        },
+        status: 'PENDING',
+      }
+    });
+
+    // 2. Unsubscribe user from any active plan
+    console.log(`[Liquidation] Unsubscribing user ${userId} from plan...`);
+    const updateResult = await tx.user.update({
+      where: { id: userId },
+      data: {
+        investmentClass: null,
+        currentPlanStartDate: null,
+        currentPlanExpiryDate: null
+      }
+    });
+    console.log(`[Liquidation] User ${userId} unsubscribed. New class: ${updateResult.investmentClass}`);
+
+    return task;
   });
 
   return task;
@@ -702,7 +783,7 @@ export const changeInvestmentPlan = async (userId: string, planName: string) => 
       userId,
       type: 'COMMISSION',
       amountUSDT: -monthlyCostUSD,
-      reference: `Comisión mensual - Plan ${planName} (${monthlyCostPercentage}%)`,
+      reference: `Gestión operativa - Plan ${planName} (${monthlyCostPercentage}%)`,
       status: 'COMPLETED',
     }
   });

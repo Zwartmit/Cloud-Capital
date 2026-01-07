@@ -164,6 +164,11 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             return;
         }
 
+        if (amountNum % 25 !== 0) {
+            alert('El monto a retirar debe ser múltiplo de $25 (ej: 50, 75, 100, 125...)');
+            return;
+        }
+
         if (selectedMethod === 'collaborator') {
             if (!collaboratorId) {
                 alert('Selecciona un colaborador');
@@ -339,6 +344,8 @@ Quedo atento a la gestión. Gracias.`;
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             placeholder="Ej: 500"
+                            min="50"
+                            step="25"
                             max={availableProfit}
                             className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                         />
@@ -416,6 +423,8 @@ Quedo atento a la gestión. Gracias.`;
                                     onChange={(e) => setAmount(e.target.value)}
                                     placeholder="Ej: 500"
                                     max={availableProfit}
+                                    min="50"
+                                    step="25"
                                     className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-accent transition-colors"
                                 />
                                 <p className="text-[10px] text-gray-400 mt-1">

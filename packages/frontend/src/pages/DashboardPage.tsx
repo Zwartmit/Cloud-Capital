@@ -22,6 +22,7 @@ import { investmentPlanService, InvestmentPlan } from '../services/investmentPla
 import { cryptoService } from '../services/cryptoService';
 import { contractService, ContractStatus } from '../services/contractService';
 import { TransactionDTO } from '@cloud-capital/shared';
+import { investmentService } from '../services/investmentService';
 
 export const DashboardPage: React.FC = () => {
     const { user } = useAuthStore();
@@ -38,7 +39,7 @@ export const DashboardPage: React.FC = () => {
     // FASE 2: Contract status state
     const [contractStatus, setContractStatus] = useState<ContractStatus | null>(null);
     const [hasDismissedCycleModal, setHasDismissedCycleModal] = useState(false);
-    const [previousWithdrawals, setPreviousWithdrawals] = useState<number>(0);
+    const [userTasks, setUserTasks] = useState<any[]>([]);
 
     // Fetch BTC price from CoinGecko
     useEffect(() => {
@@ -66,12 +67,6 @@ export const DashboardPage: React.FC = () => {
             try {
                 const data = await userService.getTransactions();
                 setTransactions(data);
-
-                // Calculate previous withdrawals (only WITHDRAWAL type, not commissions)
-                const withdrawals = data
-                    .filter(t => t.type === 'WITHDRAWAL')
-                    .reduce((sum, t) => sum + t.amountUSDT, 0);
-                setPreviousWithdrawals(withdrawals);
             } catch (error) {
                 console.error('Error fetching transactions:', error);
             } finally {
@@ -127,6 +122,33 @@ export const DashboardPage: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
+    // Fetch user tasks to check for pending liquidations
+    useEffect(() => {
+        const fetchTasks = async () => {
+            try {
+                const tasks = await userService.getUserTasks();
+                setUserTasks(tasks);
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+            }
+        };
+
+        fetchTasks();
+        const interval = setInterval(fetchTasks, 30000); // 30s refresh
+        return () => clearInterval(interval);
+    }, []);
+
+    // Check if there is any pending withdrawal
+    const hasPendingLiquidation = Array.isArray(userTasks) && userTasks.some(task => {
+        const type = (task.type || '').toUpperCase();
+        const status = (task.status || '').toUpperCase();
+
+        const isWithdrawal = type === 'WITHDRAWAL' || type === 'LIQUIDATION' || type === 'PROFIT_WITHDRAWAL';
+        const isPending = status === 'PENDING' || status === 'WAITING_APPROVAL';
+
+        return isWithdrawal && isPending;
+    });
+
     // Use real user data from backend
     const capitalUSDT = user?.capitalUSDT || 0;
     const currentBalanceUSDT = user?.currentBalanceUSDT || 0;
@@ -180,7 +202,7 @@ export const DashboardPage: React.FC = () => {
     const weeklyRate = currentPlan ? currentPlan.dailyAverage * 7 : 0;
 
     return (
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen pb-20 bg-gray-900 sm:pb-0">
             <Sidebar />
 
             <main className="flex-grow p-3 sm:p-4 lg:p-8 overflow-y-auto">
@@ -201,8 +223,39 @@ export const DashboardPage: React.FC = () => {
                                 currentBalanceUSDT={currentBalanceUSDT}
                                 btcPrice={btcPrice}
                                 currentPlan={currentPlan}
-                                onReinvest={() => setIsReinvestModalOpen(true)}
-                                onWithdraw={() => setIsWithdrawModalOpen(true)}
+                                onReinvest={() => {
+                                    // CHECK CONTRACT STATUS
+                                    if (contractStatus?.contractStatus === 'COMPLETED') {
+                                        // TRIGGER FULL REINVEST LOGIC (Same as CycleCompletedModal)
+                                        if (!contractStatus || contractStatus.availableProfit < 50) return;
+
+                                        if (window.confirm(`¿Estás seguro de que deseas reinvertir todo tu profit disponible ($${contractStatus.availableProfit.toFixed(2)}) para iniciar un nuevo ciclo?`)) {
+                                            investmentService.reinvestProfit({
+                                                amountUSD: contractStatus.availableProfit
+                                            }).then(async () => {
+                                                const { updateUser } = useAuthStore.getState();
+                                                const userData = await userService.getProfile();
+                                                updateUser(userData);
+                                                const data = await userService.getTransactions();
+                                                setTransactions(data);
+                                                setHasDismissedCycleModal(true);
+                                                alert('¡Nuevo ciclo iniciado exitosamente!');
+                                            }).catch((error: any) => {
+                                                alert(error.response?.data?.error || 'Error al reinvertir');
+                                            });
+                                        }
+                                    } else {
+                                        // STANDARD PARTIAL REINVEST
+                                        setIsReinvestModalOpen(true);
+                                    }
+                                }}
+                                onWithdraw={() => {
+                                    if (contractStatus?.contractStatus === 'COMPLETED') {
+                                        setHasDismissedCycleModal(false);
+                                    } else {
+                                        setIsWithdrawModalOpen(true);
+                                    }
+                                }}
                             />
 
                             {/* Stats Cards */}
@@ -322,14 +375,36 @@ export const DashboardPage: React.FC = () => {
 
             {/* FASE 2: Cycle Completed Modal */}
             <CycleCompletedModal
-                isOpen={contractStatus?.contractStatus === 'COMPLETED' && !hasDismissedCycleModal}
+                isOpen={contractStatus?.contractStatus === 'COMPLETED' && !hasDismissedCycleModal && (contractStatus?.availableProfit || 0) > 1}
                 totalProfit={contractStatus?.totalProfit || 0}
                 availableProfit={contractStatus?.availableProfit || 0}
-                previousWithdrawals={previousWithdrawals}
-                withdrawalHistory={contractStatus?.withdrawalHistory || []}
+                previousWithdrawals={(contractStatus?.withdrawalHistory || []).reduce((acc, curr) => acc + curr.amountUSDT, 0)}
+                withdrawalHistory={contractStatus?.withdrawalHistory}
+                hasPendingLiquidation={hasPendingLiquidation}
                 onClose={() => setHasDismissedCycleModal(true)}
                 onWithdrawProfit={() => setIsCycleCompletionModalOpen(true)}
-                onReinvest={() => setIsReinvestModalOpen(true)}
+                onReinvest={async () => {
+                    // Full Reinvest Logic for New Cycle
+                    if (!contractStatus || contractStatus.availableProfit < 50) return;
+
+                    if (window.confirm(`¿Estás seguro de que deseas reinvertir todo tu profit disponible ($${contractStatus.availableProfit.toFixed(2)}) para iniciar un nuevo ciclo?`)) {
+                        try {
+                            await investmentService.reinvestProfit({
+                                amountUSD: contractStatus.availableProfit
+                            });
+                            // Refresh data
+                            const { updateUser } = useAuthStore.getState();
+                            const userData = await userService.getProfile();
+                            updateUser(userData);
+                            const data = await userService.getTransactions();
+                            setTransactions(data);
+                            setHasDismissedCycleModal(true);
+                            alert('¡Nuevo ciclo iniciado exitosamente!');
+                        } catch (error: any) {
+                            alert(error.response?.data?.error || 'Error al reinvertir');
+                        }
+                    }
+                }}
                 onLogout={() => {
                     const { logout } = useAuthStore.getState();
                     logout();
@@ -349,6 +424,8 @@ export const DashboardPage: React.FC = () => {
                     // Also refresh transactions
                     const data = await userService.getTransactions();
                     setTransactions(data);
+                    // Close the parent modal (CycleCompletedModal) because now there is a pending request
+                    setHasDismissedCycleModal(true);
                 }}
             />
 

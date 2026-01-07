@@ -52,6 +52,11 @@ export const ReinvestModal: React.FC<ReinvestModalProps> = ({
             return;
         }
 
+        if (amountNum % 25 !== 0) {
+            alert('El monto a reinvertir debe ser múltiplo de $25 (ej: 50, 75, 100...)');
+            return;
+        }
+
         setLoading(true);
         try {
             await investmentService.reinvestProfit({
@@ -108,6 +113,8 @@ export const ReinvestModal: React.FC<ReinvestModalProps> = ({
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="Ej: 500"
+                        min="50"
+                        step="25"
                         max={availableProfit}
                         className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-base font-semibold focus:border-accent transition-colors"
                     />

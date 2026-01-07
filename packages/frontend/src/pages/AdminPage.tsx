@@ -470,7 +470,7 @@ export const AdminPage: React.FC = () => {
                                             </div>
 
                                             <div className="border-t border-gray-700 pt-4">
-                                                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                                                     <div>
                                                         <p className="text-xs sm:text-sm text-gray-400">Capital invertido</p>
                                                         <p className="text-xl sm:text-2xl font-black text-accent">
@@ -487,6 +487,12 @@ export const AdminPage: React.FC = () => {
                                                         <p className="text-xs sm:text-sm text-gray-400">Profit manual</p>
                                                         <p className="text-xl sm:text-2xl font-black text-white">
                                                             ${(selectedUser as any).manualProfit?.toFixed(2) || '0.00'}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs sm:text-sm text-gray-400">Capital manual</p>
+                                                        <p className="text-xl sm:text-2xl font-black text-white">
+                                                            ${(selectedUser as any).manualCapital?.toFixed(2) || '0.00'}
                                                         </p>
                                                     </div>
                                                     <div>
@@ -595,15 +601,10 @@ export const AdminPage: React.FC = () => {
                                                             e.preventDefault();
                                                             if (!selectedUser) return;
 
-                                                            const capitalVal = parseFloat(newCapital);
+                                                            const addedCapital = parseFloat(newCapital);
 
-                                                            if (!capitalVal || isNaN(capitalVal)) {
+                                                            if (!addedCapital || isNaN(addedCapital)) {
                                                                 setCapitalMessage({ type: 'error', text: 'Ingresa un valor válido' });
-                                                                return;
-                                                            }
-
-                                                            if (capitalVal < 0) {
-                                                                setCapitalMessage({ type: 'error', text: 'El valor no puede ser negativo' });
                                                                 return;
                                                             }
 
@@ -611,16 +612,24 @@ export const AdminPage: React.FC = () => {
                                                                 // Calculate current profit
                                                                 const currentProfit = selectedUser.currentBalanceUSDT - selectedUser.capitalUSDT;
 
+                                                                // Calculate new totals
+                                                                const newTotalCapital = selectedUser.capitalUSDT + addedCapital;
+
+                                                                if (newTotalCapital < 0) {
+                                                                    setCapitalMessage({ type: 'error', text: 'El capital resultante no puede ser negativo' });
+                                                                    return;
+                                                                }
+
                                                                 // New balance = new capital + current profit (profit stays constant)
-                                                                const newBalance = capitalVal + currentProfit;
+                                                                const newBalance = newTotalCapital + currentProfit;
 
                                                                 const updated = await adminService.updateUserBalance(
                                                                     selectedUser.id,
-                                                                    capitalVal,
+                                                                    newTotalCapital,
                                                                     newBalance
                                                                 );
                                                                 setSelectedUser(updated);
-                                                                setCapitalMessage({ type: 'success', text: 'Capital actualizado exitosamente' });
+                                                                setCapitalMessage({ type: 'success', text: 'Capital sumado/restado exitosamente' });
                                                                 setNewCapital('');
                                                                 setTimeout(() => setCapitalMessage(null), 5000);
                                                             } catch (err: any) {
@@ -631,19 +640,19 @@ export const AdminPage: React.FC = () => {
                                                             }
                                                         }} className="space-y-3">
                                                             <div>
-                                                                <label className="block text-xs text-gray-400 mb-1">Nuevo capital</label>
+                                                                <label className="block text-xs text-gray-400 mb-1">Sumar al capital (usar negativo para restar)</label>
                                                                 <input
                                                                     type="number"
                                                                     step="0.01"
                                                                     value={newCapital}
                                                                     onChange={(e) => setNewCapital(e.target.value)}
-                                                                    placeholder={selectedUser.capitalUSDT.toFixed(2)}
+                                                                    placeholder="0.00"
                                                                     className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:ring-accent focus:border-accent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                                                                     disabled={selectedUser.isBlocked}
                                                                     required
                                                                 />
                                                                 <p className="text-xs text-gray-500 mt-1 italic">
-                                                                    El profit se mantendrá constante
+                                                                    Este valor se sumará al capital actual. El profit se mantiene igual.
                                                                 </p>
                                                             </div>
                                                             <button

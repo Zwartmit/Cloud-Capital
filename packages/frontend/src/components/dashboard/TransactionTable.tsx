@@ -38,6 +38,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
             return 'Suma al profit';
         }
 
+        // Special case for cycle completion withdrawals
+        if (tx.type === 'WITHDRAWAL' && tx.reference === 'Liquidación al completar meta del 200%') {
+            return 'Liquidación Ciclo completado';
+        }
+
         switch (tx.type) {
             case 'DEPOSIT':
                 return 'Aporte';
@@ -55,6 +60,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({ transactions
                 return 'Reinversión';
             case 'REFERRAL_COMMISSION':
                 return 'Comisión Referido';
+            case 'COMMISSION':
+                return 'Cobro comisión mensual';
             default:
                 return tx.type;
         }

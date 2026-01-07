@@ -273,34 +273,36 @@ export const ProfitManager: React.FC = () => {
                     <h2 className="text-lg font-bold text-white">Comisiones de referido</h2>
                 </div>
                 <p className="text-gray-400 text-xs mb-6">
-                    Configura los pagos de comisiones por referido
+                    Configura los pagos de comisiones por referido. Esto aplica para los planes pasivos de 3% y 6%
                 </p>
 
-                {/* Radio buttons for 5% or 10% */}
+                {/* Custom Percentage Input */}
                 <div className="space-y-3 mb-6">
-                    <label className="flex items-center p-3 bg-gray-800 rounded-lg border border-gray-700 cursor-pointer hover:border-purple-500 transition">
+                    <label className="block text-xs text-gray-400 mb-1">Porcentaje de comisión</label>
+                    <div className="relative">
                         <input
-                            type="radio"
-                            name="commission"
-                            value="0.05"
-                            checked={referralCommissionRate === 0.05}
-                            onChange={(e) => setReferralCommissionRate(parseFloat(e.target.value))}
-                            className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                            type="number"
+                            value={referralCommissionRate * 100}
+                            onChange={(e) => {
+                                const val = parseFloat(e.target.value);
+                                const newValue = isNaN(val) ? 0 : val;
+                                if (newValue >= 0 && newValue <= 100) {
+                                    setReferralCommissionRate(newValue / 100);
+                                }
+                            }}
+                            className="w-full pl-4 pr-8 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-purple-500 focus:border-purple-500 focus:outline-none transition"
+                            placeholder="Ej: 5"
+                            min="0"
+                            max="100"
+                            step="0.1"
                         />
-                        <span className="ml-3 text-white text-sm font-medium">5% de comisión</span>
-                    </label>
-
-                    <label className="flex items-center p-3 bg-gray-800 rounded-lg border border-gray-700 cursor-pointer hover:border-purple-500 transition">
-                        <input
-                            type="radio"
-                            name="commission"
-                            value="0.10"
-                            checked={referralCommissionRate === 0.10}
-                            onChange={(e) => setReferralCommissionRate(parseFloat(e.target.value))}
-                            className="w-4 h-4 text-purple-600 focus:ring-purple-500"
-                        />
-                        <span className="ml-3 text-white text-sm font-medium">10% de comisión</span>
-                    </label>
+                        <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-bold">
+                            %
+                        </span>
+                    </div>
+                    <p className="text-xs text-gray-500 italic">
+                        Ingresa el porcentaje exacto (0-100) que recibirán los usuarios.
+                    </p>
                 </div>
 
                 {/* Save button */}

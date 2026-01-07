@@ -15,6 +15,8 @@ interface Task {
     destinationUserId?: string;
     assignedAddress?: string; // BTC address for auto deposits
     adminNotes?: string;
+    adjustedAmount?: number; // Original requested amount if admin approved with different amount
+    btcAddress?: string; // Address for withdrawals
 }
 
 interface NotificationCenterProps {
@@ -41,7 +43,22 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
     const [verifying, setVerifying] = useState(false);
 
     const handleVerifyBlockchain = async (task: Task) => {
-        if (!task.assignedAddress) return;
+        const addressToVerify = task.assignedAddress || (task.type === 'WITHDRAWAL' ? task.btcAddress : undefined);
+
+        // Note: Task interface in NotificationCenter didn't explicitly show btcAddress but it comes from API
+        // We cast to any or should update interface. Let's verify interface first.
+        // Interface Task defined at top has: assignedAddress?: string;
+        // It does NOT have btcAddress explicitly? lines 6-19.
+        // Need to add btcAddress to interface as well.
+        if (!addressToVerify && !task.assignedAddress) return;
+
+        // Correct logic:
+        // For auto deposit: assignedAddress
+        // For withdrawal: check if task has btcAddress (it should be in the response)
+
+        const effectiveAddress = task.assignedAddress || task.btcAddress;
+
+        if (!effectiveAddress) return;
 
         setSelectedTask(task);
         setShowBlockchainModal(true);
@@ -50,10 +67,13 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
 
         try {
             const data = await btcPoolService.verifyDeposit({
-                address: task.assignedAddress,
+                address: effectiveAddress,
                 expectedAmountBTC: task.amountBTC
             });
-            setBlockchainData(data);
+            setBlockchainData({
+                ...data,
+                explorerLink: `https://mempool.space/${import.meta.env.VITE_BTC_NETWORK === 'mainnet' ? '' : 'testnet/'}address/${effectiveAddress}`
+            });
         } catch (error) {
             console.error('Error verifying blockchain:', error);
             setBlockchainData({ error: 'No se pudo verificar la información de la blockchain. Intente nuevamente.' });
@@ -388,13 +408,62 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
                                                     </div>
                                                 </div>
                                             )}
+
+                                            {/* Show BTC address for WITHDRAWAL */}
+                                            {task.type === 'WITHDRAWAL' && task.btcAddress && (
+                                                <div className="mt-2 p-2 bg-red-500/10 border border-red-500/20 rounded">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-[10px] text-gray-400 mb-0.5">Dirección destino:</p>
+                                                            <p className="text-xs text-red-300 font-mono truncate">{task.btcAddress}</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleCopyAddress(task.btcAddress!)}
+                                                            className="flex-shrink-0 p-1.5 hover:bg-red-500/20 rounded transition"
+                                                            title="Copiar dirección"
+                                                        >
+                                                            {copiedAddress === task.btcAddress ? (
+                                                                <Check className="w-4 h-4 text-green-400" />
+                                                            ) : (
+                                                                <Copy className="w-4 h-4 text-red-400" />
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                    <div className="mt-2 pt-2 border-t border-red-500/20 flex justify-end">
+                                                        <button
+                                                            onClick={() => handleVerifyBlockchain(task)}
+                                                            className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors"
+                                                        >
+                                                            <Shield className="w-3.5 h-3.5" />
+                                                            Verificar en Blockchain
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="flex-shrink-0 text-right">
-                                        <p className={`text-sm sm:text-base font-bold ${task.type.includes('DEPOSIT') ? 'text-green-400' : 'text-red-400'
-                                            }`}>
-                                            {task.type.includes('DEPOSIT') ? '+' : '-'}${task.amountUSD.toLocaleString()}
-                                        </p>
+                                        {task.adjustedAmount ? (
+                                            // Show both requested and approved amounts when they differ
+                                            <div className="space-y-0.5">
+                                                <p className="text-xs text-gray-400 line-through">
+                                                    {task.type.includes('DEPOSIT') ? '+' : '-'}${task.adjustedAmount.toLocaleString()}
+                                                </p>
+                                                <p className={`text-sm sm:text-base font-bold ${task.type.includes('DEPOSIT') ? 'text-green-400' : 'text-red-400'
+                                                    }`}>
+                                                    {task.type.includes('DEPOSIT') ? '+' : '-'}${task.amountUSD.toLocaleString()}
+                                                </p>
+                                                <p className="text-[10px] text-blue-400">
+                                                    Aprobado
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            // Show only approved amount when no adjustment
+                                            <p className={`text-sm sm:text-base font-bold ${task.type.includes('DEPOSIT') ? 'text-green-400' : 'text-red-400'
+                                                }`}>
+                                                {task.type.includes('DEPOSIT') ? '+' : '-'}${task.amountUSD.toLocaleString()}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -453,8 +522,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ tasks, l
 
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="text-gray-400">Dirección:</span>
-                                        <code className="text-cyan-400 text-xs">{selectedTask?.assignedAddress}</code>
+                                        <span className="text-gray-400">
+                                            {selectedTask?.type === 'WITHDRAWAL' ? 'Dirección destino:' : 'Dirección asignada:'}
+                                        </span>
+                                        <code className="text-cyan-400 text-xs">{selectedTask?.assignedAddress || selectedTask?.btcAddress}</code>
                                     </div>
                                     {blockchainData.expectedAmountBTC && (
                                         <div className="flex justify-between">

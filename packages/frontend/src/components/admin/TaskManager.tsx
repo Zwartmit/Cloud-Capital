@@ -394,7 +394,8 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
     };
 
     const handleVerifyBlockchain = async (task: TaskDTO) => {
-        if (!task.assignedAddress) {
+        const addressToVerify = task.assignedAddress || task.btcAddress;
+        if (!addressToVerify) {
             setError('Esta tarea no tiene dirección BTC asignada');
             return;
         }
@@ -409,13 +410,16 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
             // Calculate expected BTC amount if we have the price
             const expectedAmountBTC = task.amountBTC || (task.btcPrice ? task.amountUSD / task.btcPrice : undefined);
 
+            // For withdrawals, we verify the destination address
+            const address = task.assignedAddress || task.btcAddress!;
+
             const result = await btcPoolService.verifyDeposit({
-                address: task.assignedAddress,
+                address,
                 expectedAmountBTC,
                 minConfirmations: 1,
             });
 
-            const explorerLink = `https://mempool.space/${import.meta.env.VITE_BTC_NETWORK === 'mainnet' ? '' : 'testnet/'}address/${task.assignedAddress}`;
+            const explorerLink = `https://mempool.space/${import.meta.env.VITE_BTC_NETWORK === 'mainnet' ? '' : 'testnet/'}address/${address}`;
 
             // Enhanced validation
             let validationMessage = '';
@@ -664,7 +668,16 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
                                             {getTypeLabel(task.type)}
                                         </span>
                                         <span className="text-gray-500 text-sm hidden sm:inline">•</span>
-                                        <span className="text-white font-bold whitespace-nowrap">{formatUSDT(task.amountUSD)}</span>
+                                        {task.adjustedAmount ? (
+                                            // Show both requested and approved amounts when they differ
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-gray-400 line-through text-sm">{formatUSDT(task.adjustedAmount)}</span>
+                                                <span className="text-white font-bold">{formatUSDT(task.amountUSD)}</span>
+                                            </div>
+                                        ) : (
+                                            // Show only approved amount when no adjustment
+                                            <span className="text-white font-bold whitespace-nowrap">{formatUSDT(task.amountUSD)}</span>
+                                        )}
                                         <span className={`text-xs px-2 py-0.5 rounded border whitespace-nowrap ${task.status === 'PENDING' ? 'border-yellow-500 text-yellow-500 bg-yellow-500/10' :
                                             task.status === 'PRE_APPROVED' ? 'border-orange-500 text-orange-500 bg-orange-500/10' :
                                                 task.status === 'COMPLETED' ? 'border-green-500 text-green-500 bg-green-500/10' :
@@ -765,8 +778,8 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
 
                                 {/* Actions */}
                                 <div className="flex flex-wrap items-center gap-2">
-                                    {/* Blockchain Verification for DEPOSIT_AUTO */}
-                                    {task.type === 'DEPOSIT_AUTO' && task.assignedAddress && (
+                                    {/* Blockchain Verification for DEPOSIT_AUTO and WITHDRAWAL */}
+                                    {((task.type === 'DEPOSIT_AUTO' && task.assignedAddress) || (task.type === 'WITHDRAWAL' && task.btcAddress)) && (
                                         <button
                                             onClick={() => handleVerifyBlockchain(task)}
                                             className="p-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white flex justify-center items-center gap-2"
@@ -1008,8 +1021,10 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ onTaskProcessed }) => 
 
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="text-gray-400">Dirección:</span>
-                                        <code className="text-cyan-400 text-xs">{selectedTask?.assignedAddress}</code>
+                                        <span className="text-gray-400">
+                                            {selectedTask?.type === 'WITHDRAWAL' ? 'Dirección destino:' : 'Dirección asignada:'}
+                                        </span>
+                                        <code className="text-cyan-400 text-xs">{selectedTask?.assignedAddress || selectedTask?.btcAddress}</code>
                                     </div>
                                     {blockchainData.expectedAmountBTC && (
                                         <div className="flex justify-between">

@@ -210,7 +210,7 @@ export const CycleProgressCard = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
                 {/* Start Date */}
                 <div className="p-3 rounded-xl bg-gray-700/30 border border-gray-600/30 backdrop-blur-sm">
                     <div className="flex items-center gap-2 mb-1">
@@ -230,11 +230,15 @@ export const CycleProgressCard = () => {
                         <Clock className="w-3 h-3 text-orange-400" />
                         <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Tiempo Restante</span>
                     </div>
-                    {daysRemaining > 0 ? (
+                    {progress?.isCompleted ? (
+                        <p className="text-xl font-bold text-emerald-400">
+                            Ciclo completado
+                        </p>
+                    ) : daysRemaining > 0 ? (
                         <p className="text-xl font-bold text-white">
                             {daysRemaining} <span className="text-xs font-normal text-gray-400">días</span>
                         </p>
-                    ) : !progress?.isCompleted ? (
+                    ) : (
                         <div className="space-y-2">
                             <p className="text-xl font-bold text-red-400">
                                 Plan expirado
@@ -243,15 +247,11 @@ export const CycleProgressCard = () => {
                                 Suscríbete a un nuevo plan o invierte más capital para seguir generando ganancias
                             </p>
                         </div>
-                    ) : (
-                        <p className="text-xl font-bold text-emerald-400">
-                            Ciclo completado
-                        </p>
                     )}
                 </div>
 
                 {/* Target Amount */}
-                <div className="p-3 rounded-xl bg-gray-700/30 border border-gray-600/30 backdrop-blur-sm col-span-2 lg:col-span-1">
+                <div className="p-3 rounded-xl bg-gray-700/30 border border-gray-600/30 backdrop-blur-sm">
                     <div className="flex items-center gap-2 mb-1">
                         <TrendingUp className="w-3 h-3 text-emerald-400" />
                         <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Meta (200%)</span>
@@ -261,6 +261,20 @@ export const CycleProgressCard = () => {
                     </p>
                     <p className="text-[9px] text-gray-500 mt-1">
                         Basado en todos tus depósitos
+                    </p>
+                </div>
+
+                {/* Remaining Amount */}
+                <div className="p-3 rounded-xl bg-gray-700/30 border border-gray-600/30 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp className="w-3 h-3 text-blue-400" />
+                        <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Falta para la meta</span>
+                    </div>
+                    <p className="text-xl font-bold text-white">
+                        ${Math.max(0, (progress?.targetProfit || 0) - (progress?.totalProfit || 0)).toFixed(2)}
+                    </p>
+                    <p className="text-[9px] text-gray-500 mt-1">
+                        Para completar el ciclo
                     </p>
                 </div>
             </div>

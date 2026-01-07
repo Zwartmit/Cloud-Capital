@@ -10,13 +10,14 @@ interface Props {
         createdAt: Date;
         reference: string;
     }>;
+    hasPendingLiquidation?: boolean;
     onClose: () => void;
     onWithdrawProfit: () => void;
     onReinvest: () => void;
     onLogout: () => void;
 }
 
-export const CycleCompletedModal = ({ isOpen, totalProfit, availableProfit, previousWithdrawals = 0, withdrawalHistory = [], onWithdrawProfit, onReinvest, onLogout, onClose }: Props) => {
+export const CycleCompletedModal = ({ isOpen, totalProfit, availableProfit, previousWithdrawals = 0, withdrawalHistory = [], hasPendingLiquidation = false, onWithdrawProfit, onReinvest, onLogout, onClose }: Props) => {
     const [loading, setLoading] = useState(false);
 
     if (!isOpen) return null;
@@ -150,32 +151,55 @@ export const CycleCompletedModal = ({ isOpen, totalProfit, availableProfit, prev
                         </div>
                     )}
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-col gap-3 mb-6">
-                        <button
-                            onClick={handleWithdrawAll}
-                            disabled={loading}
-                            className="w-full py-4 px-6 text-lg font-bold text-white transition-all transform rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                        >
-                            💰 Retirar profit
-                        </button>
+                    {/* Action Buttons or Pending Message */}
+                    {hasPendingLiquidation ? (
+                        <div className="p-6 mb-6 border bg-blue-500/10 border-blue-500/30 rounded-xl">
+                            <div className="flex flex-col items-center gap-3 text-center">
+                                <div className="p-3 bg-blue-500/20 rounded-full animate-pulse">
+                                    <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-lg font-bold text-blue-400">
+                                    Solicitud en proceso
+                                </h3>
+                                <p className="text-sm text-gray-300">
+                                    Ya tienes una solicitud de retiro de ganancia del ciclo en espera de aprobación.
+                                    <br />
+                                    <span className="text-xs text-gray-400 mt-1 block">
+                                        (No es necesario generar una nueva solicitud)
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Standard Action Buttons */
+                        <div className="flex flex-col gap-3 mb-6">
+                            <button
+                                onClick={handleWithdrawAll}
+                                disabled={loading}
+                                className="w-full py-4 px-6 text-lg font-bold text-white transition-all transform rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            >
+                                💰 Retirar profit
+                            </button>
 
-                        <button
-                            onClick={handleReinvest}
-                            disabled={loading}
-                            className="w-full py-4 px-6 text-lg font-bold text-white transition-all transform rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                        >
-                            🔄 Reinvertir (Nuevo ciclo)
-                        </button>
+                            <button
+                                onClick={handleReinvest}
+                                disabled={loading}
+                                className="w-full py-4 px-6 text-lg font-bold text-white transition-all transform rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            >
+                                🔄 Reinvertir (Nuevo ciclo)
+                            </button>
 
-                        <button
-                            onClick={onLogout}
-                            disabled={loading}
-                            className="w-full py-3 px-6 text-sm font-medium text-white transition-colors bg-red-600 border border-gray-700 rounded-xl hover:bg-red-700 hover:text-white disabled:opacity-50"
-                        >
-                            Decidir después (Cerrar sesión)
-                        </button>
-                    </div>
+                            <button
+                                onClick={onLogout}
+                                disabled={loading}
+                                className="w-full py-3 px-6 text-sm font-medium text-white transition-colors bg-red-600 border border-gray-700 rounded-xl hover:bg-red-700 hover:text-white disabled:opacity-50"
+                            >
+                                Decidir después (Cerrar sesión)
+                            </button>
+                        </div>
+                    )}
 
                     {/* Footer Note */}
                     <p className="text-xs text-gray-500">

@@ -17,6 +17,18 @@ export const LoginPage: React.FC = () => {
     const navigate = useNavigate();
     const { login: setAuthState } = useAuthStore();
 
+    // Check for messages in URL (e.g. from auto-logout interception)
+    React.useEffect(() => {
+        const searchParams = new URLSearchParams(window.location.search);
+        const message = searchParams.get('message');
+
+        if (message === 'account_deleted') {
+            setError('Tu sesión ha expirado porque tu cuenta ya no existe. Contacta al soporte si crees que es un error.');
+        } else if (message === 'session_expired') {
+            setError('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+        }
+    }, []);
+
     const handleLogin = async () => {
         setError('');
         setLoading(true);

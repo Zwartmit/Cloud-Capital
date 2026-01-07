@@ -65,8 +65,8 @@ export const requestDeposit = async (req: Request, res: Response): Promise<void>
     const userId = req.user!.userId;
     const { amountUSD, reference, proof } = req.body;
 
-    if (!amountUSD || amountUSD <= 0) {
-      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
+    if (!amountUSD || amountUSD < 50) {
+      res.status(400).json({ error: 'El monto mínimo de aporte es $50 USDT' });
       return;
     }
 
@@ -82,8 +82,13 @@ export const requestWithdrawal = async (req: Request, res: Response): Promise<vo
     const userId = req.user!.userId;
     const { amountUSD } = req.body;
 
-    if (!amountUSD || amountUSD <= 0) {
-      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
+    if (!amountUSD || amountUSD < 50) {
+      res.status(400).json({ error: 'El monto mínimo de retiro es $50 USDT' });
+      return;
+    }
+
+    if (amountUSD % 25 !== 0) {
+      res.status(400).json({ error: 'El monto debe ser múltiplo de $25 (ej: 50, 75, 100...)' });
       return;
     }
 
@@ -99,8 +104,8 @@ export const reinvest = async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { amountUSD } = req.body;
 
-    if (!amountUSD || amountUSD <= 0) {
-      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
+    if (!amountUSD || amountUSD < 50) {
+      res.status(400).json({ error: 'La cantidad mínima de reinversión es $50 USDT' });
       return;
     }
 
@@ -177,8 +182,8 @@ export const requestAutoDeposit = async (req: Request, res: Response): Promise<v
       proof = `/uploads/proofs/${req.file.filename}`;
     }
 
-    if (!amountUSDT || parseFloat(amountUSDT) <= 0) {
-      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
+    if (!amountUSDT || parseFloat(amountUSDT) < 50) {
+      res.status(400).json({ error: 'El monto mínimo de aporte es $50 USDT' });
       return;
     }
 
@@ -201,8 +206,8 @@ export const reserveBtcAddress = async (req: Request, res: Response): Promise<vo
     const userId = req.user!.userId;
     const { amountUSDT } = req.body;
 
-    if (!amountUSDT || parseFloat(amountUSDT) <= 0) {
-      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
+    if (!amountUSDT || parseFloat(amountUSDT) < 50) {
+      res.status(400).json({ error: 'El monto mínimo de aporte es $50 USDT' });
       return;
     }
 
@@ -247,8 +252,8 @@ export const updateReservedAddressAmount = async (req: Request, res: Response): 
     const { addressId } = req.params;
     const { amountUSDT } = req.body;
 
-    if (!amountUSDT || amountUSDT <= 0) {
-      res.status(400).json({ error: 'Monto inválido' });
+    if (!amountUSDT || amountUSDT < 50) {
+      res.status(400).json({ error: 'El monto mínimo de aporte es $50 USDT' });
       return;
     }
 
@@ -265,8 +270,8 @@ export const requestManualDepositOrder = async (req: Request, res: Response): Pr
     const userId = req.user!.userId;
     const { amountUSDT, txid, collaboratorName, collaboratorId, notes } = req.body;
 
-    if (!amountUSDT || amountUSDT <= 0) {
-      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
+    if (!amountUSDT || amountUSDT < 50) {
+      res.status(400).json({ error: 'El monto mínimo de aporte es $50 USDT' });
       return;
     }
 
@@ -288,8 +293,13 @@ export const requestWithdrawalEnhanced = async (req: Request, res: Response): Pr
     const userId = req.user!.userId;
     const { amountUSDT, btcAddress, destinationType, destinationUserId, bankDetails } = req.body;
 
-    if (!amountUSDT || amountUSDT <= 0) {
-      res.status(400).json({ error: 'La cantidad debe ser mayor a 0' });
+    if (!amountUSDT || amountUSDT < 50) {
+      res.status(400).json({ error: 'El monto mínimo de retiro es $50 USDT' });
+      return;
+    }
+
+    if (amountUSDT % 25 !== 0) {
+      res.status(400).json({ error: 'El monto debe ser múltiplo de $25 (ej: 50, 75, 100...)' });
       return;
     }
 
@@ -402,7 +412,7 @@ export const getPublicContactInfo = async (_req: Request, res: Response): Promis
 export const getCycleProgress = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.userId;
-    const { getCycleProgress } = await import('../utils/contract-calculations.js');
+    const { getCycleProgress, hasCycleCompleted } = await import('../utils/contract-calculations.js');
     const progress = await getCycleProgress(userId);
     res.status(200).json(progress);
   } catch (error: any) {
@@ -439,6 +449,61 @@ export const getContractStatus = async (req: Request, res: Response): Promise<vo
       return;
     }
 
+    // Lazy update: Sync contractStatus with actual cycle completion state
+    const { hasCycleCompleted } = await import('../utils/contract-calculations.js');
+    const isCompleted = await hasCycleCompleted(userId);
+
+    // Update DB if status doesn't match reality
+    if (isCompleted && user.contractStatus !== 'COMPLETED') {
+      // Cycle is completed but not marked in DB - set to COMPLETED
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          contractStatus: 'COMPLETED',
+          cycleCompleted: true,
+          cycleCompletedAt: new Date()
+        },
+        select: {
+          contractStatus: true,
+          cycleCompleted: true,
+          cycleCompletedAt: true,
+          investmentClass: true,
+          currentPlanStartDate: true,
+          currentPlanExpiryDate: true,
+          capitalUSDT: true,
+          currentBalanceUSDT: true,
+          passiveIncomeRate: true
+        }
+      });
+
+      // Use updated user data for response
+      Object.assign(user, updatedUser);
+    } else if (!isCompleted && user.contractStatus === 'COMPLETED') {
+      // Cycle is NOT completed but marked as COMPLETED in DB - reset to ACTIVE
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          contractStatus: 'ACTIVE',
+          cycleCompleted: false,
+          cycleCompletedAt: null
+        },
+        select: {
+          contractStatus: true,
+          cycleCompleted: true,
+          cycleCompletedAt: true,
+          investmentClass: true,
+          currentPlanStartDate: true,
+          currentPlanExpiryDate: true,
+          capitalUSDT: true,
+          currentBalanceUSDT: true,
+          passiveIncomeRate: true
+        }
+      });
+
+      // Use updated user data for response
+      Object.assign(user, updatedUser);
+    }
+
     // Calculate days remaining for plan
     let daysRemaining = 0;
     if (user.currentPlanExpiryDate) {
@@ -452,25 +517,22 @@ export const getContractStatus = async (req: Request, res: Response): Promise<vo
     const balance = user.currentBalanceUSDT || 0;
     const availableProfit = Math.max(0, balance - capital);
 
-    // Calculate total profit generated (sum of all PROFIT transactions)
-    // This represents the historical total profit generated across all time
-    const totalProfitResult = await prisma.transaction.aggregate({
-      where: {
-        userId,
-        type: 'PROFIT'
-      },
-      _sum: {
-        amountUSDT: true
-      }
-    });
-    const totalProfit = totalProfitResult._sum.amountUSDT || 0;
+    // Get withdrawal history for current cycle only
+    const { calculateTotalProfit, getCycleStartDate } = await import('../utils/contract-calculations.js');
+    const totalProfit = await calculateTotalProfit(userId);
+    const cycleStartDate = await getCycleStartDate(userId);
 
-    // Get withdrawal history for display in modal
     const withdrawalHistory = await prisma.transaction.findMany({
       where: {
         userId,
         type: 'WITHDRAWAL',
-        status: 'COMPLETED'
+        status: 'COMPLETED',
+        // Only show withdrawals after cycle start
+        ...(cycleStartDate && {
+          createdAt: {
+            gt: cycleStartDate
+          }
+        })
       },
       select: {
         amountUSDT: true,

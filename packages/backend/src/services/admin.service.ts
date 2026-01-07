@@ -1,6 +1,10 @@
 import { TaskStatus } from '@prisma/client';
 import prisma from '../config/database.js';
 import bcrypt from 'bcrypt';
+import {
+  calculateTotalCommissions,
+  calculateTotalProfit
+} from '../utils/contract-calculations';
 
 // User Management
 export const getAllUsers = async (page: number = 1, limit: number = 20) => {
@@ -33,24 +37,66 @@ export const getAllUsers = async (page: number = 1, limit: number = 20) => {
     prisma.user.count({ where: { role: 'USER' } })
   ]);
 
-  // Calculate manual profit for these users (PROFIT + Adicionada por el admin/sistema)
-  const manualProfits = await prisma.transaction.groupBy({
+  const userIds = allUsers.map(u => u.id);
+
+  // 1. Find the last "New cycle" reset date for each user
+  const resetDates = await prisma.transaction.groupBy({
     by: ['userId'],
     where: {
-      userId: { in: allUsers.map(u => u.id) },
-      type: 'PROFIT',
-      reference: 'Adicionada por el admin/sistema'
+      userId: { in: userIds },
+      reference: 'Reinversión - Nuevo ciclo iniciado'
     },
-    _sum: { amountUSDT: true }
+    _max: { createdAt: true }
   });
 
-  // Map _count to referralsCount for DTO compatibility and add manualProfit
+  // 2. Fetch all manual transactions for these users
+  const manualTransactions = await prisma.transaction.findMany({
+    where: {
+      userId: { in: userIds },
+      OR: [
+        { reference: 'Adicionada por el admin/sistema' }, // Manual Profit
+        { reference: 'Ajuste manual de capital por admin/sistema' } // Manual Capital
+      ]
+    },
+    select: {
+      userId: true,
+      type: true,
+      amountUSDT: true,
+      reference: true,
+      createdAt: true
+    }
+  });
+
+  // 3. Process in memory
   const users = allUsers.map(user => {
-    const profitRecord = manualProfits.find(p => p.userId === user.id);
+    // Determine cutoff date (last reset or epoch 0)
+    const resetRecord = resetDates.find(r => r.userId === user.id);
+    const cutoffDate = resetRecord?._max.createdAt ? new Date(resetRecord._max.createdAt) : new Date(0);
+
+    // Filter transactions after cutoff
+    const userTxs = manualTransactions.filter(t => t.userId === user.id && new Date(t.createdAt) > cutoffDate);
+
+    // Calculate Manual Profit
+    const manualProfit = userTxs
+      .filter(t => t.type === 'PROFIT' && t.reference === 'Adicionada por el admin/sistema')
+      .reduce((sum, t) => sum + t.amountUSDT, 0);
+
+    // Calculate Manual Capital
+    const capDeposits = userTxs
+      .filter(t => t.type === 'DEPOSIT' && t.reference === 'Ajuste manual de capital por admin/sistema')
+      .reduce((sum, t) => sum + t.amountUSDT, 0);
+
+    const capWithdrawals = userTxs
+      .filter(t => t.type === 'WITHDRAWAL' && t.reference === 'Ajuste manual de capital por admin/sistema')
+      .reduce((sum, t) => sum + t.amountUSDT, 0);
+
+    const manualCapital = capDeposits - capWithdrawals;
+
     return {
       ...user,
       referralsCount: user._count.referrals,
-      manualProfit: profitRecord?._sum.amountUSDT || 0,
+      manualProfit,
+      manualCapital,
       _count: undefined
     };
   });
@@ -107,10 +153,53 @@ export const getUserById = async (id: string) => {
     referredBy = referrer;
   }
 
-  // Map _count to referralsCount for DTO compatibility
+  // 1. Find last reset date
+  const lastReset = await prisma.transaction.findFirst({
+    where: {
+      userId: id,
+      reference: 'Reinversión - Nuevo ciclo iniciado'
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const cutoffDate = lastReset ? lastReset.createdAt : new Date(0);
+
+  // 2. Calculate Manual Stats after cutoff
+  const manualStats = await prisma.transaction.findMany({
+    where: {
+      userId: id,
+      createdAt: { gt: cutoffDate },
+      OR: [
+        { reference: 'Adicionada por el admin/sistema' },
+        { reference: 'Ajuste manual de capital por admin/sistema' }
+      ]
+    },
+    select: {
+      type: true,
+      amountUSDT: true,
+      reference: true
+    }
+  });
+
+  const manualProfit = manualStats
+    .filter(t => t.type === 'PROFIT' && t.reference === 'Adicionada por el admin/sistema')
+    .reduce((sum, t) => sum + t.amountUSDT, 0);
+
+  const capDeposits = manualStats
+    .filter(t => t.type === 'DEPOSIT' && t.reference === 'Ajuste manual de capital por admin/sistema')
+    .reduce((sum, t) => sum + t.amountUSDT, 0);
+
+  const capWithdrawals = manualStats
+    .filter(t => t.type === 'WITHDRAWAL' && t.reference === 'Ajuste manual de capital por admin/sistema')
+    .reduce((sum, t) => sum + t.amountUSDT, 0);
+
+  const manualCapital = capDeposits - capWithdrawals;
+
   return {
     ...user,
     referralsCount: user._count.referrals,
+    manualProfit,
+    manualCapital,
     referredBy,
     _count: undefined,
     referrerId: undefined
@@ -147,6 +236,9 @@ export const searchUsers = async (query: string) => {
   });
 
   // Map _count to referralsCount for DTO compatibility
+  // Note: For search, we might not need advanced manual stats aggregation yet as it's just a dropdown list
+  // But if needed, we'd replicate the logic from getAllUsers. 
+  // For now, keeping it simple as search usually just shows basic info.
   return users.map(user => ({
     ...user,
     referralsCount: user._count.referrals,
@@ -155,22 +247,77 @@ export const searchUsers = async (query: string) => {
 };
 
 export const updateUserBalance = async (id: string, capitalUSDT: number, currentBalanceUSDT: number) => {
+  // 0. Pre-validation: Check if adding profit exceeds cycle target (200%)
+  const currentUser = await prisma.user.findUnique({
+    where: { id },
+    select: { currentBalanceUSDT: true, capitalUSDT: true }
+  });
+
+  if (!currentUser) throw new Error('Usuario no encontrado');
+
+  const oldBalance = currentUser.currentBalanceUSDT || 0;
+  const oldCapital = currentUser.capitalUSDT || 0;
+  const oldProfit = oldBalance - oldCapital;
+
+  const newProfitVal = currentBalanceUSDT - capitalUSDT;
+  const profitDiff = newProfitVal - oldProfit;
+
+  // Only validate if we are ADDING profit
+  if (profitDiff > 0.001) {
+    const totalCommissions = await calculateTotalCommissions(id);
+    const baseCapital = capitalUSDT + totalCommissions;
+    const targetProfit = baseCapital * 2;
+
+    const currentCycleProfit = await calculateTotalProfit(id);
+    const projectedTotalProfit = currentCycleProfit + profitDiff;
+
+    if (projectedTotalProfit > targetProfit + 0.01) {
+      const remainingProfit = Math.max(0, targetProfit - currentCycleProfit);
+      throw new Error(`No se puede agregar esa cantidad. Excede la meta del ciclo (200%).
+Meta: $${targetProfit.toFixed(2)}
+Generado: $${currentCycleProfit.toFixed(2)}
+Restante permitido: $${remainingProfit.toFixed(2)}`);
+    }
+  }
+
   return prisma.$transaction(async (tx) => {
     // 1. Get current user state to calculate difference
     const user = await tx.user.findUnique({
       where: { id },
-      select: { currentBalanceUSDT: true }
+      select: {
+        currentBalanceUSDT: true,
+        capitalUSDT: true
+      }
     });
 
     if (!user) {
       throw new Error('User not found in updateUserBalance');
     }
 
-    // 2. Calculate difference: New Balance - Old Balance
-    const currentBalance = user.currentBalanceUSDT || 0;
-    const profitDiff = currentBalanceUSDT - currentBalance;
+    // 2. Calculate difference: New Profit - Old Profit
+    const oldBalance = user.currentBalanceUSDT || 0;
+    const oldCapital = user.capitalUSDT || 0;
+    const oldProfit = oldBalance - oldCapital;
 
-    // 3. If profit increased, create a transaction record
+    const newProfit = currentBalanceUSDT - capitalUSDT;
+    const profitDiff = newProfit - oldProfit;
+    const capitalDiff = capitalUSDT - oldCapital;
+
+    // 3a. If capital changed, create transaction
+    if (Math.abs(capitalDiff) > 0.001) {
+      await tx.transaction.create({
+        data: {
+          userId: id,
+          type: capitalDiff > 0 ? 'DEPOSIT' : 'WITHDRAWAL',
+          amountUSDT: Math.abs(capitalDiff),
+          amountBTC: 0,
+          status: 'COMPLETED',
+          reference: 'Ajuste manual de capital por admin/sistema'
+        }
+      });
+    }
+
+    // 3b. If profit increased, create a transaction record
     if (profitDiff > 0.001) {
       await tx.transaction.create({
         data: {
@@ -209,20 +356,54 @@ export const updateUserBalance = async (id: string, capitalUSDT: number, current
       }
     });
 
-    // 5. Get total manual profit for this user
-    const manualProfitAgg = await tx.transaction.aggregate({
+    // 5. Calculate Manual Stats (Reset Logic aware)
+    // Find last reset within transaction
+    const lastReset = await tx.transaction.findFirst({
       where: {
         userId: id,
-        type: 'PROFIT',
-        reference: 'Adicionada por el admin/sistema'
+        reference: 'Reinversión - Nuevo ciclo iniciado'
       },
-      _sum: { amountUSDT: true }
+      orderBy: { createdAt: 'desc' }
     });
+
+    const cutoffDate = lastReset ? lastReset.createdAt : new Date(0);
+
+    // Calculate stats after cutoff
+    const manualStats = await tx.transaction.findMany({
+      where: {
+        userId: id,
+        createdAt: { gt: cutoffDate },
+        OR: [
+          { reference: 'Adicionada por el admin/sistema' },
+          { reference: 'Ajuste manual de capital por admin/sistema' }
+        ]
+      },
+      select: {
+        type: true,
+        amountUSDT: true,
+        reference: true
+      }
+    });
+
+    const manualProfit = manualStats
+      .filter(t => t.type === 'PROFIT' && t.reference === 'Adicionada por el admin/sistema')
+      .reduce((sum, t) => sum + t.amountUSDT, 0);
+
+    const capDeposits = manualStats
+      .filter(t => t.type === 'DEPOSIT' && t.reference === 'Ajuste manual de capital por admin/sistema')
+      .reduce((sum, t) => sum + t.amountUSDT, 0);
+
+    const capWithdrawals = manualStats
+      .filter(t => t.type === 'WITHDRAWAL' && t.reference === 'Ajuste manual de capital por admin/sistema')
+      .reduce((sum, t) => sum + t.amountUSDT, 0);
+
+    const manualCapital = capDeposits - capWithdrawals;
 
     return {
       ...updatedUser,
       referralsCount: updatedUser._count?.referrals || 0,
-      manualProfit: manualProfitAgg._sum.amountUSDT || 0,
+      manualProfit,
+      manualCapital,
       _count: undefined
     };
   });
@@ -458,8 +639,11 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
           capitalUSDT: newCapital,
           currentBalanceUSDT: newBalance,
           hasFirstDeposit: true,
-          // Set passive income rate to 3% if this is first deposit
-          ...(isFirstDeposit && { passiveIncomeRate: 0.03, lastDailyProfitDate: new Date() })
+          // Set passive income rate to 3% (or 6% if referrer) if this is first deposit OR user has no active plan (new cycle)
+          ...((isFirstDeposit || !task.user.investmentClass) && {
+            passiveIncomeRate: task.user.hasSuccessfulReferral ? 0.06 : 0.03,
+            lastDailyProfitDate: new Date()
+          })
         }
       });
 
@@ -482,6 +666,10 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
           approvedByAdmin: adminEmail,
           collaboratorProof: collaboratorProof || undefined,
           reference: reference || undefined,
+          // Store original requested amount if admin approves with different amount
+          adjustedAmount: (receivedAmount && receivedAmount !== task.amountUSD) ? task.amountUSD : undefined,
+          // Update amountUSD to the approved amount if different
+          amountUSD: receivedAmount || task.amountUSD,
           // Si el monto aprobado es diferente al solicitado (y se proporcionó receivedAmount), agregar nota
           adminNotes: (receivedAmount && receivedAmount !== task.amountUSD)
             ? `La solicitud se aprobó con un monto de $${receivedAmount}, ya que fue lo que se recibió en la wallet`
@@ -630,7 +818,9 @@ export const approveTask = async (id: string, adminEmail: string, adminRole: str
           userId: task.userId,
           type: task.type === 'LIQUIDATION' ? 'WITHDRAWAL' : 'WITHDRAWAL',
           amountUSDT: amountToDeduct,
-          reference: task.txid || task.reference,
+          reference: (task.liquidationDetails as any)?.type === 'PROFIT_LIQUIDATION' && task.user.contractStatus === 'COMPLETED'
+            ? 'Liquidación al completar meta del 200%'
+            : (task.txid || task.reference || 'Retiro parcial de profit'),
           status: 'COMPLETED'
         }
       });
