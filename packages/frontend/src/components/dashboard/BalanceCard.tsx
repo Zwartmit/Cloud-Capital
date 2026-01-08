@@ -106,7 +106,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
                             </h3>
                         </div>
                         <p className="text-xs text-gray-400 mb-3">
-                            +{profitPercent.toFixed(2)}% Rendimiento Total
+                            +{profitPercent.toFixed(2)}% Rendimiento total
                         </p>
                         <div className="flex gap-2">
                             <button

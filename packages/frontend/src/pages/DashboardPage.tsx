@@ -251,7 +251,7 @@ export const DashboardPage: React.FC = () => {
                                 }}
                                 onWithdraw={() => {
                                     if (contractStatus?.contractStatus === 'COMPLETED') {
-                                        setHasDismissedCycleModal(false);
+                                        setIsCycleCompletionModalOpen(true);
                                     } else {
                                         setIsWithdrawModalOpen(true);
                                     }

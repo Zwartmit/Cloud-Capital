@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { useAuthStore } from '../store/authStore';
 import { userService } from '../services/userService';
+import { contractService } from '../services/contractService';
 import { investmentPlanService, InvestmentPlan } from '../services/investmentPlanService';
 import { User, Mail, Calendar, Copy, Check, Search, Phone, TrendingUp } from 'lucide-react';
 import { PasswordInput } from '../components/common/PasswordInput';
@@ -206,7 +207,19 @@ export const ProfilePage: React.FC = () => {
                                                         Duplicación: {investmentPlan.doublingTime}
                                                     </p>
                                                     <button
-                                                        onClick={() => setIsLiquidationModalOpen(true)}
+                                                        onClick={async () => {
+                                                            try {
+                                                                const status = await contractService.getContractStatus();
+                                                                if (status.contractStatus === 'COMPLETED') {
+                                                                    alert('No puedes liquidar el plan porque ya has completado tu ciclo de inversión. Por favor ve al Dashboard y retira tu profit completo sin penalizaciones.');
+                                                                    return;
+                                                                }
+                                                                setIsLiquidationModalOpen(true);
+                                                            } catch (error) {
+                                                                console.error('Error checking contract status:', error);
+                                                                setIsLiquidationModalOpen(true);
+                                                            }
+                                                        }}
                                                         disabled={hasPendingLiquidation}
                                                         className={`mt-2 w-full max-w-[200px] text-[10px] py-1.5 rounded transition-colors uppercase tracking-wider ${hasPendingLiquidation
                                                             ? 'bg-yellow-900/20 text-yellow-500 border border-yellow-700/30 cursor-not-allowed'
@@ -431,6 +444,7 @@ export const ProfilePage: React.FC = () => {
                 isOpen={isLiquidationModalOpen}
                 onClose={() => setIsLiquidationModalOpen(false)}
                 capitalAmount={user?.capitalUSDT || 0}
+                profitAmount={user ? Math.max(0, user.currentBalanceUSDT - user.capitalUSDT) : 0}
                 onSuccess={async () => {
                     try {
                         const updatedUser = await userService.getProfile();

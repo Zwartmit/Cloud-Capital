@@ -7,6 +7,7 @@ interface EarlyLiquidationModalProps {
     isOpen: boolean;
     onClose: () => void;
     capitalAmount: number;
+    profitAmount: number;
     onSuccess: () => void;
 }
 
@@ -14,6 +15,7 @@ export const EarlyLiquidationModal: React.FC<EarlyLiquidationModalProps> = ({
     isOpen,
     onClose,
     capitalAmount,
+    profitAmount,
     onSuccess,
 }) => {
     const [btcAddress, setBtcAddress] = useState('');
@@ -88,6 +90,12 @@ export const EarlyLiquidationModal: React.FC<EarlyLiquidationModalProps> = ({
                             Estás a punto de liquidar tu plan antes del plazo contractual. Esta acción conlleva una
                             <span className="font-bold text-white"> penalidad operativa del 38% </span>
                             sobre tu aporte total transferido, según lo estipulado en la Cláusula 3 de los Términos y Condiciones.
+                            {profitAmount > 0 && (
+                                <>
+                                    <br /><br />
+                                    Además, ten en cuenta que <span className="font-bold text-white">perderás el 100% del profit acumulado</span> generado hasta el momento.
+                                </>
+                            )}
                         </p>
                     </div>
                 </div>
@@ -110,6 +118,14 @@ export const EarlyLiquidationModal: React.FC<EarlyLiquidationModalProps> = ({
                         </span>
                     </div>
                 </div>
+
+                {/* Profit Loss Warning - Separated from calculation table */}
+                {profitAmount > 0 && (
+                    <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-3 flex justify-between items-center">
+                        <span className="text-sm text-orange-400">Profit acumulado (se perderá):</span>
+                        <span className="font-mono font-bold text-orange-400">-${profitAmount.toFixed(2)} USD</span>
+                    </div>
+                )}
 
                 {/* BTC Address Input */}
                 <div>
